@@ -30,12 +30,6 @@ type BuildContext struct {
 	SDKDir string
 	// ArchDir = ${BuildDir}/${Platform}/${SDK}/${Arch}
 	ArchDir string
-	// Target = ${BuildDir}/${Platform}/${SDK}/${Arch}/${Target}
-	TargetDir string
-	// ${Target}/include
-	TargetIncludeDir string
-	// ${Target}/lib
-	TargetLibDir string
 	// BinDir = ${BuildDir}/${Platform}/${SDK}/${Arch}/${BinType}
 	// BinType = dylib or static
 	BinDir string
@@ -60,7 +54,6 @@ func NewBuildContext(tunnel *j9.Tunnel, sdk SDKEnum, arch ArchEnum, cliArgs *CLI
 	sdkDir := GetSDKDir(buildDir, sdk)
 	archDir := filepath.Join(sdkDir, string(arch))
 
-	targetDir := filepath.Join(archDir, target)
 	var binType string
 	if isDylib {
 		binType = "dylib"
@@ -81,14 +74,9 @@ func NewBuildContext(tunnel *j9.Tunnel, sdk SDKEnum, arch ArchEnum, cliArgs *CLI
 	if !slices.Contains(sdkArchs, arch) {
 		panic(fmt.Sprintf("Unsupported arch %s for SDK %s, valid archs: %v", arch, sdk, sdkArchs))
 	}
-
-	targetIncludeDir := filepath.Join(targetDir, "include")
-	targetLibDir := filepath.Join(targetDir, "lib")
 	binIncludeDir := filepath.Join(binDir, "include")
 	binLibDir := filepath.Join(binDir, "lib")
 
-	io2.Mkdirp(targetIncludeDir)
-	io2.Mkdirp(targetLibDir)
 	io2.Mkdirp(binIncludeDir)
 	io2.Mkdirp(binLibDir)
 
@@ -100,17 +88,14 @@ func NewBuildContext(tunnel *j9.Tunnel, sdk SDKEnum, arch ArchEnum, cliArgs *CLI
 		TargetLibName: targetLibName,
 		IsDylib:       isDylib,
 
-		ArchDir:          archDir,
-		TmpDir:           filepath.Join(archDir, "tmp"),
-		TargetDir:        targetDir,
-		TargetIncludeDir: targetIncludeDir,
-		TargetLibDir:     targetLibDir,
-		BinDir:           binDir,
-		BinIncludeDir:    binIncludeDir,
-		BinLibDir:        binLibDir,
-		DebugBuild:       cliArgs.DebugBuild,
-		CleanBuild:       cliArgs.CleanBuild,
-		NDKInput:         cliArgs.NDK,
+		ArchDir:       archDir,
+		TmpDir:        filepath.Join(archDir, "tmp"),
+		BinDir:        binDir,
+		BinIncludeDir: binIncludeDir,
+		BinLibDir:     binLibDir,
+		DebugBuild:    cliArgs.DebugBuild,
+		CleanBuild:    cliArgs.CleanBuild,
+		NDKInput:      cliArgs.NDK,
 	}
 
 	targetLibFileName := targetLibName + ctx.GetDylibExt()
