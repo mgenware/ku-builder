@@ -1,0 +1,4 @@
+issues:
+  exclude-dirs:
+    - repo
+    - build
