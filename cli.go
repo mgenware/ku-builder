@@ -40,13 +40,26 @@ var SupportedCLIActions = map[CLIAction]bool{
 	CLIActionBuild:     true,
 }
 
-func ParseCLIArgs() *CLIArgs {
-	platformPtr := flag.String("platform", "", "Platform. Supported platforms: macos, ios, android, darwin(macos + ios).")
-	target := flag.String("target", "", "Build target.")
-	sdkPtr := flag.String("sdk", "", "SDK. If not specified, all supported SDKs for the platform will be used.")
-	archPtr := flag.String("arch", "", "Arch. If not specified, all supported SDK archs for the platform will be used.")
-	actionPtr := flag.String("action", "", "Action. Supported actions: configure, clean, build.")
-	dylibPtr := flag.Bool("dylib", false, "Build as dylib.")
+type CLIOptions struct {
+	DefaultPlatform PlatformEnum
+	DefaultTarget   string
+	DefaultSDK      SDKEnum
+	DefaultArch     ArchEnum
+	DefaultAction   CLIAction
+	DefaultDylib    bool
+}
+
+func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
+	if opt == nil {
+		opt = &CLIOptions{}
+	}
+
+	platformPtr := flag.String("platform", string(opt.DefaultPlatform), "Platform. Supported platforms: macos, ios, android, darwin(macos + ios).")
+	target := flag.String("target", opt.DefaultTarget, "Build target.")
+	sdkPtr := flag.String("sdk", string(opt.DefaultSDK), "SDK. If not specified, all supported SDKs for the platform will be used.")
+	archPtr := flag.String("arch", string(opt.DefaultArch), "Arch. If not specified, all supported SDK archs for the platform will be used.")
+	actionPtr := flag.String("action", string(opt.DefaultAction), "Action. Supported actions: configure, clean, build.")
+	dylibPtr := flag.Bool("dylib", opt.DefaultDylib, "Build as dylib.")
 	ndkPtr := flag.String("ndk", "", "NDK name.")
 	debugPtr := flag.Bool("debug", false, "Debug build.")
 	cleanPtr := flag.Bool("clean", false, "Run a clean build.")

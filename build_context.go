@@ -49,13 +49,14 @@ type BuildContext struct {
 	stringCache map[string]string
 }
 
-func NewBuildContext(tunnel *j9.Tunnel, sdk SDKEnum, arch ArchEnum, cliArgs *CLIArgs, target string, isDylib bool) *BuildContext {
+func NewBuildContext(tunnel *j9.Tunnel, sdk SDKEnum, arch ArchEnum, cliArgs *CLIArgs) *BuildContext {
 	buildDir := GetBuildDir(cliArgs.DebugBuild)
 	sdkDir := GetSDKDir(buildDir, sdk)
 	archDir := filepath.Join(sdkDir, string(arch))
+	target := cliArgs.Target
 
 	var binType string
-	if isDylib {
+	if cliArgs.Dylib {
 		binType = "dylib"
 	} else {
 		binType = "static"
@@ -86,7 +87,7 @@ func NewBuildContext(tunnel *j9.Tunnel, sdk SDKEnum, arch ArchEnum, cliArgs *CLI
 		Arch:          arch,
 		Target:        target,
 		TargetLibName: targetLibName,
-		IsDylib:       isDylib,
+		IsDylib:       cliArgs.Dylib,
 
 		ArchDir:       archDir,
 		TmpDir:        filepath.Join(archDir, "tmp"),

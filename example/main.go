@@ -12,9 +12,11 @@ var repo = &ku.SourceRepo{
 }
 
 func main() {
-	cliArgs := ku.ParseCLIArgs()
+	cliOpt := &ku.CLIOptions{
+		DefaultTarget: "libogg",
+	}
+	cliArgs := ku.ParseCLIArgs(cliOpt)
 	tunnel := ku.CreateDefaultTunnel()
-	target := "libogg"
 
 	for _, sdk := range cliArgs.SDKs {
 		var archs []ku.ArchEnum
@@ -25,9 +27,9 @@ func main() {
 		}
 
 		for _, arch := range archs {
-			tunnel.Logger().Log(j9.LogLevelWarning, "Building target: "+target+" for "+string(arch)+" with SDK: "+string(sdk))
+			tunnel.Logger().Log(j9.LogLevelWarning, "Building target: "+cliArgs.Target+" for "+string(arch)+" with SDK: "+string(sdk))
 
-			ctx := ku.NewBuildContext(tunnel, sdk, arch, cliArgs, target, cliArgs.Dylib)
+			ctx := ku.NewBuildContext(tunnel, sdk, arch, cliArgs)
 			libInfo := buildOgg(ctx)
 
 			// Go back to the repo root dir.
