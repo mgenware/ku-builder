@@ -29,7 +29,8 @@ func main() {
 		for _, arch := range archs {
 			tunnel.Logger().Log(j9.LogLevelWarning, "Building target: "+cliArgs.Target+" for "+string(arch)+" with SDK: "+string(sdk))
 
-			ctx := ku.NewBuildContext(tunnel, sdk, arch, cliArgs)
+			opt := ku.NewBuildContextInitOpt(tunnel, sdk, arch, cliArgs)
+			ctx := ku.NewBuildContext(opt)
 			libInfo := buildOgg(ctx)
 
 			// Go back to the repo root dir.

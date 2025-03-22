@@ -41,6 +41,14 @@ type BuildContext struct {
 	// Some repos like libaom need a tmp dir to build.
 	TmpDir string
 
+	ExtraBinDirName string
+	// ${ArchDir}/${ExtraBinDirName}
+	ExtraBinDir string
+	// ${ExtraBinDir}/include
+	ExtraBinIncludeDir string
+	// ${ExtraBinDir}/lib
+	ExtraBinLibDir string
+
 	DebugBuild bool
 	CleanBuild bool
 
@@ -49,10 +57,30 @@ type BuildContext struct {
 	stringCache map[string]string
 }
 
-func NewBuildContext(tunnel *j9.Tunnel, sdk SDKEnum, arch ArchEnum, cliArgs *CLIArgs) *BuildContext {
+type BuildContextInitOpt struct {
+	Tunnel  *j9.Tunnel
+	SDK     SDKEnum
+	Arch    ArchEnum
+	CLIArgs *CLIArgs
+}
+
+func NewBuildContextInitOpt(tunnel *j9.Tunnel, sdk SDKEnum, arch ArchEnum, cliArgs *CLIArgs) *BuildContextInitOpt {
+	return &BuildContextInitOpt{
+		Tunnel:  tunnel,
+		SDK:     sdk,
+		Arch:    arch,
+		CLIArgs: cliArgs,
+	}
+}
+
+func NewBuildContext(opt *BuildContextInitOpt) *BuildContext {
+	if opt == nil {
+		panic("opt is nil")
+	}
+	cliArgs := opt.CLIArgs
 	buildDir := GetBuildDir(cliArgs.DebugBuild)
-	sdkDir := GetSDKDir(buildDir, sdk)
-	archDir := filepath.Join(sdkDir, string(arch))
+	sdkDir := GetSDKDir(buildDir, opt.SDK)
+	archDir := filepath.Join(sdkDir, string(opt.Arch))
 	target := cliArgs.Target
 
 	var binType string
@@ -71,9 +99,9 @@ func NewBuildContext(tunnel *j9.Tunnel, sdk SDKEnum, arch ArchEnum, cliArgs *CLI
 	}
 
 	// Validate arch.
-	sdkArchs := SDKArchs[sdk]
-	if !slices.Contains(sdkArchs, arch) {
-		panic(fmt.Sprintf("Unsupported arch %s for SDK %s, valid archs: %v", arch, sdk, sdkArchs))
+	sdkArchs := SDKArchs[opt.SDK]
+	if !slices.Contains(sdkArchs, opt.Arch) {
+		panic(fmt.Sprintf("Unsupported arch %s for SDK %s, valid archs: %v", opt.Arch, opt.SDK, sdkArchs))
 	}
 	binIncludeDir := filepath.Join(binDir, "include")
 	binLibDir := filepath.Join(binDir, "lib")
@@ -82,9 +110,9 @@ func NewBuildContext(tunnel *j9.Tunnel, sdk SDKEnum, arch ArchEnum, cliArgs *CLI
 	io2.Mkdirp(binLibDir)
 
 	ctx := &BuildContext{
-		Tunnel:        tunnel,
-		SDK:           sdk,
-		Arch:          arch,
+		Tunnel:        opt.Tunnel,
+		SDK:           opt.SDK,
+		Arch:          opt.Arch,
 		Target:        target,
 		TargetLibName: targetLibName,
 		IsDylib:       cliArgs.Dylib,
