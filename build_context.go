@@ -86,9 +86,6 @@ func NewBuildContext(opt *BuildContextInitOpt) *BuildContext {
 	sdkDir := GetSDKDir(buildDir, opt.SDK)
 	archDir := filepath.Join(sdkDir, string(opt.Arch))
 	target := cliArgs.Target
-	if target == "" {
-		panic("Target is empty")
-	}
 
 	var binType string
 	if cliArgs.Dylib {
@@ -121,6 +118,10 @@ func NewBuildContext(opt *BuildContextInitOpt) *BuildContext {
 	var finalBinIncludeDir string
 	var finalBinLibDir string
 	if opt.Is2StepBuild {
+		// `target` is required in 2-step build as the final dylib outdir name.
+		if target == "" {
+			panic("Target is empty")
+		}
 		finalBinDir = filepath.Join(archDir, target)
 		finalBinIncludeDir = filepath.Join(finalBinDir, "include")
 		finalBinLibDir = filepath.Join(finalBinDir, "lib")
