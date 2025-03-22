@@ -41,13 +41,16 @@ type BuildContext struct {
 	// Some repos like libaom need a tmp dir to build.
 	TmpDir string
 
-	ExtraBinDirName string
-	// ${ArchDir}/${ExtraBinDirName}
-	ExtraBinDir string
-	// ${ExtraBinDir}/include
-	ExtraBinIncludeDir string
-	// ${ExtraBinDir}/lib
-	ExtraBinLibDir string
+	// In 2-step build, the first step is to build the static lib.
+	// The second step is to build the dylib.
+	// The final dylib outdir is ${ArchDir}/${Target} (`FinalBinDir`)
+	Is2StepBuild bool
+	// ${ArchDir}/${Target}
+	FinalBinDir string
+	// ${FinalBin}/include
+	FinalBinIncludeDir string
+	// ${FinalBin}/lib
+	FinalBinLibDir string
 
 	DebugBuild bool
 	CleanBuild bool
@@ -58,11 +61,11 @@ type BuildContext struct {
 }
 
 type BuildContextInitOpt struct {
-	Tunnel          *j9.Tunnel
-	SDK             SDKEnum
-	Arch            ArchEnum
-	CLIArgs         *CLIArgs
-	ExtraBinDirName string
+	Tunnel       *j9.Tunnel
+	SDK          SDKEnum
+	Arch         ArchEnum
+	CLIArgs      *CLIArgs
+	Is2StepBuild bool
 }
 
 func NewBuildContextInitOpt(tunnel *j9.Tunnel, sdk SDKEnum, arch ArchEnum, cliArgs *CLIArgs) *BuildContextInitOpt {
@@ -83,6 +86,9 @@ func NewBuildContext(opt *BuildContextInitOpt) *BuildContext {
 	sdkDir := GetSDKDir(buildDir, opt.SDK)
 	archDir := filepath.Join(sdkDir, string(opt.Arch))
 	target := cliArgs.Target
+	if target == "" {
+		panic("Target is empty")
+	}
 
 	var binType string
 	if cliArgs.Dylib {
@@ -111,17 +117,15 @@ func NewBuildContext(opt *BuildContextInitOpt) *BuildContext {
 	io2.Mkdirp(binLibDir)
 
 	// Extra bin dir (used in ffmpeg-ku).
-	var extraBinDirName string
-	var extraBinDir string
-	var extraBinIncludeDir string
-	var extraBinLibDir string
-	if opt.ExtraBinDirName != "" {
-		extraBinDirName = opt.ExtraBinDirName
-		extraBinDir = filepath.Join(archDir, extraBinDirName)
-		extraBinIncludeDir = filepath.Join(extraBinDir, "include")
-		extraBinLibDir = filepath.Join(extraBinDir, "lib")
-		io2.Mkdirp(extraBinIncludeDir)
-		io2.Mkdirp(extraBinLibDir)
+	var finalBinDir string
+	var finalBinIncludeDir string
+	var finalBinLibDir string
+	if opt.Is2StepBuild {
+		finalBinDir = filepath.Join(archDir, target)
+		finalBinIncludeDir = filepath.Join(finalBinDir, "include")
+		finalBinLibDir = filepath.Join(finalBinDir, "lib")
+		io2.Mkdirp(finalBinIncludeDir)
+		io2.Mkdirp(finalBinLibDir)
 	}
 
 	ctx := &BuildContext{
@@ -132,10 +136,10 @@ func NewBuildContext(opt *BuildContextInitOpt) *BuildContext {
 		TargetLibName: targetLibName,
 		IsDylib:       cliArgs.Dylib,
 
-		ExtraBinDirName:    extraBinDirName,
-		ExtraBinDir:        extraBinDir,
-		ExtraBinIncludeDir: extraBinIncludeDir,
-		ExtraBinLibDir:     extraBinLibDir,
+		Is2StepBuild:       opt.Is2StepBuild,
+		FinalBinDir:        finalBinDir,
+		FinalBinIncludeDir: finalBinIncludeDir,
+		FinalBinLibDir:     finalBinLibDir,
 
 		ArchDir:       archDir,
 		TmpDir:        filepath.Join(archDir, "tmp"),
