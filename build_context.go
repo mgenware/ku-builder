@@ -58,10 +58,11 @@ type BuildContext struct {
 }
 
 type BuildContextInitOpt struct {
-	Tunnel  *j9.Tunnel
-	SDK     SDKEnum
-	Arch    ArchEnum
-	CLIArgs *CLIArgs
+	Tunnel          *j9.Tunnel
+	SDK             SDKEnum
+	Arch            ArchEnum
+	CLIArgs         *CLIArgs
+	ExtraBinDirName string
 }
 
 func NewBuildContextInitOpt(tunnel *j9.Tunnel, sdk SDKEnum, arch ArchEnum, cliArgs *CLIArgs) *BuildContextInitOpt {
@@ -109,6 +110,20 @@ func NewBuildContext(opt *BuildContextInitOpt) *BuildContext {
 	io2.Mkdirp(binIncludeDir)
 	io2.Mkdirp(binLibDir)
 
+	// Extra bin dir (used in ffmpeg-ku).
+	var extraBinDirName string
+	var extraBinDir string
+	var extraBinIncludeDir string
+	var extraBinLibDir string
+	if opt.ExtraBinDirName != "" {
+		extraBinDirName = opt.ExtraBinDirName
+		extraBinDir = filepath.Join(archDir, extraBinDirName)
+		extraBinIncludeDir = filepath.Join(extraBinDir, "include")
+		extraBinLibDir = filepath.Join(extraBinDir, "lib")
+		io2.Mkdirp(extraBinIncludeDir)
+		io2.Mkdirp(extraBinLibDir)
+	}
+
 	ctx := &BuildContext{
 		Tunnel:        opt.Tunnel,
 		SDK:           opt.SDK,
@@ -116,6 +131,11 @@ func NewBuildContext(opt *BuildContextInitOpt) *BuildContext {
 		Target:        target,
 		TargetLibName: targetLibName,
 		IsDylib:       cliArgs.Dylib,
+
+		ExtraBinDirName:    extraBinDirName,
+		ExtraBinDir:        extraBinDir,
+		ExtraBinIncludeDir: extraBinIncludeDir,
+		ExtraBinLibDir:     extraBinLibDir,
 
 		ArchDir:       archDir,
 		TmpDir:        filepath.Join(archDir, "tmp"),
