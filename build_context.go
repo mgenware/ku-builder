@@ -205,25 +205,41 @@ func (ctx *BuildContext) RunCmake(opt *RunCmakeOpt) {
 	ctx.Tunnel.Spawn(j9Opt)
 }
 
-func (ctx *BuildContext) RunCmakeBuild() {
-	numCores := runtime.NumCPU()
+type RunCmakeBuildOpt struct {
+	Args []string
+}
 
+func (ctx *BuildContext) RunCmakeBuildCore(opt *RunCmakeBuildOpt) {
+	if opt == nil {
+		opt = &RunCmakeBuildOpt{}
+	}
+
+	numCores := runtime.NumCPU()
 	var config string
 	if ctx.DebugBuild {
 		config = "Debug"
 	} else {
 		config = "Release"
 	}
+
+	args := []string{
+		// --build
+		"--build", ".",
+		// -j
+		"-j", fmt.Sprintf("%v", numCores),
+		"--config", config,
+	}
+	if len(opt.Args) > 0 {
+		args = append(args, opt.Args...)
+	}
 	ctx.Tunnel.Spawn(&j9.SpawnOpt{
 		Name: "cmake",
-		Args: []string{
-			// --build
-			"--build", ".",
-			// -j
-			"-j", fmt.Sprintf("%v", numCores),
-			"--config", config,
-		},
+		Args: args,
 	})
+}
+
+func (ctx *BuildContext) RunCmakeBuild() {
+	ctx.RunCmakeBuildCore(nil)
 }
 
 func (ctx *BuildContext) RunCmakeInstall() {
