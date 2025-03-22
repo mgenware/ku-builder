@@ -47,6 +47,9 @@ type CLIOptions struct {
 	DefaultArch     ArchEnum
 	DefaultAction   CLIAction
 	DefaultDylib    bool
+
+	BeforeParseFn func()
+	AfterParseFn  func()
 }
 
 func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
@@ -64,6 +67,9 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 	debugPtr := flag.Bool("debug", false, "Debug build.")
 	cleanPtr := flag.Bool("clean", false, "Run a clean build.")
 	signPtr := flag.String("sign", "", "Sign the output with the specified identity.")
+	if opt.BeforeParseFn != nil {
+		opt.BeforeParseFn()
+	}
 
 	flag.Parse()
 
@@ -112,6 +118,10 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 			fmt.Printf("NDK is not specified\n")
 			os.Exit(1)
 		}
+	}
+
+	if opt.AfterParseFn != nil {
+		opt.AfterParseFn()
 	}
 
 	return &CLIArgs{
