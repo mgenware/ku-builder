@@ -47,6 +47,7 @@ type CLIOptions struct {
 	DefaultArch     ArchEnum
 	DefaultAction   CLIAction
 	DefaultDylib    bool
+	RequireTarget   bool
 
 	BeforeParseFn func()
 	AfterParseFn  func()
@@ -72,6 +73,11 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 	}
 
 	flag.Parse()
+
+	if opt.RequireTarget && *target == "" {
+		fmt.Printf("Target is required\n")
+		os.Exit(1)
+	}
 
 	var sdks []SDKEnum
 	// Validate platform if specified.

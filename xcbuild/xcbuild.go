@@ -21,13 +21,12 @@ func Build(opt *XCBuildOptions) {
 		opt = &XCBuildOptions{}
 	}
 
-	cliArgs := ku.ParseCLIArgs(nil)
+	cliOpt := &ku.CLIOptions{
+		RequireTarget: true,
+	}
+	cliArgs := ku.ParseCLIArgs(cliOpt)
 	tunnel := ku.CreateDefaultTunnel()
 	target := cliArgs.Target
-	if target == "" {
-		fmt.Println("Target not set. Use -target to set the target.")
-		os.Exit(1)
-	}
 
 	buildDir := ku.GetBuildDir(cliArgs.DebugBuild)
 

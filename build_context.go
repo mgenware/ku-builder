@@ -41,8 +41,6 @@ type BuildContext struct {
 	// Some repos like libaom need a tmp dir to build.
 	TmpDir string
 
-	// If true, target is required and target folder will be created.
-	RequireTarget bool
 	// TargetDir: ${ArchDir}/${Target}
 	TargetDir string
 	// ${TargetDir}/include
@@ -63,8 +61,6 @@ type BuildContextInitOptions struct {
 	SDK     SDKEnum
 	Arch    ArchEnum
 	CLIArgs *CLIArgs
-	// By default, -target is not required.
-	RequireTarget bool
 }
 
 func NewBuildContextInitOpt(tunnel *j9.Tunnel, sdk SDKEnum, arch ArchEnum, cliArgs *CLIArgs) *BuildContextInitOptions {
@@ -94,13 +90,6 @@ func NewBuildContext(opt *BuildContextInitOptions) *BuildContext {
 	}
 	binDir := filepath.Join(archDir, binType)
 
-	var targetLibName string
-	if strings.HasPrefix(target, "lib") {
-		targetLibName = target
-	} else {
-		targetLibName = "lib" + target
-	}
-
 	// Validate arch.
 	sdkArchs := SDKArchs[opt.SDK]
 	if !slices.Contains(sdkArchs, opt.Arch) {
@@ -112,15 +101,17 @@ func NewBuildContext(opt *BuildContextInitOptions) *BuildContext {
 	io2.Mkdirp(binIncludeDir)
 	io2.Mkdirp(binLibDir)
 
-	// Extra bin dir (used in ffmpeg-ku).
+	var targetLibName string
 	var targetDir string
 	var targetIncludeDir string
 	var targetLibDir string
-	if opt.RequireTarget {
-		if target == "" {
-			fmt.Println("Target is required.")
-			os.Exit(1)
+	if cliArgs.Target != "" {
+		if strings.HasPrefix(target, "lib") {
+			targetLibName = target
+		} else {
+			targetLibName = "lib" + target
 		}
+
 		targetDir = filepath.Join(archDir, target)
 		targetIncludeDir = filepath.Join(targetDir, "include")
 		targetLibDir = filepath.Join(targetDir, "lib")
@@ -136,7 +127,6 @@ func NewBuildContext(opt *BuildContextInitOptions) *BuildContext {
 		TargetLibName: targetLibName,
 		IsDylib:       cliArgs.Dylib,
 
-		RequireTarget:    opt.RequireTarget,
 		TargetDir:        targetDir,
 		TargetIncludeDir: targetIncludeDir,
 		TargetLibDir:     targetLibDir,
