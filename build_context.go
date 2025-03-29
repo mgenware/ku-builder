@@ -41,16 +41,14 @@ type BuildContext struct {
 	// Some repos like libaom need a tmp dir to build.
 	TmpDir string
 
-	// In 2-step build, the first step is to build the static lib.
-	// The second step is to build the dylib.
-	// The final dylib outdir is ${ArchDir}/${Target} (`FinalBinDir`)
-	Is2StepBuild bool
-	// ${ArchDir}/${Target}
-	FinalBinDir string
-	// ${FinalBin}/include
-	FinalBinIncludeDir string
-	// ${FinalBin}/lib
-	FinalBinLibDir string
+	// If true, target is required and target folder will be created.
+	RequireTarget bool
+	// TargetDir: ${ArchDir}/${Target}
+	TargetDir string
+	// ${TargetDir}/include
+	TargetIncludeDir string
+	// ${TargetDir}/lib
+	TargetLibDir string
 
 	DebugBuild bool
 	CleanBuild bool
@@ -60,16 +58,17 @@ type BuildContext struct {
 	stringCache map[string]string
 }
 
-type BuildContextInitOpt struct {
-	Tunnel       *j9.Tunnel
-	SDK          SDKEnum
-	Arch         ArchEnum
-	CLIArgs      *CLIArgs
-	Is2StepBuild bool
+type BuildContextInitOptions struct {
+	Tunnel  *j9.Tunnel
+	SDK     SDKEnum
+	Arch    ArchEnum
+	CLIArgs *CLIArgs
+	// By default, -target is not required.
+	RequireTarget bool
 }
 
-func NewBuildContextInitOpt(tunnel *j9.Tunnel, sdk SDKEnum, arch ArchEnum, cliArgs *CLIArgs) *BuildContextInitOpt {
-	return &BuildContextInitOpt{
+func NewBuildContextInitOpt(tunnel *j9.Tunnel, sdk SDKEnum, arch ArchEnum, cliArgs *CLIArgs) *BuildContextInitOptions {
+	return &BuildContextInitOptions{
 		Tunnel:  tunnel,
 		SDK:     sdk,
 		Arch:    arch,
@@ -77,7 +76,7 @@ func NewBuildContextInitOpt(tunnel *j9.Tunnel, sdk SDKEnum, arch ArchEnum, cliAr
 	}
 }
 
-func NewBuildContext(opt *BuildContextInitOpt) *BuildContext {
+func NewBuildContext(opt *BuildContextInitOptions) *BuildContext {
 	if opt == nil {
 		panic("opt is nil")
 	}
@@ -114,19 +113,19 @@ func NewBuildContext(opt *BuildContextInitOpt) *BuildContext {
 	io2.Mkdirp(binLibDir)
 
 	// Extra bin dir (used in ffmpeg-ku).
-	var finalBinDir string
-	var finalBinIncludeDir string
-	var finalBinLibDir string
-	if opt.Is2StepBuild {
-		// `target` is required in 2-step build as the final dylib outdir name.
+	var targetDir string
+	var targetIncludeDir string
+	var targetLibDir string
+	if opt.RequireTarget {
 		if target == "" {
-			panic("Target is empty")
+			fmt.Println("Target is required.")
+			os.Exit(1)
 		}
-		finalBinDir = filepath.Join(archDir, target)
-		finalBinIncludeDir = filepath.Join(finalBinDir, "include")
-		finalBinLibDir = filepath.Join(finalBinDir, "lib")
-		io2.Mkdirp(finalBinIncludeDir)
-		io2.Mkdirp(finalBinLibDir)
+		targetDir = filepath.Join(archDir, target)
+		targetIncludeDir = filepath.Join(targetDir, "include")
+		targetLibDir = filepath.Join(targetDir, "lib")
+		io2.Mkdirp(targetIncludeDir)
+		io2.Mkdirp(targetLibDir)
 	}
 
 	ctx := &BuildContext{
@@ -137,10 +136,10 @@ func NewBuildContext(opt *BuildContextInitOpt) *BuildContext {
 		TargetLibName: targetLibName,
 		IsDylib:       cliArgs.Dylib,
 
-		Is2StepBuild:       opt.Is2StepBuild,
-		FinalBinDir:        finalBinDir,
-		FinalBinIncludeDir: finalBinIncludeDir,
-		FinalBinLibDir:     finalBinLibDir,
+		RequireTarget:    opt.RequireTarget,
+		TargetDir:        targetDir,
+		TargetIncludeDir: targetIncludeDir,
+		TargetLibDir:     targetLibDir,
 
 		ArchDir:       archDir,
 		TmpDir:        filepath.Join(archDir, "tmp"),
