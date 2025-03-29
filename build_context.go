@@ -691,6 +691,19 @@ func (ctx *BuildContext) GetAutoconfHost() string {
 	return ""
 }
 
+func (ctx *BuildContext) GetKuEnv() []string {
+	return []string{
+		"KU_SDK=" + string(ctx.SDK),
+		"KU_ARCH=" + string(ctx.Arch),
+		"KU_TARGET_LIB_NAME=" + ctx.TargetLibName,
+		"KU_TARGET_LIB_FILENAME=" + ctx.TargetLibFileName,
+		"KU_ARCH_DIR=" + ctx.ArchDir,
+		"KU_BIN_DIR=" + ctx.BinDir,
+		"KU_BIN_INCLUDE_DIR=" + ctx.BinIncludeDir,
+		"KU_BIN_LIB_DIR=" + ctx.BinLibDir,
+	}
+}
+
 func (ctx *BuildContext) MustGetAutoconfHost() string {
 	host := ctx.GetAutoconfHost()
 	if host == "" {
