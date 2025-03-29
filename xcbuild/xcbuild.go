@@ -157,7 +157,7 @@ func Build(opt *XCBuildOptions) {
 				Cmd: "cp -R " + filepath.Join(srcDylibHeadersDir, "*") + " " + fwHeadersDir,
 			})
 
-			// Modulemap for ffapplib.framework.
+			// Modulemap for [target].framework.
 			if hasModuleMap {
 				fmt.Printf("Creating modulemap for %s\n", dylibInfo.Name)
 				fwModuleMapFile := filepath.Join(fwModulesDir, "module.modulemap")
