@@ -3,7 +3,6 @@ package ku
 type SourceRepo struct {
 	Url                  string
 	Name                 string
-	FolderName           string
 	Tag                  string
 	Commit               string
 	UrlArchiveName       string
