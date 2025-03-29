@@ -618,6 +618,7 @@ func (ctx *BuildContext) CommonCmakeArgs() []string {
 		"-DCMAKE_SYSTEM_NAME=" + targetOS,
 		"-DCMAKE_INSTALL_PREFIX=" + ctx.BinDir,
 		"-DCMAKE_LIBRARY_PATH=" + ctx.BinLibDir,
+		"-DCMAKE_IGNORE_PATH=/opt/homebrew/lib",
 	}
 
 	buildSharedLibs := "0"

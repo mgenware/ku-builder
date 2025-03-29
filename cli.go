@@ -98,6 +98,14 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 		}
 		sdks = []SDKEnum{SDKEnum(*sdkPtr)}
 	}
+
+	// There must be at least one sdk.
+	// Note: `sdks` could be set by `-platform` or `-sdk`.
+	if len(sdks) == 0 {
+		fmt.Printf("No SDKs found. Please specify SDKs via -platform or -sdk.\n")
+		os.Exit(1)
+	}
+
 	// Validate arch.
 	if *archPtr != "" {
 		if !SupportedArchs[ArchEnum(*archPtr)] {
@@ -113,7 +121,7 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 		}
 	}
 	// Validate Android settings.
-	if len(sdks) > 0 && sdks[0] == SDKAndroid {
+	if sdks[0] == SDKAndroid {
 		if *ndkPtr == "" {
 			fmt.Printf("NDK is not specified\n")
 			os.Exit(1)
