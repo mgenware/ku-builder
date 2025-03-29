@@ -30,13 +30,13 @@ type BuildContext struct {
 	SDKDir string
 	// ArchDir = ${BuildDir}/${Platform}/${SDK}/${Arch}
 	ArchDir string
-	// BinDir = ${BuildDir}/${Platform}/${SDK}/${Arch}/${BinType}
-	// BinType = dylib or static
-	BinDir string
-	// ${BinDir}/include
-	BinIncludeDir string
-	// ${BinDir}/lib
-	BinLibDir string
+	// OutDir = ${BuildDir}/${Platform}/${SDK}/${Arch}/${OutType}
+	// OutType = dylib or static
+	OutDir string
+	// ${OutDir}/include
+	OutIncludeDir string
+	// ${OutDir}/lib
+	OutLibDir string
 	// TmpDir = ${BuildDir}/${Platform}/${SDK}/${Arch}/tmp
 	// Some repos like libaom need a tmp dir to build.
 	TmpDir string
@@ -82,24 +82,24 @@ func NewBuildContext(opt *BuildContextInitOptions) *BuildContext {
 	archDir := filepath.Join(sdkDir, string(opt.Arch))
 	target := cliArgs.Target
 
-	var binType string
+	var outType string
 	if cliArgs.Dylib {
-		binType = "dylib"
+		outType = "dylib"
 	} else {
-		binType = "static"
+		outType = "static"
 	}
-	binDir := filepath.Join(archDir, binType)
+	outDir := filepath.Join(archDir, outType)
 
 	// Validate arch.
 	sdkArchs := SDKArchs[opt.SDK]
 	if !slices.Contains(sdkArchs, opt.Arch) {
 		panic(fmt.Sprintf("Unsupported arch %s for SDK %s, valid archs: %v", opt.Arch, opt.SDK, sdkArchs))
 	}
-	binIncludeDir := filepath.Join(binDir, "include")
-	binLibDir := filepath.Join(binDir, "lib")
+	outIncludeDir := filepath.Join(outDir, "include")
+	outLibDir := filepath.Join(outDir, "lib")
 
-	io2.Mkdirp(binIncludeDir)
-	io2.Mkdirp(binLibDir)
+	io2.Mkdirp(outIncludeDir)
+	io2.Mkdirp(outLibDir)
 
 	var targetLibName string
 	var targetDir string
@@ -133,9 +133,9 @@ func NewBuildContext(opt *BuildContextInitOptions) *BuildContext {
 
 		ArchDir:       archDir,
 		TmpDir:        filepath.Join(archDir, "tmp"),
-		BinDir:        binDir,
-		BinIncludeDir: binIncludeDir,
-		BinLibDir:     binLibDir,
+		OutDir:        outDir,
+		OutIncludeDir: outIncludeDir,
+		OutLibDir:     outLibDir,
 		DebugBuild:    cliArgs.DebugBuild,
 		CleanBuild:    cliArgs.CleanBuild,
 		NDKInput:      cliArgs.NDK,
@@ -530,7 +530,7 @@ func (ctx *BuildContext) androidReadStaticLibArch(file string) ArchEnum {
 
 func (ctx *BuildContext) CheckLocalStaticLibArch(fileName string) {
 	var actualArch ArchEnum
-	file := filepath.Join(ctx.BinLibDir, fileName)
+	file := filepath.Join(ctx.OutLibDir, fileName)
 	if ctx.IsDarwinPlatform() {
 		actualArch = ctx.lipoStaticLibArch(file)
 	} else if ctx.IsAndroidPlatform() {
@@ -569,7 +569,7 @@ func (ctx *BuildContext) MinDarwinSDKVer() string {
 }
 
 func (ctx *BuildContext) CheckLocalStaticLibMinSDKVer(fileName string) {
-	file := filepath.Join(ctx.BinLibDir, fileName)
+	file := filepath.Join(ctx.OutLibDir, fileName)
 	if ctx.IsDarwinPlatform() {
 		ctx.checkStaticLibMinSDKVer(file, ctx.MinDarwinSDKVer())
 	}
@@ -605,8 +605,8 @@ func (ctx *BuildContext) CommonCmakeArgs() []string {
 
 	args := []string{
 		"-DCMAKE_SYSTEM_NAME=" + targetOS,
-		"-DCMAKE_INSTALL_PREFIX=" + ctx.BinDir,
-		"-DCMAKE_LIBRARY_PATH=" + ctx.BinLibDir,
+		"-DCMAKE_INSTALL_PREFIX=" + ctx.OutDir,
+		"-DCMAKE_LIBRARY_PATH=" + ctx.OutLibDir,
 		"-DCMAKE_FIND_USE_CMAKE_SYSTEM_PATH=0",
 		"-DCMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH=0",
 	}
@@ -687,9 +687,9 @@ func (ctx *BuildContext) GetKuEnv() []string {
 		"KU_SDK=" + string(ctx.SDK),
 		"KU_ARCH=" + string(ctx.Arch),
 		"KU_ARCH_DIR=" + ctx.ArchDir,
-		"KU_BIN_DIR=" + ctx.BinDir,
-		"KU_BIN_INCLUDE_DIR=" + ctx.BinIncludeDir,
-		"KU_BIN_LIB_DIR=" + ctx.BinLibDir,
+		"KU_OUT_DIR=" + ctx.OutDir,
+		"KU_OUT_INCLUDE_DIR=" + ctx.OutIncludeDir,
+		"KU_OUT_LIB_DIR=" + ctx.OutLibDir,
 	}
 	if ctx.TargetDir != "" {
 		env = append(env,
