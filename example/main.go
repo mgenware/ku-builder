@@ -6,14 +6,14 @@ import (
 )
 
 var repo = &ku.SourceRepo{
-	Url:  "https://github.com/xiph/ogg",
-	Tag:  "v1.3.5",
-	Name: "libogg",
+	Url:  "https://chromium.googlesource.com/webm/libwebp",
+	Name: "libwebp",
+	Tag:  "v1.5.0",
 }
 
 func main() {
 	cliOpt := &ku.CLIOptions{
-		DefaultTarget: "libogg",
+		DefaultTarget: repo.Name,
 	}
 	cliArgs := ku.ParseCLIArgs(cliOpt)
 	tunnel := ku.CreateDefaultTunnel()
@@ -31,7 +31,7 @@ func main() {
 
 			opt := ku.NewBuildContextInitOpt(tunnel, sdk, arch, cliArgs)
 			ctx := ku.NewBuildContext(opt)
-			libInfo := buildOgg(ctx)
+			libInfo := buildLibwebp(ctx)
 
 			// Go back to the repo root dir.
 			ctx.Tunnel.CD(libInfo.RepoDir)
@@ -39,7 +39,7 @@ func main() {
 	}
 }
 
-func buildOgg(ctx *ku.BuildContext) *ku.SourceInfo {
+func buildLibwebp(ctx *ku.BuildContext) *ku.SourceInfo {
 	repoDir := ku.CloneAndGotoRepo(ctx.Tunnel, repo)
 
 	buildDir := ctx.GetArchBuildDir(string(repo.Name))
