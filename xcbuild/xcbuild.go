@@ -24,6 +24,11 @@ func Build(opt *XCBuildOptions) {
 	cliArgs := ku.ParseCLIArgs(nil)
 	tunnel := ku.CreateDefaultTunnel()
 	target := cliArgs.Target
+	if target == "" {
+		fmt.Println("Target not set. Use -target to set the target.")
+		os.Exit(1)
+	}
+
 	buildDir := ku.GetBuildDir(cliArgs.DebugBuild)
 
 	moduleMapSet := make(map[string]bool)
