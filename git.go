@@ -20,7 +20,11 @@ func GetRepoDir(repo *SourceRepo) string {
 	} else {
 		ver = "_latest_"
 	}
-	return filepath.Join(ProjectRepoDir, string(repo.Name), ver)
+	folderName := repo.FolderName
+	if folderName == "" {
+		folderName = repo.Name
+	}
+	return filepath.Join(ProjectRepoDir, folderName, ver)
 }
 
 func CloneAndGotoRepo(t *j9.Tunnel, repo *SourceRepo) string {
