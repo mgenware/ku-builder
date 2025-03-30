@@ -14,6 +14,7 @@ import (
 
 type XCBuildOptions struct {
 	ModuleMapList []string
+	DefaultTarget string
 }
 
 func Build(opt *XCBuildOptions) {
@@ -23,6 +24,7 @@ func Build(opt *XCBuildOptions) {
 
 	cliOpt := &ku.CLIOptions{
 		RequireTarget:   true,
+		DefaultTarget:   opt.DefaultTarget,
 		DefaultPlatform: ku.PlatformDarwin,
 	}
 	cliArgs := ku.ParseCLIArgs(cliOpt)
