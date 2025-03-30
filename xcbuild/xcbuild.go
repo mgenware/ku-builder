@@ -15,6 +15,8 @@ import (
 type XCDylibContext struct {
 	Info   *XCDylibInfo
 	SDKDir string
+	Target string
+	SDK    ku.SDKEnum
 }
 
 type XCBuildOptions struct {
@@ -106,6 +108,8 @@ func Build(opt *XCBuildOptions) {
 			srcDylibHeadersDir := opt.GetDylibIncludeSrcDir(&XCDylibContext{
 				Info:   &dylibInfo,
 				SDKDir: sdkDir,
+				Target: target,
+				SDK:    sdk,
 			})
 			if srcDylibHeadersDir == "" {
 				fmt.Printf("GetDylibIncludeSrcDir returns empty for dylib %s\n", dylibInfo.FileName)
