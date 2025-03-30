@@ -22,7 +22,8 @@ func Build(opt *XCBuildOptions) {
 	}
 
 	cliOpt := &ku.CLIOptions{
-		RequireTarget: true,
+		RequireTarget:   true,
+		DefaultPlatform: ku.PlatformDarwin,
 	}
 	cliArgs := ku.ParseCLIArgs(cliOpt)
 	tunnel := ku.CreateDefaultTunnel()
