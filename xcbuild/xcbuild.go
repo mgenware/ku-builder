@@ -12,11 +12,16 @@ import (
 	"github.com/mgenware/ku-builder/io2"
 )
 
+type XCDylibContext struct {
+	Info   *XCDylibInfo
+	SDKDir string
+}
+
 type XCBuildOptions struct {
 	ModuleMapList []string
 	DefaultTarget string
 
-	GetDylibIncludeSrcDir func(dylib *XCDylibInfo) string
+	GetDylibIncludeSrcDir func(ctx *XCDylibContext) string
 }
 
 func Build(opt *XCBuildOptions) {
@@ -97,7 +102,11 @@ func Build(opt *XCBuildOptions) {
 			// https://developer.apple.com/documentation/bundleresources/placing-content-in-a-bundle
 			// iOS and macOS has different framework structures.
 			// Use arm64 headers for the resulting dylib.
-			srcDylibHeadersDir := opt.GetDylibIncludeSrcDir(&dylibInfo)
+
+			srcDylibHeadersDir := opt.GetDylibIncludeSrcDir(&XCDylibContext{
+				Info:   &dylibInfo,
+				SDKDir: sdkDir,
+			})
 			if srcDylibHeadersDir == "" {
 				fmt.Printf("GetDylibIncludeSrcDir returns empty for dylib %s\n", dylibInfo.FileName)
 				os.Exit(1)
