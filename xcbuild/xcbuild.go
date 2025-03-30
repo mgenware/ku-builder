@@ -15,11 +15,19 @@ import (
 type XCBuildOptions struct {
 	ModuleMapList []string
 	DefaultTarget string
+
+	GetDylibIncludeSrcDir func(dylib *XCDylibInfo) string
 }
 
 func Build(opt *XCBuildOptions) {
 	if opt == nil {
-		opt = &XCBuildOptions{}
+		fmt.Println("No options provided")
+		os.Exit(1)
+	}
+
+	if opt.GetDylibIncludeSrcDir == nil {
+		fmt.Println("Options.GetDylibIncludeSrcDir is required")
+		os.Exit(1)
 	}
 
 	cliOpt := &ku.CLIOptions{
@@ -42,7 +50,7 @@ func Build(opt *XCBuildOptions) {
 
 	// List of dylib info including ffapp.
 	// Initialized in the first SDK loop.
-	var dylibInfoList []iDylibInfo
+	var dylibInfoList []XCDylibInfo
 	sdks := cliArgs.SDKs
 	if sdks == nil {
 		sdks = ku.PlatformSDKs[ku.PlatformDarwin]
@@ -89,7 +97,11 @@ func Build(opt *XCBuildOptions) {
 			// https://developer.apple.com/documentation/bundleresources/placing-content-in-a-bundle
 			// iOS and macOS has different framework structures.
 			// Use arm64 headers for the resulting dylib.
-			srcDylibHeadersDir := filepath.Join(ku.GetSDKArchDir(sdkDir, ku.ArchArm64), target, "include", dylibInfo.Name)
+			srcDylibHeadersDir := opt.GetDylibIncludeSrcDir(&dylibInfo)
+			if srcDylibHeadersDir == "" {
+				fmt.Printf("GetDylibIncludeSrcDir returns empty for dylib %s\n", dylibInfo.FileName)
+				os.Exit(1)
+			}
 			isMacos := sdk == ku.SDKMacos
 			srcDylibFat := ku.FatSDKs[sdk]
 			hasModuleMap := moduleMapSet[dylibInfo.Name]
@@ -257,7 +269,7 @@ func Build(opt *XCBuildOptions) {
 	}
 }
 
-type iDylibInfo struct {
+type XCDylibInfo struct {
 	// Can be either a lib name or ffapp (ffprobe).
 	// Example: libavformat
 	Name string
@@ -266,7 +278,7 @@ type iDylibInfo struct {
 }
 
 type iFrameworkInfo struct {
-	LibInfo iDylibInfo
+	LibInfo XCDylibInfo
 	// Example: sdk-iphoneos/framework/ffprobe/libavformat.framework
 	Path string
 	// Example: sdk-iphoneos/framework/ffprobe/libavformat.framework/libavformat
@@ -279,8 +291,8 @@ type iFrameworkInfo struct {
 	IsFat            bool
 }
 
-func getDylibInfo(libDir string) []iDylibInfo {
-	var builtLibs []iDylibInfo
+func getDylibInfo(libDir string) []XCDylibInfo {
+	var builtLibs []XCDylibInfo
 	files, err := os.ReadDir(libDir)
 	if err != nil {
 		panic(fmt.Errorf("failed to read dir: %v during `getLibNames`", err))
@@ -293,7 +305,7 @@ func getDylibInfo(libDir string) []iDylibInfo {
 		}
 
 		libName := strings.Split(fileName, ".")[0]
-		builtLib := iDylibInfo{
+		builtLib := XCDylibInfo{
 			Name:     libName,
 			FileName: fileName,
 		}
