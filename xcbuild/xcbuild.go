@@ -23,7 +23,8 @@ type XCBuildOptions struct {
 	ModuleMapList []string
 	DefaultTarget string
 
-	GetDylibIncludeSrcDir func(ctx *XCDylibContext) string
+	GetDylibIncludeSrcDir    func(ctx *XCDylibContext) string
+	GetDylibModuleMapContent func(ctx *XCDylibContext) string
 }
 
 func Build(opt *XCBuildOptions) {
@@ -104,13 +105,13 @@ func Build(opt *XCBuildOptions) {
 			// https://developer.apple.com/documentation/bundleresources/placing-content-in-a-bundle
 			// iOS and macOS has different framework structures.
 			// Use arm64 headers for the resulting dylib.
-
-			srcDylibHeadersDir := opt.GetDylibIncludeSrcDir(&XCDylibContext{
+			dylibCtx := &XCDylibContext{
 				Info:   &dylibInfo,
 				SDKDir: sdkDir,
 				Target: target,
 				SDK:    sdk,
-			})
+			}
+			srcDylibHeadersDir := opt.GetDylibIncludeSrcDir(dylibCtx)
 			if srcDylibHeadersDir == "" {
 				fmt.Printf("GetDylibIncludeSrcDir returns empty for dylib %s\n", dylibInfo.FileName)
 				os.Exit(1)
@@ -193,7 +194,13 @@ func Build(opt *XCBuildOptions) {
 			if hasModuleMap {
 				fmt.Printf("Creating modulemap for %s\n", dylibInfo.Name)
 				fwModuleMapFile := filepath.Join(fwModulesDir, "module.modulemap")
-				fwModuleMapContent := moduleMapForFw(dylibInfo.Name)
+
+				var fwModuleMapContent string
+				if opt.GetDylibModuleMapContent != nil {
+					fwModuleMapContent = opt.GetDylibModuleMapContent(dylibCtx)
+				} else {
+					fwModuleMapContent = moduleMapForFw(dylibInfo.Name)
+				}
 				err = os.WriteFile(fwModuleMapFile, []byte(fwModuleMapContent), 0644)
 				if err != nil {
 					panic(err)
