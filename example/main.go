@@ -15,28 +15,14 @@ func main() {
 	cliOpt := &ku.CLIOptions{
 		DefaultTarget: repo.Name,
 	}
-	cliArgs := ku.ParseCLIArgs(cliOpt)
-	tunnel := ku.CreateDefaultTunnel()
+	ku.StartLoop(cliOpt, func(ctx *ku.BuildContext) {
+		ctx.Tunnel.Logger().Log(j9.LogLevelWarning, "Building target: "+ctx.CLIArgs.Target+" for "+string(ctx.Arch)+" with SDK: "+string(ctx.SDK))
 
-	for _, sdk := range cliArgs.SDKs {
-		var archs []ku.ArchEnum
-		if cliArgs.Arch != "" {
-			archs = append(archs, cliArgs.Arch)
-		} else {
-			archs = ku.SDKArchs[sdk]
-		}
+		libInfo := buildLibwebp(ctx)
 
-		for _, arch := range archs {
-			tunnel.Logger().Log(j9.LogLevelWarning, "Building target: "+cliArgs.Target+" for "+string(arch)+" with SDK: "+string(sdk))
-
-			opt := ku.NewBuildContextInitOpt(tunnel, sdk, arch, cliArgs)
-			ctx := ku.NewBuildContext(opt)
-			libInfo := buildLibwebp(ctx)
-
-			// Go back to the repo root dir.
-			ctx.Tunnel.CD(libInfo.RepoDir)
-		}
-	}
+		// Go back to the repo root dir.
+		ctx.Tunnel.CD(libInfo.RepoDir)
+	})
 }
 
 func buildLibwebp(ctx *ku.BuildContext) *ku.SourceInfo {

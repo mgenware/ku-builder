@@ -13,9 +13,11 @@ import (
 )
 
 type BuildContext struct {
-	Tunnel *j9.Tunnel
-	SDK    SDKEnum
-	Arch   ArchEnum
+	Tunnel  *j9.Tunnel
+	CLIArgs *CLIArgs
+
+	SDK  SDKEnum
+	Arch ArchEnum
 	// Example: ffmpeg
 	Target string
 	// Example: libffmpeg
@@ -120,7 +122,9 @@ func NewBuildContext(opt *BuildContextInitOptions) *BuildContext {
 	}
 
 	ctx := &BuildContext{
-		Tunnel:        opt.Tunnel,
+		Tunnel:  opt.Tunnel,
+		CLIArgs: opt.CLIArgs,
+
 		SDK:           opt.SDK,
 		Arch:          opt.Arch,
 		Target:        target,
