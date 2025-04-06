@@ -238,9 +238,15 @@ func (ctx *BuildContext) RunCmakeBuild() {
 }
 
 func (ctx *BuildContext) RunCmakeInstall() {
+	args := []string{"--install", "."}
+	if ctx.IsAndroidPlatform() {
+		// This uses `CMAKE_STRIP`, which is set by Android toolchain.
+		args = append(args, "--strip")
+	}
+
 	ctx.Tunnel.Spawn(&j9.SpawnOpt{
 		Name: "cmake",
-		Args: []string{"--install", "."},
+		Args: args,
 	})
 }
 
