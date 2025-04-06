@@ -200,6 +200,7 @@ func (ctx *BuildContext) RunCmake(opt *RunCmakeOpt) {
 
 type RunCmakeBuildOpt struct {
 	Args []string
+	Env  []string
 }
 
 func (ctx *BuildContext) RunCmakeBuildCore(opt *RunCmakeBuildOpt) {
@@ -228,6 +229,7 @@ func (ctx *BuildContext) RunCmakeBuildCore(opt *RunCmakeBuildOpt) {
 	ctx.Tunnel.Spawn(&j9.SpawnOpt{
 		Name: "cmake",
 		Args: args,
+		Env:  opt.Env,
 	})
 }
 
