@@ -7,7 +7,7 @@ import (
 	"github.com/mgenware/ku-builder/io2"
 )
 
-func CopyJNILibs(tunnel *j9.Tunnel, cliArgs *CLIArgs, libFileNames []string, headerFileNames []string, relPath string) {
+func CopyJNILibs(cliArgs *CLIArgs, tunnel *j9.Tunnel, libFileNames []string, headerFileNames []string, relPath string) {
 	buildDir := GetBuildDir(cliArgs.DebugBuild)
 	sdkDir := GetSDKDir(buildDir, SDKAndroid)
 

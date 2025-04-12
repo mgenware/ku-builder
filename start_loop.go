@@ -1,8 +1,23 @@
 package ku
 
-func StartLoop(cliOpt *CLIOptions, fn func(*BuildContext)) {
+import "github.com/mgenware/j9/v3"
+
+type StartLoopOptions struct {
+	ContextFn   func(*BuildContext)
+	BeforeAllFn func(*CLIArgs, *j9.Tunnel)
+	AfterAllFn  func(*CLIArgs, *j9.Tunnel)
+}
+
+func StartLoopWithOptions(cliOpt *CLIOptions, opt *StartLoopOptions) {
+	if opt == nil || opt.ContextFn == nil {
+		panic("StartLoopWithOptions: ContextFn is required")
+	}
 	cliArgs := ParseCLIArgs(cliOpt)
 	tunnel := CreateDefaultTunnel()
+
+	if opt.BeforeAllFn != nil {
+		opt.BeforeAllFn(cliArgs, tunnel)
+	}
 
 	for _, sdk := range cliArgs.SDKs {
 		var archs []ArchEnum
@@ -13,10 +28,20 @@ func StartLoop(cliOpt *CLIOptions, fn func(*BuildContext)) {
 		}
 
 		for _, arch := range archs {
-			opt := NewBuildContextInitOpt(tunnel, sdk, arch, cliArgs)
-			ctx := NewBuildContext(opt)
+			ctxOpt := NewBuildContextInitOpt(tunnel, sdk, arch, cliArgs)
+			ctx := NewBuildContext(ctxOpt)
 
-			fn(ctx)
+			opt.ContextFn(ctx)
 		}
 	}
+
+	if opt.AfterAllFn != nil {
+		opt.AfterAllFn(cliArgs, tunnel)
+	}
+}
+
+func StartLoop(cliOpt *CLIOptions, fn func(*BuildContext)) {
+	StartLoopWithOptions(cliOpt, &StartLoopOptions{
+		ContextFn: fn,
+	})
 }
