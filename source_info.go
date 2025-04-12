@@ -1,11 +1,14 @@
 package ku
 
 type SourceRepo struct {
-	Url                  string
-	Name                 string
-	Tag                  string
-	Commit               string
-	UrlArchiveName       string
+	Url  string
+	Name string
+
+	Tag            string
+	Commit         string
+	UrlArchiveName string
+	Branch         string
+
 	CreateArchiveDirName bool
 	PostCheckoutCommands [][]string
 }

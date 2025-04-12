@@ -17,6 +17,8 @@ func GetRepoDir(repo *SourceRepo) string {
 		ver = repo.Commit
 	} else if repo.UrlArchiveName != "" {
 		ver = repo.UrlArchiveName
+	} else if repo.Branch != "" {
+		ver = repo.Branch
 	} else {
 		ver = "_latest_"
 	}
@@ -77,6 +79,8 @@ func CloneAndGotoRepo(t *j9.Tunnel, repo *SourceRepo) string {
 	} else if repo.Commit != "" {
 		args = []string{"clone", repo.Url, dir}
 		needCheckout = true
+	} else if repo.Branch != "" {
+		args = []string{"clone", "--branch", repo.Branch, "--depth", "1", repo.Url, dir}
 	} else {
 		args = []string{"clone", "--depth", "1", repo.Url, dir}
 	}
