@@ -2,12 +2,16 @@ package ku
 
 import (
 	"path/filepath"
+	"slices"
 
 	"github.com/mgenware/j9/v3"
 	"github.com/mgenware/ku-builder/io2"
 )
 
 func CopyJNILibs(cliArgs *CLIArgs, tunnel *j9.Tunnel, libFileNames []string, headerFileNames []string, relPath string) {
+	if !slices.Contains(cliArgs.SDKs, SDKAndroid) {
+		return
+	}
 	buildDir := GetBuildDir(cliArgs.DebugBuild)
 	sdkDir := GetSDKDir(buildDir, SDKAndroid)
 
