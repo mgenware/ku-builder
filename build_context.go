@@ -26,8 +26,8 @@ type BuildContext struct {
 	TargetLibFileName string
 	IsDylib           bool
 
-	// PlatformDir = ${BuildDir}/${Platform}
-	PlatformDir string
+	// BuildDir = ${RootBuildDir}/${release/debug}
+	BuildDir string
 	// SDKDir = ${BuildDir}/${Platform}/${SDK}
 	SDKDir string
 	// ArchDir = ${BuildDir}/${Platform}/${SDK}/${Arch}
@@ -135,6 +135,8 @@ func NewBuildContext(opt *BuildContextInitOptions) *BuildContext {
 		TargetIncludeDir: targetIncludeDir,
 		TargetLibDir:     targetLibDir,
 
+		BuildDir:      buildDir,
+		SDKDir:        sdkDir,
 		ArchDir:       archDir,
 		TmpDir:        filepath.Join(archDir, "tmp"),
 		OutDir:        outDir,

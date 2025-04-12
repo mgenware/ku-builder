@@ -17,5 +17,7 @@ func main() {
 
 		// Go back to the repo root dir.
 		ctx.Tunnel.CD(libInfo.RepoDir)
+
+		ku.CopyJNILibs(ctx.Tunnel, ctx.CLIArgs, []string{"libogg.so"}, []string{"ogg"}, "dylib")
 	})
 }
