@@ -6,7 +6,7 @@ import (
 
 const MinMacosVersion = "11.0"
 const MinIosVersion = "14.0"
-const MinAndroidAPI = "28"
+const MinAndroidAPI = "26"
 
 var ProjectRepoDir string
 var buildDir string

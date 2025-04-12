@@ -13,7 +13,7 @@ Minimum SDK versions:
 
 - macOS 11+
 - iOS 14+
-- Android SDK API level 28+
+- Android SDK API level 26+
 
 Supported host platform:
 
