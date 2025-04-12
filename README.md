@@ -9,6 +9,12 @@ Supported cross-compile targets:
 - iOS Simulator (ARM64, x86_64)
 - Android (ARM64, x86_64)
 
+Minimum SDK versions:
+
+- macOS 11+
+- iOS 14+
+- Android SDK API level 28+
+
 Supported host platform:
 
 - Latest macOS
