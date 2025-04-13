@@ -179,15 +179,20 @@ type RunCmakeGenOptions struct {
 }
 
 func (ctx *BuildContext) RunCmakeGen(opt *RunCmakeGenOptions) {
-	j9Opt := &j9.SpawnOpt{
-		Name: "cmake",
-		Args: opt.Args,
-		Env:  opt.Env,
-	}
+	args := opt.Args
 	if ctx.CleanBuild {
-		j9Opt.Args = append(j9Opt.Args, "--fresh")
+		args = append(args, "--fresh")
 	}
-	ctx.Tunnel.Spawn(j9Opt)
+
+	env := append(opt.Env,
+		"KU_CMAKE_ACTION=gen",
+	)
+
+	ctx.Tunnel.Spawn(&j9.SpawnOpt{
+		Name: "cmake",
+		Args: args,
+		Env:  env,
+	})
 }
 
 type RunCmakeBuildOrInstallOptions struct {
@@ -212,6 +217,9 @@ func (ctx *BuildContext) RunCmakeBuildOrInstall(opt *RunCmakeBuildOrInstallOptio
 	}
 
 	if opt.Target != "" {
+		if opt.Action == "install" {
+			panic("opt.Target is not supported for install")
+		}
 		args = append(args, "--target", opt.Target)
 	}
 
@@ -237,12 +245,14 @@ func (ctx *BuildContext) RunCmakeBuildOrInstall(opt *RunCmakeBuildOrInstallOptio
 		args = append(args, opt.ExtraArgs...)
 	}
 
-	j9Opt := &j9.SpawnOpt{
+	env := append(opt.Env,
+		"KU_CMAKE_ACTION="+opt.Action,
+	)
+	ctx.Tunnel.Spawn(&j9.SpawnOpt{
 		Name: "cmake",
 		Args: args,
-		Env:  opt.Env,
-	}
-	ctx.Tunnel.Spawn(j9Opt)
+		Env:  env,
+	})
 }
 
 func (ctx *BuildContext) RunCmakeBuild() {
