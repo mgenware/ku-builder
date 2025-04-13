@@ -19,7 +19,7 @@ func BuildOgg(ctx *ku.BuildContext, libType ku.LibType) *ku.SourceInfo {
 	args = append(args, repoDir)
 
 	env := ctx.GetCompilerConfigureEnv(nil)
-	ctx.RunCmake(&ku.RunCmakeOpt{
+	ctx.RunCmakeGen(&ku.RunCmakeGenOptions{
 		Args: args,
 		Env:  env,
 	})

@@ -173,74 +173,95 @@ func (ctx *BuildContext) RunMake() {
 	ctx.RunMakeWithArgs(nil)
 }
 
-type RunCmakeOpt struct {
-	Args  []string
-	Env   []string
-	Clean bool
+type RunCmakeGenOptions struct {
+	Args []string
+	Env  []string
 }
 
-func (ctx *BuildContext) RunCmake(opt *RunCmakeOpt) {
+func (ctx *BuildContext) RunCmakeGen(opt *RunCmakeGenOptions) {
 	j9Opt := &j9.SpawnOpt{
 		Name: "cmake",
 		Args: opt.Args,
 		Env:  opt.Env,
 	}
-	if opt.Clean {
+	if ctx.CleanBuild {
 		j9Opt.Args = append(j9Opt.Args, "--fresh")
 	}
 	ctx.Tunnel.Spawn(j9Opt)
 }
 
-type RunCmakeBuildOpt struct {
-	Args []string
-	Env  []string
+type RunCmakeBuildOrInstallOptions struct {
+	// Required.
+	Action string
+
+	Target    string
+	ExtraArgs []string
+	Env       []string
 }
 
-func (ctx *BuildContext) RunCmakeBuildCore(opt *RunCmakeBuildOpt) {
+func (ctx *BuildContext) RunCmakeBuildOrInstall(opt *RunCmakeBuildOrInstallOptions) {
 	if opt == nil {
-		opt = &RunCmakeBuildOpt{}
+		panic("opt is nil")
+	}
+	if opt.Action == "" {
+		panic("opt.Action is empty")
 	}
 
-	numCores := runtime.NumCPU()
+	args := []string{
+		"--" + opt.Action, ".",
+	}
+
+	if opt.Target != "" {
+		args = append(args, "--target", opt.Target)
+	}
+
 	var config string
 	if ctx.DebugBuild {
 		config = "Debug"
 	} else {
 		config = "Release"
 	}
+	args = append(args, "--config", config)
 
-	args := []string{
-		// --build
-		"--build", ".",
-		// -j
-		"-j", fmt.Sprintf("%v", numCores),
-		"--config", config,
-	}
-	if len(opt.Args) > 0 {
-		args = append(args, opt.Args...)
-	}
-	ctx.Tunnel.Spawn(&j9.SpawnOpt{
-		Name: "cmake",
-		Args: args,
-		Env:  opt.Env,
-	})
-}
-
-func (ctx *BuildContext) RunCmakeBuild() {
-	ctx.RunCmakeBuildCore(nil)
-}
-
-func (ctx *BuildContext) RunCmakeInstall() {
-	args := []string{"--install", "."}
-	if ctx.IsAndroidPlatform() {
+	// Strip during production install.
+	if opt.Action == "install" && !ctx.DebugBuild {
 		// This uses `CMAKE_STRIP`, which is set by Android toolchain.
 		args = append(args, "--strip")
 	}
 
-	ctx.Tunnel.Spawn(&j9.SpawnOpt{
+	numCores := runtime.NumCPU()
+	args = append(args, "-j", fmt.Sprintf("%v", numCores))
+
+	// Extra args.
+	if len(opt.ExtraArgs) > 0 {
+		args = append(args, opt.ExtraArgs...)
+	}
+
+	j9Opt := &j9.SpawnOpt{
 		Name: "cmake",
 		Args: args,
-	})
+		Env:  opt.Env,
+	}
+	ctx.Tunnel.Spawn(j9Opt)
+}
+
+func (ctx *BuildContext) RunCmakeBuild() {
+	ctx.RunCmakeBuildTarget("")
+}
+
+func (ctx *BuildContext) RunCmakeBuildTarget(target string) {
+	opt := &RunCmakeBuildOrInstallOptions{
+		Action: "build",
+		Target: target,
+	}
+	ctx.RunCmakeBuildOrInstall(opt)
+}
+
+func (ctx *BuildContext) RunCmakeInstall() {
+	opt := &RunCmakeBuildOrInstallOptions{
+		Action: "install",
+	}
+	ctx.RunCmakeBuildOrInstall(opt)
 }
 
 func (ctx *BuildContext) getSDKPathImpl() string {
