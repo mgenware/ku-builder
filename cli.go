@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"slices"
 
 	"github.com/mgenware/j9/v3"
 )
@@ -42,6 +43,7 @@ var SupportedCLIActions = map[CLIAction]bool{
 }
 
 type CLIOptions struct {
+	AllowedTargets  []string
 	DefaultPlatform PlatformEnum
 	DefaultTarget   string
 	DefaultSDK      SDKEnum
@@ -55,11 +57,22 @@ type CLIOptions struct {
 
 func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 	if opt == nil {
-		opt = &CLIOptions{}
+		fmt.Printf("CLIOptions is nil\n")
+		os.Exit(1)
+	}
+
+	var allowedTargets []string
+	if len(opt.AllowedTargets) > 0 {
+		allowedTargets = opt.AllowedTargets
+	} else if opt.DefaultTarget != "" {
+		allowedTargets = []string{opt.DefaultTarget}
+	} else {
+		fmt.Printf("AllowedTargets is empty and DefaultTarget is not set\n")
+		os.Exit(1)
 	}
 
 	platformPtr := flag.String("platform", string(opt.DefaultPlatform), "Platform. Supported platforms: macos, ios, android, darwin(macos + ios).")
-	target := flag.String("target", opt.DefaultTarget, "Build target.")
+	target := flag.String("target", opt.DefaultTarget, "Build target. "+"Allowed targets: "+fmt.Sprintf("%v", allowedTargets))
 	sdkPtr := flag.String("sdk", string(opt.DefaultSDK), "SDK. If not specified, all supported SDKs for the platform will be used.")
 	archPtr := flag.String("arch", string(opt.DefaultArch), "Arch. If not specified, all supported SDK archs for the platform will be used.")
 	actionPtr := flag.String("action", string(opt.DefaultAction), "Action. Supported actions: configure, clean, build.")
@@ -75,6 +88,10 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 
 	if *target == "" {
 		fmt.Printf("Target is required\n")
+		os.Exit(1)
+	}
+	if !slices.Contains(allowedTargets, *target) {
+		fmt.Printf("Target %v is not allowed. Allowed targets: %v\n", *target, allowedTargets)
 		os.Exit(1)
 	}
 
