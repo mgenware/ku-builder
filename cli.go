@@ -50,7 +50,7 @@ type CLIOptions struct {
 	RequireTarget   bool
 
 	BeforeParseFn func()
-	AfterParseFn  func()
+	AfterParseFn  func(cliArgs *CLIArgs)
 }
 
 func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
@@ -134,11 +134,7 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 		}
 	}
 
-	if opt.AfterParseFn != nil {
-		opt.AfterParseFn()
-	}
-
-	return &CLIArgs{
+	res := &CLIArgs{
 		SDKs:        sdks,
 		Arch:        ArchEnum(*archPtr),
 		Target:      *target,
@@ -150,6 +146,12 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 		Dylib:       *dylibPtr,
 		PlatformArg: PlatformEnum(*platformPtr),
 	}
+
+	if opt.AfterParseFn != nil {
+		opt.AfterParseFn(res)
+	}
+
+	return res
 }
 
 func CreateDefaultTunnel() *j9.Tunnel {
