@@ -12,17 +12,23 @@ import (
 	"github.com/mgenware/ku-builder/io2"
 )
 
+type XCContext struct {
+	CLIArgs *ku.CLIArgs
+	Tunnel  *j9.Tunnel
+	Target  string
+}
+
 type XCDylibContext struct {
+	XCCtx  *XCContext
 	Info   *XCDylibInfo
 	SDKDir string
-	Target string
 	SDK    ku.SDKEnum
 }
 
 type XCBuildOptions struct {
-	ModuleMapList []string
 	DefaultTarget string
 
+	GetModuleMapTargets      func(ctx *XCContext) []string
 	GetDylibIncludeSrcDir    func(ctx *XCDylibContext) string
 	GetDylibModuleMapContent func(ctx *XCDylibContext) string
 }
@@ -48,10 +54,16 @@ func Build(opt *XCBuildOptions) {
 	target := cliArgs.Target
 
 	buildDir := ku.GetBuildDir(cliArgs.DebugBuild)
+	xcCtx := &XCContext{
+		CLIArgs: cliArgs,
+		Tunnel:  tunnel,
+		Target:  target,
+	}
 
 	moduleMapSet := make(map[string]bool)
-	if opt.ModuleMapList != nil {
-		for _, moduleName := range opt.ModuleMapList {
+	if opt.GetModuleMapTargets != nil {
+		moduleMapTargets := opt.GetModuleMapTargets(xcCtx)
+		for _, moduleName := range moduleMapTargets {
 			moduleMapSet[moduleName] = true
 		}
 	}
@@ -108,8 +120,8 @@ func Build(opt *XCBuildOptions) {
 			dylibCtx := &XCDylibContext{
 				Info:   &dylibInfo,
 				SDKDir: sdkDir,
-				Target: target,
 				SDK:    sdk,
+				XCCtx:  xcCtx,
 			}
 			srcDylibHeadersDir := opt.GetDylibIncludeSrcDir(dylibCtx)
 			if srcDylibHeadersDir == "" {
