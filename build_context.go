@@ -144,16 +144,20 @@ func NewBuildContext(opt *BuildContextInitOptions) *BuildContext {
 }
 
 func (ctx *BuildContext) RunMakeInstall() {
+	env := ctx.coreKuEnv()
 	ctx.Tunnel.Spawn(&j9.SpawnOpt{
 		Name: "make",
 		Args: []string{"install"},
+		Env:  env,
 	})
 }
 
 func (ctx *BuildContext) RunMakeClean() {
+	env := ctx.coreKuEnv()
 	ctx.Tunnel.Spawn(&j9.SpawnOpt{
 		Name: "make",
 		Args: []string{"clean"},
+		Env:  env,
 	})
 }
 
@@ -162,10 +166,13 @@ func (ctx *BuildContext) RunMakeWithArgs(opt *j9.SpawnOpt) {
 		opt = &j9.SpawnOpt{}
 	}
 	numCores := runtime.NumCPU()
+
+	env := append(opt.Env, ctx.coreKuEnv()...)
+
 	ctx.Tunnel.Spawn(&j9.SpawnOpt{
 		Name: "make",
 		Args: []string{fmt.Sprintf("-j%v", numCores)},
-		Env:  opt.Env,
+		Env:  env,
 	})
 }
 
@@ -184,7 +191,8 @@ func (ctx *BuildContext) RunCmakeGen(opt *RunCmakeGenOptions) {
 		args = append(args, "--fresh")
 	}
 
-	env := append(opt.Env,
+	env := ctx.coreKuEnv()
+	env = append(env,
 		"KU_CMAKE_ACTION=gen",
 	)
 
@@ -245,7 +253,8 @@ func (ctx *BuildContext) RunCmakeBuildOrInstall(opt *RunCmakeBuildOrInstallOptio
 		args = append(args, opt.ExtraArgs...)
 	}
 
-	env := append(opt.Env,
+	env := ctx.coreKuEnv()
+	env = append(env,
 		"KU_CMAKE_ACTION="+opt.Action,
 	)
 	ctx.Tunnel.Spawn(&j9.SpawnOpt{
@@ -725,7 +734,7 @@ func (ctx *BuildContext) GetAutoconfHost() string {
 	return ""
 }
 
-func (ctx *BuildContext) GetKuEnv() []string {
+func (ctx *BuildContext) coreKuEnv() []string {
 	env := []string{
 		"KU_SDK=" + string(ctx.SDK),
 		"KU_ARCH=" + string(ctx.Arch),
@@ -746,6 +755,10 @@ func (ctx *BuildContext) GetKuEnv() []string {
 		)
 	}
 	return env
+}
+
+func (ctx *BuildContext) GetCoreKuEnv() []string {
+	return ctx.coreKuEnv()
 }
 
 func (ctx *BuildContext) MustGetAutoconfHost() string {
