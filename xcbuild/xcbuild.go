@@ -52,11 +52,12 @@ func Build(opt *XCBuildOptions) {
 		Target:  target,
 	}
 
-	moduleMapSet := make(map[string]bool)
+	// Target lib names with modulemap (NOTE: key is target lib names).
+	moduleMapTargetLibNames := make(map[string]bool)
 	if opt.GetModuleMapTargets != nil {
 		moduleMapTargets := opt.GetModuleMapTargets(xcCtx)
-		for _, moduleName := range moduleMapTargets {
-			moduleMapSet[moduleName] = true
+		for _, target := range moduleMapTargets {
+			moduleMapTargetLibNames[ku.GetTargetLibName(target)] = true
 		}
 	}
 
@@ -127,7 +128,7 @@ func Build(opt *XCBuildOptions) {
 			}
 			isMacos := sdk == ku.SDKMacos
 			srcDylibFat := ku.FatSDKs[sdk]
-			hasModuleMap := moduleMapSet[dylibInfo.Name]
+			hasModuleMap := moduleMapTargetLibNames[dylibInfo.Name]
 
 			fwPath := filepath.Join(sdkFwDir, dylibInfo.Name+".framework")
 			var fwContentDir string
@@ -253,7 +254,7 @@ func Build(opt *XCBuildOptions) {
 			fwMap[dylibInfo.Name] = append(fwMap[dylibInfo.Name], fwInfo)
 		} // end of for libraryNames
 		if !mainLibModulemapSet {
-			panic(fmt.Sprintf("Main modulemap not set for target %s, moduleMapSet: %v", target, moduleMapSet))
+			panic(fmt.Sprintf("Main modulemap not set for target %s, moduleMapSet: %v", target, moduleMapTargetLibNames))
 		}
 	} // end of for sdks
 
