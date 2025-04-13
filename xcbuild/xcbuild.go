@@ -25,7 +25,8 @@ type XCDylibContext struct {
 }
 
 type XCBuildOptions struct {
-	DefaultTarget string
+	DefaultTarget  string
+	AllowedTargets []string
 
 	GetModuleMapTargets      func(ctx *XCContext) []string
 	GetDylibModuleMapContent func(ctx *XCDylibContext) string
@@ -39,6 +40,7 @@ func Build(opt *XCBuildOptions) {
 
 	cliOpt := &ku.CLIOptions{
 		DefaultTarget:   opt.DefaultTarget,
+		AllowedTargets:  opt.AllowedTargets,
 		DefaultPlatform: ku.PlatformDarwin,
 	}
 	cliArgs := ku.ParseCLIArgs(cliOpt)
