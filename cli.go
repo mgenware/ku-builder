@@ -16,9 +16,10 @@ type CLIArgs struct {
 	DebugBuild  bool
 	NDK         string
 	CleanBuild  bool
-	Dylib       bool
 	SignArg     string
 	PlatformArg PlatformEnum
+
+	Options *CLIOptions
 }
 
 type CLIAction string
@@ -46,8 +47,7 @@ type CLIOptions struct {
 	DefaultSDK      SDKEnum
 	DefaultArch     ArchEnum
 	DefaultAction   CLIAction
-	DefaultDylib    bool
-	RequireTarget   bool
+	CreateDistDir   bool
 
 	BeforeParseFn func()
 	AfterParseFn  func(cliArgs *CLIArgs)
@@ -63,7 +63,6 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 	sdkPtr := flag.String("sdk", string(opt.DefaultSDK), "SDK. If not specified, all supported SDKs for the platform will be used.")
 	archPtr := flag.String("arch", string(opt.DefaultArch), "Arch. If not specified, all supported SDK archs for the platform will be used.")
 	actionPtr := flag.String("action", string(opt.DefaultAction), "Action. Supported actions: configure, clean, build.")
-	dylibPtr := flag.Bool("dylib", opt.DefaultDylib, "Build as dylib.")
 	ndkPtr := flag.String("ndk", "", "NDK name.")
 	debugPtr := flag.Bool("debug", false, "Debug build.")
 	cleanPtr := flag.Bool("clean", false, "Run a clean build.")
@@ -74,7 +73,7 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 
 	flag.Parse()
 
-	if opt.RequireTarget && *target == "" {
+	if *target == "" {
 		fmt.Printf("Target is required\n")
 		os.Exit(1)
 	}
@@ -143,8 +142,8 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 		CleanBuild:  *cleanPtr,
 		NDK:         *ndkPtr,
 		SignArg:     *signPtr,
-		Dylib:       *dylibPtr,
 		PlatformArg: PlatformEnum(*platformPtr),
+		Options:     opt,
 	}
 
 	if opt.AfterParseFn != nil {

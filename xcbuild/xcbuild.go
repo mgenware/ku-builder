@@ -45,15 +45,14 @@ func Build(opt *XCBuildOptions) {
 	}
 
 	cliOpt := &ku.CLIOptions{
-		RequireTarget:   true,
 		DefaultTarget:   opt.DefaultTarget,
 		DefaultPlatform: ku.PlatformDarwin,
 	}
 	cliArgs := ku.ParseCLIArgs(cliOpt)
 	tunnel := ku.CreateDefaultTunnel()
+	buildDir := ku.GetBuildDir(cliArgs.DebugBuild)
 	target := cliArgs.Target
 
-	buildDir := ku.GetBuildDir(cliArgs.DebugBuild)
 	xcCtx := &XCContext{
 		CLIArgs: cliArgs,
 		Tunnel:  tunnel,
@@ -100,9 +99,10 @@ func Build(opt *XCBuildOptions) {
 		for _, arch := range archs {
 			archDir := ku.GetSDKArchDir(sdkDir, arch)
 			targetDir := filepath.Join(archDir, target)
-			libDir := filepath.Join(targetDir, "lib")
+			distDir := getDistDir(targetDir)
+			distLibDir := filepath.Join(distDir, "lib")
 			if firstArchLibDir == "" {
-				firstArchLibDir = libDir
+				firstArchLibDir = distLibDir
 			}
 		} // end of for archs
 
@@ -161,8 +161,10 @@ func Build(opt *XCBuildOptions) {
 			// Loop each arch and create a list of dylib paths.
 			var archDylibPaths []string
 			for _, arch := range archs {
-				arch := ku.GetSDKArchDir(sdkDir, arch)
-				archDylibPath := filepath.Join(arch, target, "lib", dylibInfo.FileName)
+				archDir := ku.GetSDKArchDir(sdkDir, arch)
+				targetDir := filepath.Join(archDir, target)
+				distDir := getDistDir(targetDir)
+				archDylibPath := filepath.Join(distDir, "lib", dylibInfo.FileName)
 				archDylibPaths = append(archDylibPaths, archDylibPath)
 			}
 
@@ -431,4 +433,14 @@ func updateDylibDepRpath(t *j9.Tunnel, dylibPath string, buildDir string) {
 			Args: args,
 		})
 	}
+}
+
+func getDistDir(targetDir string) string {
+	// Dist dir could be ${TargetDir}/dist or ${TargetDir}/libs.
+	distDir := filepath.Join(targetDir, "dist")
+	if io2.DirectoryExists(distDir) {
+		return distDir
+	}
+	distDir = filepath.Join(targetDir, "libs")
+	return distDir
 }

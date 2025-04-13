@@ -75,6 +75,18 @@ var SDKArchs = map[SDKEnum][]ArchEnum{
 	SDKAndroid:      {ArchArm64, ArchX86_64},
 }
 
+type LibType string
+
+const (
+	LibTypeStatic  LibType = "static"
+	LibTypeDynamic LibType = "dynamic"
+)
+
+var SupportedLibTypes = map[LibType]bool{
+	LibTypeStatic:  true,
+	LibTypeDynamic: true,
+}
+
 func GetBuildDir(debug bool) string {
 	if debug {
 		return filepath.Join(buildDir, "debug")

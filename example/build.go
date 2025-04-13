@@ -8,20 +8,17 @@ var Repo = &ku.SourceRepo{
 	Name: "libogg",
 }
 
-func BuildOgg(ctx *ku.BuildContext, shared bool) *ku.SourceInfo {
+func BuildOgg(ctx *ku.BuildContext, libType ku.LibType) *ku.SourceInfo {
 	repoDir := ku.CloneAndGotoRepo(ctx.Tunnel, Repo)
 
 	buildDir := ctx.GetArchBuildDir(string(Repo.Name))
 	ctx.Tunnel.CD(buildDir)
 
-	args := ctx.CommonCmakeArgs()
+	args := ctx.CommonCmakeArgs(libType)
 	// repo dir is passed as the last argument.
 	args = append(args, repoDir)
 
 	env := ctx.GetCompilerConfigureEnv(nil)
-	if shared {
-		args = append(args, "-DBUILD_SHARED_LIBS=ON")
-	}
 	ctx.RunCmake(&ku.RunCmakeOpt{
 		Args: args,
 		Env:  env,

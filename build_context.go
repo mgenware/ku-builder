@@ -24,7 +24,6 @@ type BuildContext struct {
 	TargetLibName string
 	// Example: libffmpeg.dylib
 	TargetLibFileName string
-	IsDylib           bool
 
 	// BuildDir = ${RootBuildDir}/${release/debug}
 	BuildDir string
@@ -32,23 +31,27 @@ type BuildContext struct {
 	SDKDir string
 	// ArchDir = ${BuildDir}/${Platform}/${SDK}/${Arch}
 	ArchDir string
-	// OutDir = ${BuildDir}/${Platform}/${SDK}/${Arch}/${OutType}
-	// OutType = dylib or static
-	OutDir string
-	// ${OutDir}/include
-	OutIncludeDir string
-	// ${OutDir}/lib
-	OutLibDir string
-	// TmpDir = ${BuildDir}/${Platform}/${SDK}/${Arch}/tmp
-	// Some repos like libaom need a tmp dir to build.
-	TmpDir string
 
 	// TargetDir: ${ArchDir}/${Target}
 	TargetDir string
-	// ${TargetDir}/include
-	TargetIncludeDir string
-	// ${TargetDir}/lib
-	TargetLibDir string
+
+	// Libs = ${TargetDir}/libs
+	LibsDir string
+	// ${LibsDir}/include
+	LibsIncludeDir string
+	// ${LibsDir}/lib
+	LibsLibDir string
+
+	// Optional out dir for the target.
+	DistDir string
+	// ${DistDir}/include
+	DistIncludeDir string
+	// ${DistDir}/lib
+	DistLibDir string
+
+	// TmpDir = ${TargetDir}/tmp
+	// Mostly CMake build files.
+	TmpDir string
 
 	DebugBuild bool
 	CleanBuild bool
@@ -83,42 +86,26 @@ func NewBuildContext(opt *BuildContextInitOptions) *BuildContext {
 	sdkDir := GetSDKDir(buildDir, opt.SDK)
 	archDir := filepath.Join(sdkDir, string(opt.Arch))
 	target := cliArgs.Target
-
-	var outType string
-	if cliArgs.Dylib {
-		outType = "dylib"
-	} else {
-		outType = "static"
-	}
-	outDir := filepath.Join(archDir, outType)
+	targetDir := filepath.Join(archDir, target)
+	libsDir := filepath.Join(targetDir, "libs")
+	tmpDir := filepath.Join(targetDir, "tmp")
 
 	// Validate arch.
 	sdkArchs := SDKArchs[opt.SDK]
 	if !slices.Contains(sdkArchs, opt.Arch) {
 		panic(fmt.Sprintf("Unsupported arch %s for SDK %s, valid archs: %v", opt.Arch, opt.SDK, sdkArchs))
 	}
-	outIncludeDir := filepath.Join(outDir, "include")
-	outLibDir := filepath.Join(outDir, "lib")
+	libsIncludeDir := filepath.Join(libsDir, "include")
+	libsLibDir := filepath.Join(libsDir, "lib")
 
-	io2.Mkdirp(outIncludeDir)
-	io2.Mkdirp(outLibDir)
+	io2.Mkdirp(libsIncludeDir)
+	io2.Mkdirp(libsLibDir)
 
 	var targetLibName string
-	var targetDir string
-	var targetIncludeDir string
-	var targetLibDir string
-	if cliArgs.Target != "" {
-		if strings.HasPrefix(target, "lib") {
-			targetLibName = target
-		} else {
-			targetLibName = "lib" + target
-		}
-
-		targetDir = filepath.Join(archDir, target)
-		targetIncludeDir = filepath.Join(targetDir, "include")
-		targetLibDir = filepath.Join(targetDir, "lib")
-		io2.Mkdirp(targetIncludeDir)
-		io2.Mkdirp(targetLibDir)
+	if strings.HasPrefix(target, "lib") {
+		targetLibName = target
+	} else {
+		targetLibName = "lib" + target
 	}
 
 	ctx := &BuildContext{
@@ -129,26 +116,35 @@ func NewBuildContext(opt *BuildContextInitOptions) *BuildContext {
 		Arch:          opt.Arch,
 		Target:        target,
 		TargetLibName: targetLibName,
-		IsDylib:       cliArgs.Dylib,
 
-		TargetDir:        targetDir,
-		TargetIncludeDir: targetIncludeDir,
-		TargetLibDir:     targetLibDir,
-
-		BuildDir:      buildDir,
-		SDKDir:        sdkDir,
-		ArchDir:       archDir,
-		TmpDir:        filepath.Join(archDir, "tmp"),
-		OutDir:        outDir,
-		OutIncludeDir: outIncludeDir,
-		OutLibDir:     outLibDir,
-		DebugBuild:    cliArgs.DebugBuild,
-		CleanBuild:    cliArgs.CleanBuild,
-		NDKInput:      cliArgs.NDK,
+		BuildDir:       buildDir,
+		SDKDir:         sdkDir,
+		ArchDir:        archDir,
+		TmpDir:         tmpDir,
+		TargetDir:      targetDir,
+		LibsDir:        libsDir,
+		LibsIncludeDir: libsIncludeDir,
+		LibsLibDir:     libsLibDir,
+		DebugBuild:     cliArgs.DebugBuild,
+		CleanBuild:     cliArgs.CleanBuild,
+		NDKInput:       cliArgs.NDK,
 	}
 
 	targetLibFileName := targetLibName + ctx.GetDylibExt()
 	ctx.TargetLibFileName = targetLibFileName
+
+	if cliArgs.Options != nil && cliArgs.Options.CreateDistDir {
+		distDir := filepath.Join(targetDir, "dist")
+		distIncludeDir := filepath.Join(distDir, "include")
+		distLibDir := filepath.Join(distDir, "lib")
+		io2.Mkdirp(distIncludeDir)
+		io2.Mkdirp(distLibDir)
+
+		ctx.DistDir = distDir
+		ctx.DistIncludeDir = distIncludeDir
+		ctx.DistLibDir = distLibDir
+	}
+
 	return ctx
 }
 
@@ -544,7 +540,7 @@ func (ctx *BuildContext) androidReadStaticLibArch(file string) ArchEnum {
 
 func (ctx *BuildContext) CheckLocalStaticLibArch(fileName string) {
 	var actualArch ArchEnum
-	file := filepath.Join(ctx.OutLibDir, fileName)
+	file := filepath.Join(ctx.LibsLibDir, fileName)
 	if ctx.IsDarwinPlatform() {
 		actualArch = ctx.lipoStaticLibArch(file)
 	} else if ctx.IsAndroidPlatform() {
@@ -583,7 +579,7 @@ func (ctx *BuildContext) MinDarwinSDKVer() string {
 }
 
 func (ctx *BuildContext) CheckLocalStaticLibMinSDKVer(fileName string) {
-	file := filepath.Join(ctx.OutLibDir, fileName)
+	file := filepath.Join(ctx.LibsLibDir, fileName)
 	if ctx.IsDarwinPlatform() {
 		ctx.checkStaticLibMinSDKVer(file, ctx.MinDarwinSDKVer())
 	}
@@ -603,7 +599,14 @@ func (ctx *BuildContext) UnsupportedError() error {
 	return fmt.Errorf("unsupported config. SDK: %s, Arch: %s", ctx.SDK, ctx.Arch)
 }
 
-func (ctx *BuildContext) CommonCmakeArgs() []string {
+func (ctx *BuildContext) CommonCmakeArgs(libType LibType) []string {
+	var isDylib bool
+	if SupportedLibTypes[libType] {
+		isDylib = libType == LibTypeDynamic
+	} else {
+		panic(fmt.Sprintf("Invalid libType: %s, valid types: %v", libType, SupportedLibTypes))
+	}
+
 	var targetOS string
 	switch ctx.SDK {
 	case SDKMacos:
@@ -619,17 +622,17 @@ func (ctx *BuildContext) CommonCmakeArgs() []string {
 
 	args := []string{
 		"-DCMAKE_SYSTEM_NAME=" + targetOS,
-		"-DCMAKE_INSTALL_PREFIX=" + ctx.OutDir,
-		"-DCMAKE_LIBRARY_PATH=" + ctx.OutLibDir,
+		"-DCMAKE_INSTALL_PREFIX=" + ctx.LibsDir,
+		"-DCMAKE_LIBRARY_PATH=" + ctx.LibsLibDir,
 		"-DCMAKE_FIND_USE_CMAKE_SYSTEM_PATH=0",
 		"-DCMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH=0",
 	}
 
-	buildSharedLibs := "0"
-	if ctx.IsDylib {
-		buildSharedLibs = "1"
+	isDylibStr := "0"
+	if isDylib {
+		isDylibStr = "1"
 	}
-	args = append(args, "-DBUILD_SHARED_LIBS="+buildSharedLibs)
+	args = append(args, "-DBUILD_SHARED_LIBS="+isDylibStr)
 
 	if ctx.IsDarwinPlatform() {
 		args = append(args,
@@ -701,17 +704,19 @@ func (ctx *BuildContext) GetKuEnv() []string {
 		"KU_SDK=" + string(ctx.SDK),
 		"KU_ARCH=" + string(ctx.Arch),
 		"KU_ARCH_DIR=" + ctx.ArchDir,
-		"KU_OUT_DIR=" + ctx.OutDir,
-		"KU_OUT_INCLUDE_DIR=" + ctx.OutIncludeDir,
-		"KU_OUT_LIB_DIR=" + ctx.OutLibDir,
+		"KU_TARGET=" + ctx.Target,
+		"KU_TARGET_LIB_NAME=" + ctx.TargetLibName,
+		"KU_TARGET_LIB_FILENAME=" + ctx.TargetLibFileName,
+		"KU_TARGET_DIR=" + ctx.TargetDir,
+		"KU_LIBS_DIR=" + ctx.LibsDir,
+		"KU_LIBS_INCLUDE_DIR=" + ctx.LibsIncludeDir,
+		"KU_LIBS_LIB_DIR=" + ctx.LibsLibDir,
 	}
-	if ctx.TargetDir != "" {
+	if ctx.DistDir != "" {
 		env = append(env,
-			"KU_TARGET_LIB_NAME="+ctx.TargetLibName,
-			"KU_TARGET_LIB_FILENAME="+ctx.TargetLibFileName,
-			"KU_TARGET_DIR="+ctx.TargetDir,
-			"KU_TARGET_INCLUDE_DIR="+ctx.TargetIncludeDir,
-			"KU_TARGET_LIB_DIR="+ctx.TargetLibDir,
+			"KU_DIST_DIR="+ctx.DistDir,
+			"KU_DIST_INCLUDE_DIR="+ctx.DistIncludeDir,
+			"KU_DIST_LIB_DIR="+ctx.DistLibDir,
 		)
 	}
 	return env
