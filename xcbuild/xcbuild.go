@@ -19,28 +19,21 @@ type XCContext struct {
 }
 
 type XCDylibContext struct {
-	XCCtx  *XCContext
-	Info   *XCDylibInfo
-	SDKDir string
-	SDK    ku.SDKEnum
+	XCCtx *XCContext
+	Info  *XCDylibInfo
+	SDK   ku.SDKEnum
 }
 
 type XCBuildOptions struct {
 	DefaultTarget string
 
 	GetModuleMapTargets      func(ctx *XCContext) []string
-	GetDylibIncludeSrcDir    func(ctx *XCDylibContext) string
 	GetDylibModuleMapContent func(ctx *XCDylibContext) string
 }
 
 func Build(opt *XCBuildOptions) {
 	if opt == nil {
 		fmt.Println("No options provided")
-		os.Exit(1)
-	}
-
-	if opt.GetDylibIncludeSrcDir == nil {
-		fmt.Println("Options.GetDylibIncludeSrcDir is required")
 		os.Exit(1)
 	}
 
@@ -99,7 +92,7 @@ func Build(opt *XCBuildOptions) {
 		for _, arch := range archs {
 			archDir := ku.GetSDKArchDir(sdkDir, arch)
 			targetDir := filepath.Join(archDir, target)
-			distDir := getDistDir(targetDir)
+			distDir := ku.GetTargetDistDir(targetDir)
 			distLibDir := filepath.Join(distDir, "lib")
 			if firstArchLibDir == "" {
 				firstArchLibDir = distLibDir
@@ -112,20 +105,24 @@ func Build(opt *XCBuildOptions) {
 		}
 
 		mainLibModulemapSet := false
+		// Used to get headers for the resulting dylib.
+		arm64TargetDir := filepath.Join(ku.GetSDKArchDir(sdkDir, ku.ArchArm64), target)
+
 		// Create frameworks.
 		for _, dylibInfo := range dylibInfoList {
 			// https://developer.apple.com/documentation/bundleresources/placing-content-in-a-bundle
 			// iOS and macOS has different framework structures.
 			// Use arm64 headers for the resulting dylib.
 			dylibCtx := &XCDylibContext{
-				Info:   &dylibInfo,
-				SDKDir: sdkDir,
-				SDK:    sdk,
-				XCCtx:  xcCtx,
+				Info:  &dylibInfo,
+				SDK:   sdk,
+				XCCtx: xcCtx,
 			}
-			srcDylibHeadersDir := opt.GetDylibIncludeSrcDir(dylibCtx)
-			if srcDylibHeadersDir == "" {
-				fmt.Printf("GetDylibIncludeSrcDir returns empty for dylib %s\n", dylibInfo.FileName)
+
+			arm64DistDir := ku.GetTargetDistDir(arm64TargetDir)
+			srcDylibHeadersDir := filepath.Join(arm64DistDir, "include")
+			if !io2.DirectoryExists(srcDylibHeadersDir) {
+				fmt.Printf("Headers dir not found: %s\n", srcDylibHeadersDir)
 				os.Exit(1)
 			}
 			isMacos := sdk == ku.SDKMacos
@@ -163,7 +160,7 @@ func Build(opt *XCBuildOptions) {
 			for _, arch := range archs {
 				archDir := ku.GetSDKArchDir(sdkDir, arch)
 				targetDir := filepath.Join(archDir, target)
-				distDir := getDistDir(targetDir)
+				distDir := ku.GetTargetDistDir(targetDir)
 				archDylibPath := filepath.Join(distDir, "lib", dylibInfo.FileName)
 				archDylibPaths = append(archDylibPaths, archDylibPath)
 			}
@@ -256,7 +253,7 @@ func Build(opt *XCBuildOptions) {
 			fwMap[dylibInfo.Name] = append(fwMap[dylibInfo.Name], fwInfo)
 		} // end of for libraryNames
 		if !mainLibModulemapSet {
-			panic("Main lib modulemap not set")
+			panic(fmt.Sprintf("Main modulemap not set for target %s, moduleMapSet: %v", target, moduleMapSet))
 		}
 	} // end of for sdks
 
@@ -335,6 +332,10 @@ func getDylibInfo(libDir string) []XCDylibInfo {
 		fileName := file.Name()
 		// Skip symbolic links.
 		if file.IsDir() || file.Type()&fs.ModeSymlink != 0 {
+			continue
+		}
+		// Skip non dylib files.
+		if !strings.HasSuffix(fileName, ".dylib") {
 			continue
 		}
 
@@ -433,14 +434,4 @@ func updateDylibDepRpath(t *j9.Tunnel, dylibPath string, buildDir string) {
 			Args: args,
 		})
 	}
-}
-
-func getDistDir(targetDir string) string {
-	// Dist dir could be ${TargetDir}/dist or ${TargetDir}/libs.
-	distDir := filepath.Join(targetDir, "dist")
-	if io2.DirectoryExists(distDir) {
-		return distDir
-	}
-	distDir = filepath.Join(targetDir, "libs")
-	return distDir
 }

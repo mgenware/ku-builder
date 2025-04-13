@@ -101,21 +101,13 @@ func NewBuildContext(opt *BuildContextInitOptions) *BuildContext {
 	io2.Mkdirp(libsIncludeDir)
 	io2.Mkdirp(libsLibDir)
 
-	var targetLibName string
-	if strings.HasPrefix(target, "lib") {
-		targetLibName = target
-	} else {
-		targetLibName = "lib" + target
-	}
-
 	ctx := &BuildContext{
 		Tunnel:  opt.Tunnel,
 		CLIArgs: opt.CLIArgs,
 
-		SDK:           opt.SDK,
-		Arch:          opt.Arch,
-		Target:        target,
-		TargetLibName: targetLibName,
+		SDK:    opt.SDK,
+		Arch:   opt.Arch,
+		Target: target,
 
 		BuildDir:       buildDir,
 		SDKDir:         sdkDir,
@@ -130,7 +122,10 @@ func NewBuildContext(opt *BuildContextInitOptions) *BuildContext {
 		NDKInput:       cliArgs.NDK,
 	}
 
+	targetLibName := GetTargetLibName(target)
 	targetLibFileName := targetLibName + ctx.GetDylibExt()
+
+	ctx.TargetLibName = targetLibName
 	ctx.TargetLibFileName = targetLibFileName
 
 	if cliArgs.Options != nil && cliArgs.Options.CreateDistDir {

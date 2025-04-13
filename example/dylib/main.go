@@ -20,7 +20,7 @@ func main() {
 			ctx.Tunnel.CD(libInfo.RepoDir)
 		},
 		AfterAllFn: func(c *ku.CLIArgs, t *j9.Tunnel) {
-			ku.CopyJNILibs(c, t, []string{"libogg.so"}, []string{"ogg"}, "dylib")
+			ku.CopyJNILibs(c, t, []string{"libogg.so"}, []string{"ogg"})
 		},
 	}
 	ku.StartLoopWithOptions(cliOpt, loopOpt)

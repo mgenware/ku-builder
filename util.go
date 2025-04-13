@@ -8,14 +8,24 @@ import (
 	"github.com/mgenware/ku-builder/io2"
 )
 
-func CopyJNILibs(cliArgs *CLIArgs, tunnel *j9.Tunnel, libFileNames []string, headerFileNames []string, relPath string) {
+func GetTargetDistDir(targetDir string) string {
+	// Dist dir could be ${TargetDir}/dist or ${TargetDir}/libs.
+	distDir := filepath.Join(targetDir, "dist")
+	if io2.DirectoryExists(distDir) {
+		return distDir
+	}
+	distDir = filepath.Join(targetDir, "libs")
+	return distDir
+}
+
+func CopyJNILibs(cliArgs *CLIArgs, tunnel *j9.Tunnel, libFileNames []string, headerFileNames []string) {
 	if !slices.Contains(cliArgs.SDKs, SDKAndroid) {
 		return
 	}
 	buildDir := GetBuildDir(cliArgs.DebugBuild)
 	sdkDir := GetSDKDir(buildDir, SDKAndroid)
 
-	jniBuildDir := filepath.Join(sdkDir, "jni")
+	jniBuildDir := filepath.Join(sdkDir, "jni", cliArgs.Target)
 	libsDir := filepath.Join(jniBuildDir, "jniLibs")
 	includeDir := filepath.Join(jniBuildDir, "include")
 
@@ -30,7 +40,10 @@ func CopyJNILibs(cliArgs *CLIArgs, tunnel *j9.Tunnel, libFileNames []string, hea
 
 	for _, arch := range jniArchList {
 		for _, libFileName := range libFileNames {
-			srcLibFile := filepath.Join(sdkDir, string(arch), relPath, "lib", libFileName)
+			archDir := GetSDKArchDir(sdkDir, arch)
+			targetDir := filepath.Join(archDir, cliArgs.Target)
+			targetDistDir := GetTargetDistDir(targetDir)
+			srcLibFile := filepath.Join(targetDistDir, "lib", libFileName)
 
 			var jniArch string
 			if arch == ArchArm64 {
@@ -49,7 +62,10 @@ func CopyJNILibs(cliArgs *CLIArgs, tunnel *j9.Tunnel, libFileNames []string, hea
 		}
 	}
 
-	headerSrcDir := filepath.Join(sdkDir, string(ArchArm64), relPath, "include")
+	arm64ArchDir := GetSDKArchDir(sdkDir, ArchArm64)
+	arm64TargetDir := filepath.Join(arm64ArchDir, cliArgs.Target)
+	arm64TargetDistDir := GetTargetDistDir(arm64TargetDir)
+	headerSrcDir := filepath.Join(arm64TargetDistDir, "include")
 	for _, headerFileName := range headerFileNames {
 		srcHeaderFile := filepath.Join(headerSrcDir, headerFileName)
 

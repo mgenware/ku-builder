@@ -2,6 +2,7 @@ package ku
 
 import (
 	"path/filepath"
+	"strings"
 )
 
 const MinMacosVersion = "11.0"
@@ -122,6 +123,13 @@ func GetABI(arch ArchEnum) string {
 		return "arm64-v8a"
 	}
 	return "x86_64"
+}
+
+func GetTargetLibName(target string) string {
+	if strings.HasPrefix(target, "lib") {
+		return target
+	}
+	return "lib" + target
 }
 
 func mustAbs(path string) string {
