@@ -661,6 +661,7 @@ func (ctx *BuildContext) CommonCmakeArgs(libType LibType) []string {
 	args := []string{
 		"-DCMAKE_SYSTEM_NAME=" + targetOS,
 		"-DCMAKE_INSTALL_PREFIX=" + ctx.LibsDir,
+		"-DCMAKE_PREFIX_PATH=" + ctx.LibsDir,
 		"-DCMAKE_LIBRARY_PATH=" + ctx.LibsLibDir,
 		"-DCMAKE_FIND_USE_CMAKE_SYSTEM_PATH=0",
 		"-DCMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH=0",
