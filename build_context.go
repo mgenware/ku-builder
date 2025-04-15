@@ -665,6 +665,8 @@ func (ctx *BuildContext) CommonCmakeArgs(libType LibType) []string {
 		"-DCMAKE_LIBRARY_PATH=" + ctx.LibsLibDir,
 		"-DCMAKE_FIND_USE_CMAKE_SYSTEM_PATH=0",
 		"-DCMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH=0",
+		// Always enable PIC regardless of lib type.
+		"-DCMAKE_POSITION_INDEPENDENT_CODE=1",
 	}
 
 	isDylibStr := "0"
