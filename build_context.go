@@ -182,14 +182,18 @@ func (ctx *BuildContext) RunMake() {
 }
 
 type RunCmakeGenOptions struct {
-	Args []string
-	Env  []string
+	Args   []string
+	Env    []string
+	Preset string
 }
 
 func (ctx *BuildContext) RunCmakeGen(opt *RunCmakeGenOptions) {
 	args := opt.Args
 	if ctx.CleanBuild {
 		args = append(args, "--fresh")
+	}
+	if opt.Preset != "" {
+		args = append(args, "--preset", opt.Preset)
 	}
 
 	// Note: `opt.Env` should be set after `GetCoreKuEnv`.
