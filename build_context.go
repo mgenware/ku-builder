@@ -641,7 +641,20 @@ func (ctx *BuildContext) UnsupportedError() error {
 	return fmt.Errorf("unsupported config. SDK: %s, Arch: %s", ctx.SDK, ctx.Arch)
 }
 
+type CommonCmakeArgsOptions struct {
+	EnableSystemPath bool
+	DisablePIC       bool
+}
+
 func (ctx *BuildContext) CommonCmakeArgs(libType LibType) []string {
+	return ctx.CommonCmakeArgsWithOptions(libType, nil)
+}
+
+func (ctx *BuildContext) CommonCmakeArgsWithOptions(libType LibType, opt *CommonCmakeArgsOptions) []string {
+	if opt == nil {
+		opt = &CommonCmakeArgsOptions{}
+	}
+
 	var isDylib bool
 	if SupportedLibTypes[libType] {
 		isDylib = libType == LibTypeDynamic
@@ -667,10 +680,19 @@ func (ctx *BuildContext) CommonCmakeArgs(libType LibType) []string {
 		"-DCMAKE_INSTALL_PREFIX=" + ctx.LibsDir,
 		"-DCMAKE_PREFIX_PATH=" + ctx.LibsDir,
 		"-DCMAKE_LIBRARY_PATH=" + ctx.LibsLibDir,
-		"-DCMAKE_FIND_USE_CMAKE_SYSTEM_PATH=0",
-		"-DCMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH=0",
-		// Always enable PIC regardless of lib type.
-		"-DCMAKE_POSITION_INDEPENDENT_CODE=1",
+	}
+
+	if !opt.EnableSystemPath {
+		args = append(args,
+			"-DCMAKE_FIND_USE_CMAKE_SYSTEM_PATH=0",
+			"-DCMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH=0",
+		)
+	}
+
+	if !opt.DisablePIC {
+		args = append(args,
+			"-DCMAKE_POSITION_INDEPENDENT_CODE=1",
+		)
 	}
 
 	isDylibStr := "0"
