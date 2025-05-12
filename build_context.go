@@ -310,7 +310,7 @@ func (ctx *BuildContext) GetSDKPath() string {
 	})
 }
 
-type GetCommonFlagsOptions struct {
+type GetCompilerFlags struct {
 	LD          bool
 	DisableArch bool
 	EnablePIC   bool
@@ -328,9 +328,9 @@ func (ctx *BuildContext) IsAndroidPlatform() bool {
 	return ctx.SDK == SDKAndroid
 }
 
-func (ctx *BuildContext) getCommonFlagsList(opt *GetCommonFlagsOptions) []string {
+func (ctx *BuildContext) getCompilerFlagsList(opt *GetCompilerFlags) []string {
 	if opt == nil {
-		opt = &GetCommonFlagsOptions{}
+		opt = &GetCompilerFlags{}
 	}
 	args := []string{}
 
@@ -364,8 +364,8 @@ func (ctx *BuildContext) getCommonFlagsList(opt *GetCommonFlagsOptions) []string
 	return args
 }
 
-func (ctx *BuildContext) GetCompilerFlags(opt *GetCommonFlagsOptions) string {
-	return strings.Join(ctx.getCommonFlagsList(opt), " ")
+func (ctx *BuildContext) GetCompilerFlags(opt *GetCompilerFlags) string {
+	return strings.Join(ctx.getCompilerFlagsList(opt), " ")
 }
 
 func (ctx *BuildContext) getCCPathImpl() string {
@@ -530,7 +530,7 @@ func (ctx *BuildContext) GetCompilerConfigureEnv(opt *GetCompilerConfigureEnvOpt
 
 	if opt.OverrideCompilerFlags {
 		cflags := ctx.GetCompilerFlags(nil)
-		ldflags := ctx.GetCompilerFlags(&GetCommonFlagsOptions{LD: true})
+		ldflags := ctx.GetCompilerFlags(&GetCompilerFlags{LD: true})
 
 		args = append(args, "CFLAGS="+cflags)
 		args = append(args, "CXXFLAGS="+cflags)
