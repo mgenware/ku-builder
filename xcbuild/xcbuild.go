@@ -103,8 +103,14 @@ func Build(opt *XCBuildOptions) {
 		} // end of for archs
 
 		if dylibInfoList == nil {
+			fmt.Printf("Search for library names in %v\n", firstArchLibDir)
 			dylibInfoList = getDylibInfo(firstArchLibDir)
-			fmt.Printf("Found libraries: %v\n", dylibInfoList)
+			fmt.Printf("Found library names: %v\n", dylibInfoList)
+
+			if len(dylibInfoList) == 0 {
+				fmt.Println("No library names found")
+				os.Exit(1)
+			}
 		}
 
 		hasLibModulemapSet := false
