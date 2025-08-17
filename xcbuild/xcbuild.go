@@ -124,7 +124,12 @@ func Build(opt *XCBuildOptions) {
 
 			arm64DistDir := ku.GetTargetDistDir(arm64TargetDir)
 			srcDylibHeadersDir := filepath.Join(arm64DistDir, "include")
-			if !io2.DirectoryExists(srcDylibHeadersDir) {
+
+			// Check if `../include/${current_dylib}` exists.
+			headersWithDylibName := filepath.Join(srcDylibHeadersDir, dylibInfo.Name)
+			if io2.DirectoryExists(headersWithDylibName) {
+				srcDylibHeadersDir = headersWithDylibName
+			} else if !io2.DirectoryExists(srcDylibHeadersDir) {
 				fmt.Printf("Headers dir not found: %s\n", srcDylibHeadersDir)
 				os.Exit(1)
 			}
