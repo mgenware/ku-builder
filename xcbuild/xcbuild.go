@@ -107,7 +107,7 @@ func Build(opt *XCBuildOptions) {
 			fmt.Printf("Found libraries: %v\n", dylibInfoList)
 		}
 
-		mainLibModulemapSet := false
+		hasLibModulemapSet := false
 		// Used to get headers for the resulting dylib.
 		arm64TargetDir := filepath.Join(ku.GetSDKArchDir(sdkDir, ku.ArchArm64), target)
 
@@ -219,7 +219,7 @@ func Build(opt *XCBuildOptions) {
 				if err != nil {
 					panic(err)
 				}
-				mainLibModulemapSet = true
+				hasLibModulemapSet = true
 			}
 
 			// Set up symlinks for macOS framework.
@@ -254,9 +254,9 @@ func Build(opt *XCBuildOptions) {
 			}
 
 			fwMap[dylibInfo.Name] = append(fwMap[dylibInfo.Name], fwInfo)
-		} // end of for libraryNames
-		if !mainLibModulemapSet {
-			panic(fmt.Sprintf("Main modulemap not set for target %s, moduleMapSet: %v", target, moduleMapTargetLibNames))
+		} // end of for dylibInfoList
+		if !hasLibModulemapSet {
+			panic(fmt.Sprintf("No modulemap set for target %s, `moduleMapSet`: %v, `dylibInfoList`: %v", target, moduleMapTargetLibNames, dylibInfoList))
 		}
 	} // end of for sdks
 
