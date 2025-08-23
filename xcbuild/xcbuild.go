@@ -141,10 +141,15 @@ func Build(opt *XCBuildOptions) {
 			arm64DistDir := ku.GetTargetDistDir(arm64TargetDir)
 			srcDylibHeadersDir := filepath.Join(arm64DistDir, "include")
 
-			// Check if `../include/${current_dylib}` exists.
+			// Check if `../include/${libabc}` exists.
 			headersWithDylibName := filepath.Join(srcDylibHeadersDir, dylibInfo.Name)
+			dylibNameWithoutLibPrefix := trimLibPrefix(dylibInfo.Name)
+			// Check if `../include/${abc}` exists.
+			headersWithDylibNameWithoutLibPrefix := filepath.Join(srcDylibHeadersDir, dylibNameWithoutLibPrefix)
 			if io2.DirectoryExists(headersWithDylibName) {
 				srcDylibHeadersDir = headersWithDylibName
+			} else if io2.DirectoryExists(headersWithDylibNameWithoutLibPrefix) {
+				srcDylibHeadersDir = headersWithDylibNameWithoutLibPrefix
 			} else if !io2.DirectoryExists(srcDylibHeadersDir) {
 				fmt.Printf("Headers dir not found: %s\n", srcDylibHeadersDir)
 				os.Exit(1)
@@ -461,4 +466,11 @@ func updateDylibDepRpath(t *j9.Tunnel, dylibPath string, buildDir string) {
 			Args: args,
 		})
 	}
+}
+
+func trimLibPrefix(s string) string {
+	if strings.HasPrefix(s, "lib") {
+		return s[3:]
+	}
+	return s
 }
