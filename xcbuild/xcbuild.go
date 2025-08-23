@@ -1,7 +1,6 @@
 package xcbuild
 
 import (
-	"flag"
 	"fmt"
 	"io/fs"
 	"os"
@@ -28,6 +27,7 @@ type XCDylibContext struct {
 type XCBuildOptions struct {
 	DefaultTarget  string
 	AllowedTargets []string
+	LibNames       []string
 
 	GetModuleMapTargets      func(ctx *XCContext) []string
 	GetDylibModuleMapContent func(ctx *XCDylibContext) string
@@ -39,26 +39,10 @@ func Build(opt *XCBuildOptions) {
 		os.Exit(1)
 	}
 
-	var libsPtr *string
-	var userLibs map[string]bool
-
 	cliOpt := &ku.CLIOptions{
 		DefaultTarget:   opt.DefaultTarget,
 		AllowedTargets:  opt.AllowedTargets,
 		DefaultPlatform: ku.PlatformDarwin,
-	}
-	cliOpt.BeforeParseFn = func() {
-		libsPtr = flag.String("libs", "", "Explicitly specify which libs to build, separated by comma.")
-	}
-	cliOpt.AfterParseFn = func(cliArgs *ku.CLIArgs) {
-		// Validate libs.
-		if *libsPtr != "" {
-			libs := strings.Split(*libsPtr, ",")
-			userLibs = make(map[string]bool)
-			for _, lib := range libs {
-				userLibs[lib] = true
-			}
-		}
 	}
 
 	cliArgs := ku.ParseCLIArgs(cliOpt)
@@ -70,6 +54,14 @@ func Build(opt *XCBuildOptions) {
 		CLIArgs: cliArgs,
 		Tunnel:  tunnel,
 		Target:  target,
+	}
+
+	var userLibs map[string]bool
+	if len(opt.LibNames) > 0 {
+		userLibs = make(map[string]bool)
+		for _, lib := range opt.LibNames {
+			userLibs[lib] = true
+		}
 	}
 
 	// Target lib names with modulemap (NOTE: key is target lib names).
@@ -122,7 +114,7 @@ func Build(opt *XCBuildOptions) {
 
 		if dylibInfoList == nil {
 			fmt.Printf("Search for library names in %v\n", firstArchLibDir)
-			dylibInfoList = getDylibsInfo(firstArchLibDir, userLibs)``
+			dylibInfoList = getDylibsInfo(firstArchLibDir, userLibs)
 			fmt.Printf("Found library names: %v\n", dylibInfoList)
 
 			if len(dylibInfoList) == 0 {
