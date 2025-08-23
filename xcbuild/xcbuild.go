@@ -29,6 +29,9 @@ type XCBuildOptions struct {
 	AllowedTargets []string
 	LibNames       []string
 
+	// K: lib name. V: header relative path.
+	LibHeaderPathMap map[string]string
+
 	GetModuleMapTargets      func(ctx *XCContext) []string
 	GetDylibModuleMapContent func(ctx *XCDylibContext) string
 }
@@ -146,7 +149,9 @@ func Build(opt *XCBuildOptions) {
 			dylibNameWithoutLibPrefix := trimLibPrefix(dylibInfo.Name)
 			// Check if `../include/${abc}` exists.
 			headersWithDylibNameWithoutLibPrefix := filepath.Join(srcDylibHeadersDir, dylibNameWithoutLibPrefix)
-			if io2.DirectoryExists(headersWithDylibName) {
+			if opt.LibHeaderPathMap != nil && opt.LibHeaderPathMap[dylibInfo.Name] != "" {
+				srcDylibHeadersDir = filepath.Join(srcDylibHeadersDir, opt.LibHeaderPathMap[dylibInfo.Name])
+			} else if io2.DirectoryExists(headersWithDylibName) {
 				srcDylibHeadersDir = headersWithDylibName
 			} else if io2.DirectoryExists(headersWithDylibNameWithoutLibPrefix) {
 				srcDylibHeadersDir = headersWithDylibNameWithoutLibPrefix
