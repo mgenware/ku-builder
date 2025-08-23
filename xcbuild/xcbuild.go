@@ -285,11 +285,11 @@ func Build(opt *XCBuildOptions) {
 			}
 
 			fwMap[dylibInfo.Name] = append(fwMap[dylibInfo.Name], fwInfo)
-		} // end of for dylibInfoList
+		} // end of creating frameworks from `dylibInfoList`.
 		if !hasLibModulemapSet {
 			panic(fmt.Sprintf("No modulemap set for target %s, `moduleMapSet`: %v, `dylibInfoList`: %v", target, moduleMapTargetLibNames, dylibInfoList))
 		}
-	} // end of for sdks
+	} // end of `for sdks`.
 
 	xcDir := filepath.Join(buildDir, "xcframework", platformStr)
 	io2.CleanDir(xcDir)
