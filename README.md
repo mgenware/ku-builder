@@ -17,4 +17,4 @@ Minimum SDK versions:
 
 Supported host platform:
 
-- Latest macOS
+- Latest stable macOS version.
