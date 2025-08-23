@@ -18,3 +18,21 @@ Minimum SDK versions:
 Supported host platform:
 
 - Latest stable macOS version.
+
+## ku-builder Utils CLI (kbu)
+
+### Installation
+
+```bash
+go install github.com/mgenware/ku-builder/cmd/kbu@latest
+```
+
+### Usage
+
+```
+kbu <action> <a dylib or so file>
+```
+
+Supported actions:
+
+- `deps` Show dependencies.
