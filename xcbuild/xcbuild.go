@@ -1,6 +1,7 @@
 package xcbuild
 
 import (
+	"flag"
 	"fmt"
 	"io/fs"
 	"os"
@@ -38,11 +39,28 @@ func Build(opt *XCBuildOptions) {
 		os.Exit(1)
 	}
 
+	var libsPtr *string
+	var userLibs map[string]bool
+
 	cliOpt := &ku.CLIOptions{
 		DefaultTarget:   opt.DefaultTarget,
 		AllowedTargets:  opt.AllowedTargets,
 		DefaultPlatform: ku.PlatformDarwin,
 	}
+	cliOpt.BeforeParseFn = func() {
+		libsPtr = flag.String("libs", "", "Explicitly specify which libs to build, separated by comma.")
+	}
+	cliOpt.AfterParseFn = func(cliArgs *ku.CLIArgs) {
+		// Validate libs.
+		if *libsPtr != "" {
+			libs := strings.Split(*libsPtr, ",")
+			userLibs = make(map[string]bool)
+			for _, lib := range libs {
+				userLibs[lib] = true
+			}
+		}
+	}
+
 	cliArgs := ku.ParseCLIArgs(cliOpt)
 	tunnel := ku.CreateDefaultTunnel()
 	buildDir := ku.GetBuildDir(cliArgs.DebugBuild)
@@ -104,7 +122,7 @@ func Build(opt *XCBuildOptions) {
 
 		if dylibInfoList == nil {
 			fmt.Printf("Search for library names in %v\n", firstArchLibDir)
-			dylibInfoList = getDylibInfo(firstArchLibDir)
+			dylibInfoList = getDylibsInfo(firstArchLibDir, userLibs)``
 			fmt.Printf("Found library names: %v\n", dylibInfoList)
 
 			if len(dylibInfoList) == 0 {
@@ -336,7 +354,7 @@ type iFrameworkInfo struct {
 	IsFat            bool
 }
 
-func getDylibInfo(libDir string) []XCDylibInfo {
+func getDylibsInfo(libDir string, userLibs map[string]bool) []XCDylibInfo {
 	var builtLibs []XCDylibInfo
 	files, err := os.ReadDir(libDir)
 	if err != nil {
@@ -354,12 +372,15 @@ func getDylibInfo(libDir string) []XCDylibInfo {
 		}
 
 		libName := strings.Split(fileName, ".")[0]
-		builtLib := XCDylibInfo{
-			Name:     libName,
-			FileName: fileName,
+
+		if userLibs == nil || userLibs[libName] {
+			builtLib := XCDylibInfo{
+				Name:     libName,
+				FileName: fileName,
+			}
+			builtLibs = append(builtLibs, builtLib)
 		}
 
-		builtLibs = append(builtLibs, builtLib)
 	}
 	return builtLibs
 }
