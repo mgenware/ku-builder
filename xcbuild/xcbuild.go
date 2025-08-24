@@ -34,6 +34,10 @@ type XCBuildOptions struct {
 
 	GetModuleMapTargets      func(ctx *XCContext) []string
 	GetDylibModuleMapContent func(ctx *XCDylibContext) string
+
+	// Default is false. Only update dependency rpaths that are in the build directory.
+	// If true, update all dependency rpaths that are not in /usr/bin.
+	AggressiveDepRpathUpdates bool
 }
 
 func Build(opt *XCBuildOptions) {
@@ -208,7 +212,7 @@ func Build(opt *XCBuildOptions) {
 				})
 
 				// Set rpath of dependencies.
-				updateDylibDepRpath(tunnel, archDylibPath, buildDir)
+				updateDylibDepRpath(tunnel, archDylibPath, buildDir, opt.AggressiveDepRpathUpdates)
 			}
 
 			// lipo
@@ -427,7 +431,7 @@ func moduleMapForFw(libName string) string {
 }`
 }
 
-func updateDylibDepRpath(t *j9.Tunnel, dylibPath string, buildDir string) {
+func updateDylibDepRpath(t *j9.Tunnel, dylibPath string, buildDir string, aggressiveDepRpathUpdates bool) {
 	output := t.Shell(&j9.ShellOpt{
 		Cmd: "otool -L \"" + dylibPath + "\"",
 	})
@@ -436,12 +440,25 @@ func updateDylibDepRpath(t *j9.Tunnel, dylibPath string, buildDir string) {
 	// Skip the first line, which is the dylib path.
 	lines = lines[1:]
 
-	var keys []string
-	var values []string
+	// Replace dylib dependency paths into dep names with rpath.
+	// Example: <build>/sdk-macosx/arm64/ffprobe/lib/libswresample.5.dylib
+	var depPaths []string
+	// Example: libswresample
+	var replaceNames []string
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
-		if !strings.HasPrefix(line, buildDir) {
-			continue
+		if aggressiveDepRpathUpdates {
+			// Aggressive dep rpath updates.
+			// Only deps in system paths are ignored.
+			if strings.HasPrefix(line, "/usr/lib/") || strings.HasPrefix(line, "/System/Library/") {
+				continue
+			}
+		} else {
+			// Default dep rpath updates.
+			// Deps that are not in build dir are ignored.
+			if !strings.HasPrefix(line, buildDir) {
+				continue
+			}
 		}
 		// Example: <build>/sdk-macosx/arm64/ffprobe/lib/libswresample.5.dylib (compatibility version 5.0.0, current version 5.3.100)
 		parenthesesIndex := strings.Index(line, "(")
@@ -451,19 +468,19 @@ func updateDylibDepRpath(t *j9.Tunnel, dylibPath string, buildDir string) {
 		} else {
 			resultLine = strings.TrimSpace(line[:parenthesesIndex])
 		}
-		keys = append(keys, resultLine)
+		depPaths = append(depPaths, resultLine)
 
 		// Extract the dylib name without version and extension.
 		fileName := filepath.Base(resultLine)
 		fileName = strings.Split(fileName, ".")[0]
-		values = append(values, fileName)
+		replaceNames = append(replaceNames, fileName)
 	}
 
 	// Set dep rpath.
-	if len(keys) > 0 {
+	if len(depPaths) > 0 {
 		var args []string
-		for i := 0; i < len(keys); i++ {
-			args = append(args, "-change", keys[i], "@rpath/"+values[i]+".framework/"+values[i])
+		for i := 0; i < len(depPaths); i++ {
+			args = append(args, "-change", depPaths[i], "@rpath/"+replaceNames[i]+".framework/"+replaceNames[i])
 		}
 		args = append(args, dylibPath)
 		t.Spawn(&j9.SpawnOpt{
