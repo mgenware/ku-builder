@@ -335,8 +335,9 @@ func (ctx *BuildContext) getCompilerFlagsList(opt *GetCompilerFlagsOptions) []st
 	args := []string{}
 
 	if ctx.IsDarwinPlatform() {
+		archStr := string(ctx.Arch)
 		if !opt.DisableArch {
-			args = append(args, "-arch", string(ctx.Arch))
+			args = append(args, "-arch", archStr)
 		}
 
 		args = append(args, "-isysroot", ctx.GetSDKPath())
@@ -344,12 +345,14 @@ func (ctx *BuildContext) getCompilerFlagsList(opt *GetCompilerFlagsOptions) []st
 		// Darwin -target and min SDK version.
 		switch ctx.SDK {
 		case SDKMacos:
-			// Min SDK.
 			args = append(args, "-mmacosx-version-min="+MinMacosVersion)
+			args = append(args, "-target", archStr+"-apple-macos"+MinMacosVersion)
 		case SDKIosSimulator:
 			args = append(args, "-mios-simulator-version-min="+MinIosVersion)
+			args = append(args, "-target", archStr+"-apple-ios"+MinIosVersion+"-simulator")
 		case SDKIos:
 			args = append(args, "-miphoneos-version-min="+MinIosVersion)
+			args = append(args, "-target", archStr+"-apple-ios"+MinIosVersion)
 		}
 	}
 
