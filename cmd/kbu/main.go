@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -15,7 +16,9 @@ const configDirName = ".ku-builder"
 const ndkConfigFileName = "ndk-ver"
 
 func main() {
-	args := os.Args[1:]
+	osPtr := flag.String("os", "", "d (Darwin) or a (Android). If not specified. Detect from input file.")
+	flag.Parse()
+	args := flag.Args()
 
 	// This program only runs on macOS.
 	if runtime.GOOS != "darwin" {
@@ -38,7 +41,18 @@ func main() {
 
 	var isDarwin bool
 	inputExt := filepath.Ext(input)
-	if inputExt == ".dylib" {
+	if *osPtr != "" {
+		v := *osPtr
+		switch v {
+		case "d":
+			isDarwin = true
+		case "a":
+			isDarwin = false
+		default:
+			fmt.Println("Invalid OS type. Please specify 'd' for Darwin or 'a' for Android.")
+			return
+		}
+	} else if inputExt == ".dylib" {
 		isDarwin = true
 	} else if inputExt != ".so" {
 		fmt.Println("Unsupported file type")
