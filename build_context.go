@@ -508,11 +508,16 @@ func (ctx *BuildContext) getNDKClangPath(cpp bool) string {
 }
 
 type GetCompilerConfigureEnvOptions struct {
-	// This might override other flags provided by source repo.
-	// It's recommended to use `--extra-xxxflags` during `./configure`.
+	// When true, override CFLAGS, CXXFLAGS, LDFLAGS.
+	// Useful for make projects using `./configure`.
+	// Note that might override existing compiler flags provided by source repo.
+	// In that case, it's recommended to use `--extra-xxxflags` during `./configure`.
 	OverrideCompilerFlags bool
 }
 
+// GetCompilerConfigureEnv returns environment variables for compiler configuration.
+// This includes CC, CXX, LD, and optionally CFLAGS, CXXFLAGS, LDFLAGS (when OverrideCompilerFlags is true).
+// On Android, it also includes AR, AS, RANLIB, STRIP, NM.
 func (ctx *BuildContext) GetCompilerConfigureEnv(opt *GetCompilerConfigureEnvOptions) []string {
 	if opt == nil {
 		opt = &GetCompilerConfigureEnvOptions{}
