@@ -72,6 +72,13 @@ func main() {
 			t.Spawn(&j9.SpawnOpt{Name: ndkBinPath(mustHaveNDKVer(ndkVer), "llvm-readelf"), Args: []string{"-d", input}})
 		}
 
+	case "symbols":
+		if isDarwin {
+			t.Spawn(&j9.SpawnOpt{Name: "nm", Args: []string{"-gU", input}})
+		} else {
+			t.Spawn(&j9.SpawnOpt{Name: ndkBinPath(mustHaveNDKVer(ndkVer), "llvm-nm"), Args: []string{"-g", input}})
+		}
+
 	default:
 		fmt.Println("Unknown action")
 	}
@@ -106,9 +113,12 @@ func mustHaveNDKVer(ndkVer string) string {
 
 func printUsage() {
 	fmt.Println("Usage: kbu <action> [options] <input>")
+	fmt.Println()
 	fmt.Println("Actions:")
 	fmt.Println("  deps       List dependencies of the input file")
+	fmt.Println("  symbols    List exported symbols of the input file")
+	fmt.Println()
 	fmt.Println("Options:")
-	fmt.Println("  -ndk       Specify NDK version.")
+	fmt.Println("  -ndk       Specify NDK version")
 	fmt.Println("  -os        Specify the operating system type: 'd' for Darwin, 'a' for Android")
 }

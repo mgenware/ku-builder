@@ -30,9 +30,13 @@ go install github.com/mgenware/ku-builder/cmd/kbu@latest
 ### Usage
 
 ```
-kbu <action> <a dylib or so file>
+Usage: kbu <action> [options] <input>
+
+Actions:
+  deps       List dependencies of the input file
+  symbols    List exported symbols of the input file
+
+Options:
+  -ndk       Specify NDK version
+  -os        Specify the operating system type: 'd' for Darwin, 'a' for Android
 ```
-
-Supported actions:
-
-- `deps` Show dependencies.
