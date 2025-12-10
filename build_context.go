@@ -152,13 +152,20 @@ func (ctx *BuildContext) RunMakeInstall() {
 	})
 }
 
-func (ctx *BuildContext) RunMakeClean() {
+func (ctx *BuildContext) RunMakeCleanRaw() error {
 	env := ctx.GetCoreKuEnv()
-	ctx.Tunnel.Spawn(&j9.SpawnOpt{
+	return ctx.Tunnel.SpawnRaw(&j9.SpawnOpt{
 		Name: "make",
 		Args: []string{"clean"},
 		Env:  env,
 	})
+}
+
+func (ctx *BuildContext) RunMakeClean() {
+	err := ctx.RunMakeCleanRaw()
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (ctx *BuildContext) RunMakeWithArgs(opt *j9.SpawnOpt) {
