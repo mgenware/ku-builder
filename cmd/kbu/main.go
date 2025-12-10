@@ -6,17 +6,14 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 
 	"github.com/mgenware/j9/v3"
-	"github.com/mgenware/ku-builder/io2"
 )
 
-const configDirName = ".ku-builder"
-const ndkConfigFileName = "ndk-ver"
-
 func main() {
+	ndkPtr := flag.String("ndk", "", "Specify NDK version.")
 	osPtr := flag.String("os", "", "d (Darwin) or a (Android). If not specified. Detect from input file.")
+	helpPtr := flag.Bool("help", false, "Show usage information.")
 	flag.Parse()
 	args := flag.Args()
 
@@ -26,11 +23,17 @@ func main() {
 		return
 	}
 
-	if len(args) < 2 {
-		fmt.Println("Usage: kbu <action> <input>")
+	if *helpPtr {
+		printUsage()
 		return
 	}
 
+	if len(args) < 2 {
+		printUsage()
+		return
+	}
+
+	ndkVer := *ndkPtr
 	action := args[0]
 	input := args[1]
 
@@ -66,7 +69,7 @@ func main() {
 		if isDarwin {
 			t.Spawn(&j9.SpawnOpt{Name: "otool", Args: []string{"-L", input}})
 		} else {
-			t.Spawn(&j9.SpawnOpt{Name: ndkBinPath("llvm-readelf"), Args: []string{"-d", input}})
+			t.Spawn(&j9.SpawnOpt{Name: ndkBinPath(mustHaveNDKVer(ndkVer), "llvm-readelf"), Args: []string{"-d", input}})
 		}
 
 	default:
@@ -83,29 +86,29 @@ func androidSDKPath() string {
 	return androidHome
 }
 
-func ndkPath() string {
+func ndkPath(ndkVer string) string {
 	ndkContainer := filepath.Join(androidSDKPath(), "ndk")
-	ndkVer := getNDKVersion()
 	ndkPath := filepath.Join(ndkContainer, ndkVer)
 	return ndkPath
 }
 
-func ndkBinPath(name string) string {
-	return filepath.Join(ndkPath(), "toolchains", "llvm", "prebuilt", "darwin-x86_64", "bin", name)
+func ndkBinPath(ndkVer string, name string) string {
+	return filepath.Join(ndkPath(ndkVer), "toolchains", "llvm", "prebuilt", "darwin-x86_64", "bin", name)
 }
 
-func getNDKVersion() string {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		panic(err)
+func mustHaveNDKVer(ndkVer string) string {
+	if ndkVer == "" {
+		fmt.Println("NDK version not specified. Please use -ndk to specify it.")
+		os.Exit(1)
 	}
-	ndkConfigFile := filepath.Join(homeDir, configDirName, ndkConfigFileName)
-	if io2.FileExists(ndkConfigFile) {
-		ndkName, err := os.ReadFile(ndkConfigFile)
-		if err != nil {
-			panic(err)
-		}
-		return strings.TrimSpace(string(ndkName))
-	}
-	panic("NDK version not configured. Please use `setndk` to configure it.")
+	return ndkVer
+}
+
+func printUsage() {
+	fmt.Println("Usage: kbu <action> [options] <input>")
+	fmt.Println("Actions:")
+	fmt.Println("  deps       List dependencies of the input file")
+	fmt.Println("Options:")
+	fmt.Println("  -ndk       Specify NDK version.")
+	fmt.Println("  -os        Specify the operating system type: 'd' for Darwin, 'a' for Android")
 }
