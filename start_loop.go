@@ -1,6 +1,9 @@
 package ku
 
-import "github.com/mgenware/j9/v3"
+import (
+	"github.com/mgenware/j9/v3"
+	"github.com/mgenware/ku-builder/io2"
+)
 
 type StartLoopOptions struct {
 	ContextFn   func(*BuildContext)
@@ -31,6 +34,7 @@ func StartLoopWithOptions(cliOpt *CLIOptions, opt *StartLoopOptions) {
 			ctxOpt := NewBuildContextInitOpt(tunnel, sdk, arch, cliArgs)
 			ctx := NewBuildContext(ctxOpt)
 
+			io2.CleanDir(ctx.OutDir)
 			opt.ContextFn(ctx)
 		}
 	}
