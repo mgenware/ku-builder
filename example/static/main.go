@@ -8,7 +8,7 @@ import (
 
 func main() {
 	cliOpt := &ku.CLIOptions{
-		DefaultTarget: "libogg",
+		DefaultTarget: example.LibName,
 	}
 	ku.StartLoop(cliOpt, func(ctx *ku.BuildContext) {
 		ctx.Tunnel.Logger().Log(j9.LogLevelWarning, "Building target: "+ctx.CLIArgs.Target+" for "+string(ctx.Arch)+" with SDK: "+string(ctx.SDK))

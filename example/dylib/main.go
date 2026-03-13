@@ -8,7 +8,7 @@ import (
 
 func main() {
 	cliOpt := &ku.CLIOptions{
-		DefaultTarget: "libogg",
+		DefaultTarget: example.LibName,
 	}
 	loopOpt := &ku.StartLoopOptions{
 		ContextFn: func(ctx *ku.BuildContext) {
@@ -20,7 +20,7 @@ func main() {
 			ctx.Tunnel.CD(libInfo.RepoDir)
 		},
 		AfterAllFn: func(c *ku.CLIArgs, t *j9.Tunnel) {
-			ku.CopyJNILibs(c, t, []string{"libogg.so"}, []string{"ogg"})
+			ku.CopyJNILibs(c, t, []string{example.LibName + ".so"}, []string{"ogg"})
 		},
 	}
 	ku.StartLoopWithOptions(cliOpt, loopOpt)

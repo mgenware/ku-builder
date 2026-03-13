@@ -2,16 +2,18 @@ package example
 
 import "github.com/mgenware/ku-builder"
 
+const LibName = "libogg"
+
 var Repo = &ku.SourceRepo{
 	Url:  "https://github.com/xiph/ogg",
 	Tag:  "v1.3.5",
-	Name: "libogg",
+	Name: LibName,
 }
 
 func BuildOgg(ctx *ku.BuildContext, libType ku.LibType) *ku.SourceInfo {
 	repoDir := ku.CloneAndGotoRepo(ctx.Tunnel, Repo)
 
-	buildDir := ctx.GetArchBuildDir(string(Repo.Name))
+	buildDir := ctx.GetArchBuildDir(Repo.Name)
 	ctx.Tunnel.CD(buildDir)
 
 	args := ctx.CommonCmakeArgs(libType)
