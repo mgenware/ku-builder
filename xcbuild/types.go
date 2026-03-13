@@ -34,6 +34,9 @@ type XCBuildOptions struct {
 	// An optional subdirectory under lib/ to search for dylibs.
 	LibSubDir string
 
+	// An optional subdirectory under include/ to search for headers.
+	IncludeSubDir string
+
 	// Default is false. Only update dependency rpaths that are in the build directory.
 	// If true, update all dependency rpaths that are not in /usr/bin.
 	AggressiveDepRpathUpdates bool

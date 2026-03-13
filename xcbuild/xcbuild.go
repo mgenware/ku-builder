@@ -119,6 +119,9 @@ func Build(opt *XCBuildOptions) {
 
 			arm64DistDir := ku.GetTargetDistDir(arm64TargetDir)
 			srcDylibHeadersDir := filepath.Join(arm64DistDir, "include")
+			if opt.IncludeSubDir != "" {
+				srcDylibHeadersDir = filepath.Join(srcDylibHeadersDir, opt.IncludeSubDir)
+			}
 
 			// Check if `../include/${libabc}` exists.
 			headersWithDylibName := filepath.Join(srcDylibHeadersDir, dylibInfo.Name)
