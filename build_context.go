@@ -87,7 +87,7 @@ func NewBuildContext(opt *BuildContextInitOptions) *BuildContext {
 	archDir := filepath.Join(sdkDir, string(opt.Arch))
 	target := cliArgs.Target
 	targetDir := filepath.Join(archDir, target)
-	outDir := filepath.Join(targetDir, "out")
+	outDir := filepath.Join(targetDir, OutDirName)
 	tmpDir := filepath.Join(targetDir, "tmp")
 
 	// Validate arch.
@@ -129,7 +129,7 @@ func NewBuildContext(opt *BuildContextInitOptions) *BuildContext {
 	ctx.TargetLibFileName = targetLibFileName
 
 	if cliArgs.Options != nil && cliArgs.Options.CreateDistDir {
-		distDir := filepath.Join(targetDir, "dist")
+		distDir := filepath.Join(targetDir, DistDirName)
 		distIncludeDir := filepath.Join(distDir, "include")
 		distLibDir := filepath.Join(distDir, "lib")
 		io2.Mkdirp(distIncludeDir)

@@ -8,6 +8,8 @@ import (
 const MinMacosVersion = "11.0"
 const MinIosVersion = "14.0"
 const MinAndroidAPI = "26"
+const OutDirName = "out"
+const DistDirName = "dist"
 
 var ProjectRepoDir string
 var buildDir string

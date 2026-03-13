@@ -10,11 +10,11 @@ import (
 
 func GetTargetDistDir(targetDir string) string {
 	// Dist dir could be ${TargetDir}/dist or ${TargetDir}/libs.
-	distDir := filepath.Join(targetDir, "dist")
+	distDir := filepath.Join(targetDir, DistDirName)
 	if io2.DirectoryExists(distDir) {
 		return distDir
 	}
-	distDir = filepath.Join(targetDir, "libs")
+	distDir = filepath.Join(targetDir, OutDirName)
 	return distDir
 }
 
