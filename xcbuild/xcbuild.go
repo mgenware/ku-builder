@@ -28,10 +28,6 @@ func Build(opt *XCBuildOptions) {
 	tunnel := ku.CreateDefaultTunnel()
 	buildDir := ku.GetBuildDir(cliArgs.DebugBuild)
 	target := cliArgs.Target
-	targetFolderName := target
-	if opt.TargetSearchName != "" {
-		targetFolderName = opt.TargetSearchName
-	}
 
 	xcCtx := &XCContext{
 		CLIArgs: cliArgs,
@@ -87,9 +83,9 @@ func Build(opt *XCBuildOptions) {
 		firstArchLibDir := ""
 		for _, arch := range archs {
 			archDir := ku.GetSDKArchDir(sdkDir, arch)
-			targetDir := filepath.Join(archDir, targetFolderName)
+			targetDir := filepath.Join(archDir, target)
 			distDir := ku.GetTargetDistDir(targetDir)
-			distLibDir := filepath.Join(distDir, "lib")
+			distLibDir := goToLibDir(distDir, opt.LibSubDir)
 			if firstArchLibDir == "" {
 				firstArchLibDir = distLibDir
 			}
@@ -108,7 +104,7 @@ func Build(opt *XCBuildOptions) {
 
 		hasLibModulemapSet := false
 		// Used to get headers for the resulting dylib.
-		arm64TargetDir := filepath.Join(ku.GetSDKArchDir(sdkDir, ku.ArchArm64), targetFolderName)
+		arm64TargetDir := filepath.Join(ku.GetSDKArchDir(sdkDir, ku.ArchArm64), target)
 
 		// Create frameworks.
 		for _, dylibInfo := range dylibInfoList {
@@ -173,9 +169,10 @@ func Build(opt *XCBuildOptions) {
 			var archDylibPaths []string
 			for _, arch := range archs {
 				archDir := ku.GetSDKArchDir(sdkDir, arch)
-				targetDir := filepath.Join(archDir, targetFolderName)
+				targetDir := filepath.Join(archDir, target)
 				distDir := ku.GetTargetDistDir(targetDir)
-				archDylibPath := filepath.Join(distDir, "lib", dylibInfo.FileName)
+				distLibDir := goToLibDir(distDir, opt.LibSubDir)
+				archDylibPath := filepath.Join(distLibDir, dylibInfo.FileName)
 				archDylibPaths = append(archDylibPaths, archDylibPath)
 			}
 
@@ -454,4 +451,12 @@ func trimLibPrefix(s string) string {
 		return s[3:]
 	}
 	return s
+}
+
+func goToLibDir(parent string, libSubDir string) string {
+	libDir := filepath.Join(parent, "lib")
+	if libSubDir != "" {
+		libDir = filepath.Join(libDir, libSubDir)
+	}
+	return libDir
 }

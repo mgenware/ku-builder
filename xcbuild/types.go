@@ -31,9 +31,8 @@ type XCBuildOptions struct {
 	GetModuleMapTargets      func(ctx *XCContext) []string
 	GetDylibModuleMapContent func(ctx *XCDylibContext) string
 
-	// The folder name used to search for the target dylibs in the build dir.
-	// If empty, the current target name will be used.
-	TargetSearchName string
+	// An optional subdirectory under lib/ to search for dylibs.
+	LibSubDir string
 
 	// Default is false. Only update dependency rpaths that are in the build directory.
 	// If true, update all dependency rpaths that are not in /usr/bin.
