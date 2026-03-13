@@ -42,7 +42,7 @@ type BuildContext struct {
 	// ${LibsDir}/lib
 	LibsLibDir string
 
-	// Optional out dir for the target.
+	// Optional dist dir for the target (some libraries might use it to output final products).
 	DistDir string
 	// ${DistDir}/include
 	DistIncludeDir string
