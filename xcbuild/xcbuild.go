@@ -12,37 +12,6 @@ import (
 	"github.com/mgenware/ku-builder/io2"
 )
 
-type XCContext struct {
-	CLIArgs *ku.CLIArgs
-	Tunnel  *j9.Tunnel
-	Target  string
-}
-
-type XCDylibContext struct {
-	XCCtx *XCContext
-	Info  *XCDylibInfo
-	SDK   ku.SDKEnum
-}
-
-type XCBuildOptions struct {
-	// The fallback target if -target is not provided in CLI args.
-	DefaultTarget string
-
-	// The allowed targets for CLI args.
-	AllowedTargets []string
-	LibNames       []string
-
-	// K: lib name. V: header relative path.
-	LibHeaderPathMap map[string]string
-
-	GetModuleMapTargets      func(ctx *XCContext) []string
-	GetDylibModuleMapContent func(ctx *XCDylibContext) string
-
-	// Default is false. Only update dependency rpaths that are in the build directory.
-	// If true, update all dependency rpaths that are not in /usr/bin.
-	AggressiveDepRpathUpdates bool
-}
-
 func Build(opt *XCBuildOptions) {
 	if opt == nil {
 		fmt.Println("No options provided")
@@ -59,6 +28,10 @@ func Build(opt *XCBuildOptions) {
 	tunnel := ku.CreateDefaultTunnel()
 	buildDir := ku.GetBuildDir(cliArgs.DebugBuild)
 	target := cliArgs.Target
+	targetFolderName := target
+	if opt.TargetSearchName != "" {
+		targetFolderName = opt.TargetSearchName
+	}
 
 	xcCtx := &XCContext{
 		CLIArgs: cliArgs,
@@ -114,7 +87,7 @@ func Build(opt *XCBuildOptions) {
 		firstArchLibDir := ""
 		for _, arch := range archs {
 			archDir := ku.GetSDKArchDir(sdkDir, arch)
-			targetDir := filepath.Join(archDir, target)
+			targetDir := filepath.Join(archDir, targetFolderName)
 			distDir := ku.GetTargetDistDir(targetDir)
 			distLibDir := filepath.Join(distDir, "lib")
 			if firstArchLibDir == "" {
@@ -135,7 +108,7 @@ func Build(opt *XCBuildOptions) {
 
 		hasLibModulemapSet := false
 		// Used to get headers for the resulting dylib.
-		arm64TargetDir := filepath.Join(ku.GetSDKArchDir(sdkDir, ku.ArchArm64), target)
+		arm64TargetDir := filepath.Join(ku.GetSDKArchDir(sdkDir, ku.ArchArm64), targetFolderName)
 
 		// Create frameworks.
 		for _, dylibInfo := range dylibInfoList {
@@ -200,7 +173,7 @@ func Build(opt *XCBuildOptions) {
 			var archDylibPaths []string
 			for _, arch := range archs {
 				archDir := ku.GetSDKArchDir(sdkDir, arch)
-				targetDir := filepath.Join(archDir, target)
+				targetDir := filepath.Join(archDir, targetFolderName)
 				distDir := ku.GetTargetDistDir(targetDir)
 				archDylibPath := filepath.Join(distDir, "lib", dylibInfo.FileName)
 				archDylibPaths = append(archDylibPaths, archDylibPath)
@@ -339,28 +312,6 @@ func Build(opt *XCBuildOptions) {
 			})
 		}
 	}
-}
-
-type XCDylibInfo struct {
-	// Can be either a lib name or ffapp (ffprobe).
-	// Example: libavformat
-	Name string
-	// Example: libavformat.61.7.100.dylib
-	FileName string
-}
-
-type iFrameworkInfo struct {
-	LibInfo XCDylibInfo
-	// Example: sdk-iphoneos/framework/ffprobe/libavformat.framework
-	Path string
-	// Example: sdk-iphoneos/framework/ffprobe/libavformat.framework/libavformat
-	BinPath string
-	// Example: sdk-iphoneos/arm64/ffprobe/include/libavformat
-	SourceHeadersDir string
-	// Example: sdk-iphoneos/arm64/ffprobe/lib/libavformat.dylib
-	// Could be multiple if fat.
-	SourceDylibPaths []string
-	IsFat            bool
 }
 
 func getDylibsInfo(libDir string, userLibs map[string]bool) []XCDylibInfo {
