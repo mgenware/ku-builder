@@ -25,7 +25,10 @@ type XCDylibContext struct {
 }
 
 type XCBuildOptions struct {
-	DefaultTarget  string
+	// The fallback target if -target is not provided in CLI args.
+	DefaultTarget string
+
+	// The allowed targets for CLI args.
 	AllowedTargets []string
 	LibNames       []string
 
@@ -362,9 +365,14 @@ type iFrameworkInfo struct {
 
 func getDylibsInfo(libDir string, userLibs map[string]bool) []XCDylibInfo {
 	var builtLibs []XCDylibInfo
+
+	if !io2.DirectoryExists(libDir) {
+		panic("lib dir not found: " + libDir)
+	}
+
 	files, err := os.ReadDir(libDir)
 	if err != nil {
-		panic(fmt.Errorf("failed to read dir: %v during `getLibNames`", err))
+		panic(fmt.Errorf("failed to read dir: %v in `getDylibInfo`", err))
 	}
 	for _, file := range files {
 		fileName := file.Name()
