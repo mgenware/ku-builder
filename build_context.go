@@ -90,11 +90,12 @@ func NewBuildContext(opt *BuildContextInitOptions) *BuildContext {
 	targetDir := filepath.Join(archDir, target)
 	outDir := filepath.Join(targetDir, OutDirName)
 	tmpDir := filepath.Join(targetDir, "tmp")
+	shell := NewShell(opt.Tunnel)
 
 	// Validate arch.
 	sdkArchs := SDKArchs[opt.SDK]
 	if !slices.Contains(sdkArchs, opt.Arch) {
-		panic(fmt.Sprintf("Unsupported arch %s for SDK %s, valid archs: %v", opt.Arch, opt.SDK, sdkArchs))
+		shell.Quit(fmt.Sprintf("Unsupported arch %s for SDK %s, valid archs: %v", opt.Arch, opt.SDK, sdkArchs))
 	}
 	outIncludeDir := filepath.Join(outDir, "include")
 	outLibDir := filepath.Join(outDir, "lib")
@@ -102,7 +103,6 @@ func NewBuildContext(opt *BuildContextInitOptions) *BuildContext {
 	io2.Mkdirp(outIncludeDir)
 	io2.Mkdirp(outLibDir)
 
-	shell := NewShell(opt.Tunnel)
 	env := NewEnv(shell, cliArgs, opt.SDK, opt.Arch)
 
 	ctx := &BuildContext{
@@ -110,9 +110,10 @@ func NewBuildContext(opt *BuildContextInitOptions) *BuildContext {
 		CLIArgs: opt.CLIArgs,
 		Env:     env,
 
-		SDK:    opt.SDK,
-		Arch:   opt.Arch,
-		Target: target,
+		SDK:     opt.SDK,
+		Arch:    opt.Arch,
+		LibType: opt.LibType,
+		Target:  target,
 
 		BuildDir:      buildDir,
 		SDKDir:        sdkDir,
@@ -443,7 +444,7 @@ func (ctx *BuildContext) CommonCmakeArgsWithOptions(opt *CommonCmakeArgsOptions)
 	if SupportedLibTypes[libType] {
 		isDylib = libType == LibTypeDynamic
 	} else {
-		panic(fmt.Sprintf("Invalid libType: %s, valid types: %v", libType, SupportedLibTypes))
+		ctx.Shell.Quit(fmt.Sprintf("Invalid libType: %s, valid types: %v", libType, SupportedLibTypes))
 	}
 
 	var targetOS string

@@ -26,6 +26,7 @@ func Build(opt *XCBuildOptions) {
 
 	cliArgs := ku.ParseCLIArgs(cliOpt)
 	tunnel := ku.CreateDefaultTunnel()
+	shell := ku.NewShell(tunnel)
 	buildDir := ku.GetBuildDir(cliArgs.DebugBuild)
 	target := cliArgs.Target
 
@@ -93,7 +94,7 @@ func Build(opt *XCBuildOptions) {
 
 		if dylibInfoList == nil {
 			fmt.Printf("Search for library names in %v\n", firstArchLibDir)
-			dylibInfoList = getDylibsInfo(firstArchLibDir, userLibs)
+			dylibInfoList = getDylibsInfo(shell, firstArchLibDir, userLibs)
 			fmt.Printf("Found library names: %v\n", dylibInfoList)
 
 			if len(dylibInfoList) == 0 {
@@ -267,7 +268,7 @@ func Build(opt *XCBuildOptions) {
 			fwMap[dylibInfo.Name] = append(fwMap[dylibInfo.Name], fwInfo)
 		} // end of creating frameworks from `dylibInfoList`.
 		if !hasLibModulemapSet {
-			panic(fmt.Sprintf("No modulemap set for target %s, `moduleMapSet`: %v, `dylibInfoList`: %v", target, moduleMapTargetLibNames, dylibInfoList))
+			shell.Quit(fmt.Sprintf("No modulemap set for target %s, `moduleMapSet`: %v, `dylibInfoList`: %v", target, moduleMapTargetLibNames, dylibInfoList))
 		}
 	} // end of `for sdks`.
 
@@ -282,7 +283,7 @@ func Build(opt *XCBuildOptions) {
 		var xcArgs []string
 		sdkFwList := fwMap[dylibInfo.Name]
 		if len(sdkFwList) == 0 {
-			panic("No SDK dylib found for library: " + dylibInfo.Name)
+			shell.Quit("No SDK dylib found for library: " + dylibInfo.Name)
 		}
 
 		xcArgs = append(xcArgs, "-create-xcframework")
@@ -301,7 +302,7 @@ func Build(opt *XCBuildOptions) {
 	// Sign the xcframeworks.
 	if !cliArgs.DebugBuild {
 		if cliArgs.SignArg == "" {
-			panic("-sign is required for release build")
+			shell.Quit("-sign is required for release build")
 		}
 		tunnel.Logger().Log(j9.LogLevelWarning, "Signing xcframeworks")
 		for _, xc := range xcList {
@@ -313,16 +314,16 @@ func Build(opt *XCBuildOptions) {
 	}
 }
 
-func getDylibsInfo(libDir string, userLibs map[string]bool) []XCDylibInfo {
+func getDylibsInfo(shell *ku.Shell, libDir string, userLibs map[string]bool) []XCDylibInfo {
 	var builtLibs []XCDylibInfo
 
 	if !io2.DirectoryExists(libDir) {
-		panic("lib dir not found: " + libDir)
+		shell.Quit("lib dir not found: " + libDir)
 	}
 
 	files, err := os.ReadDir(libDir)
 	if err != nil {
-		panic(fmt.Errorf("failed to read dir: %v in `getDylibInfo`", err))
+		shell.Quit(fmt.Sprintf("failed to read dir: %v in `getDylibInfo`", err))
 	}
 	for _, file := range files {
 		fileName := file.Name()

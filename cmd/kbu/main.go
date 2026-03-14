@@ -8,6 +8,7 @@ import (
 	"runtime"
 
 	"github.com/mgenware/j9/v3"
+	"github.com/mgenware/ku-builder"
 )
 
 func main() {
@@ -63,20 +64,21 @@ func main() {
 	}
 
 	t := j9.NewTunnel(j9.NewLocalNode(), j9.NewConsoleLogger())
+	shell := ku.NewShell(t)
 
 	switch action {
 	case "deps":
 		if isDarwin {
 			t.Spawn(&j9.SpawnOpt{Name: "otool", Args: []string{"-L", input}})
 		} else {
-			t.Spawn(&j9.SpawnOpt{Name: ndkBinPath(mustHaveNDKVer(ndkVer), "llvm-readelf"), Args: []string{"-d", input}})
+			t.Spawn(&j9.SpawnOpt{Name: ndkBinPath(shell, mustHaveNDKVer(ndkVer), "llvm-readelf"), Args: []string{"-d", input}})
 		}
 
 	case "symbols":
 		if isDarwin {
 			t.Spawn(&j9.SpawnOpt{Name: "nm", Args: []string{"-gU", input}})
 		} else {
-			t.Spawn(&j9.SpawnOpt{Name: ndkBinPath(mustHaveNDKVer(ndkVer), "llvm-nm"), Args: []string{"-g", input}})
+			t.Spawn(&j9.SpawnOpt{Name: ndkBinPath(shell, mustHaveNDKVer(ndkVer), "llvm-nm"), Args: []string{"-g", input}})
 		}
 
 	default:
@@ -84,23 +86,24 @@ func main() {
 	}
 }
 
-func androidSDKPath() string {
+func androidSDKPath(shell *ku.Shell) string {
 	// Get $ANDROID_HOME.
 	androidHome := os.Getenv("ANDROID_HOME")
 	if androidHome == "" {
-		panic("$ANDROID_HOME is not set")
+		shell.Quit("$ANDROID_HOME is not set")
+		panic("unreachable")
 	}
 	return androidHome
 }
 
-func ndkPath(ndkVer string) string {
-	ndkContainer := filepath.Join(androidSDKPath(), "ndk")
+func ndkPath(shell *ku.Shell, ndkVer string) string {
+	ndkContainer := filepath.Join(androidSDKPath(shell), "ndk")
 	ndkPath := filepath.Join(ndkContainer, ndkVer)
 	return ndkPath
 }
 
-func ndkBinPath(ndkVer string, name string) string {
-	return filepath.Join(ndkPath(ndkVer), "toolchains", "llvm", "prebuilt", "darwin-x86_64", "bin", name)
+func ndkBinPath(shell *ku.Shell, ndkVer string, name string) string {
+	return filepath.Join(ndkPath(shell, ndkVer), "toolchains", "llvm", "prebuilt", "darwin-x86_64", "bin", name)
 }
 
 func mustHaveNDKVer(ndkVer string) string {

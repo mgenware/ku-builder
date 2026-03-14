@@ -60,7 +60,8 @@ func (e *Env) fetchSDKRootPath() string {
 	case SDKAndroid:
 		return filepath.Join(e.getNDKToolchainRootPath(), "sysroot")
 	}
-	panic(e.UnsupportedError())
+	e.ThrowUnsupportedError()
+	panic("unreachable")
 }
 
 func (e *Env) GetCCPath() string {
@@ -74,7 +75,8 @@ func (e *Env) fetchCCPath() string {
 	if e.IsAndroidPlatform() {
 		return e.getNDKClangPath(false)
 	}
-	panic(e.UnsupportedError())
+	e.ThrowUnsupportedError()
+	panic("unreachable")
 }
 
 func (e *Env) GetCXXPath() string {
@@ -88,7 +90,8 @@ func (e *Env) fetchCXXPath() string {
 	if e.IsAndroidPlatform() {
 		return e.getNDKClangPath(true)
 	}
-	panic(e.UnsupportedError())
+	e.ThrowUnsupportedError()
+	panic("unreachable")
 }
 
 func (e *Env) GetLDPath() string {
@@ -102,7 +105,8 @@ func (e *Env) fetchLDPath() string {
 	if e.IsAndroidPlatform() {
 		return e.getNDKClangPath(false)
 	}
-	panic(e.UnsupportedError())
+	e.ThrowUnsupportedError()
+	panic("unreachable")
 }
 
 func (e *Env) GetAndroidSDKPath() string {
@@ -120,7 +124,8 @@ func (e *Env) GetAndroidSDKPath() string {
 			return path
 		})
 	}
-	panic(e.UnsupportedError())
+	e.ThrowUnsupportedError()
+	panic("unreachable")
 }
 
 func (e *Env) GetNDKPath() string {
@@ -139,7 +144,8 @@ func (e *Env) GetNDKPath() string {
 			return path
 		})
 	}
-	panic(e.UnsupportedError())
+	e.ThrowUnsupportedError()
+	panic("unreachable")
 }
 
 func (e *Env) GetNDKCmakeToolchainFile() string {
@@ -150,7 +156,8 @@ func (e *Env) GetNDKCmakeToolchainFile() string {
 			return path
 		})
 	}
-	panic(e.UnsupportedError())
+	e.ThrowUnsupportedError()
+	panic("unreachable")
 }
 
 func (e *Env) GetLibExt(libType LibType) string {
@@ -202,8 +209,10 @@ func (e *Env) getNDKClangPath(cpp bool) string {
 	return e.GetNDKToolchainBinPath(binName)
 }
 
-func (e *Env) UnsupportedError() error {
-	return fmt.Errorf("unsupported environment. SDK: %s, Arch: %s", e.SDK, e.Arch)
+//go:noreturn
+func (e *Env) ThrowUnsupportedError() error {
+	e.shell.Quit(fmt.Sprintf("unsupported environment. SDK: %s, Arch: %s", e.SDK, e.Arch))
+	panic("unreachable")
 }
 
 func (e *Env) readDarwinLibArch(file string) ArchEnum {
@@ -214,7 +223,8 @@ func (e *Env) readDarwinLibArch(file string) ArchEnum {
 	case "x86_64":
 		return ArchX86_64
 	default:
-		panic(fmt.Sprintf("Unexpected arch: %s", output))
+		e.shell.Quit(fmt.Sprintf("Unexpected arch: %s", output))
+		panic("unreachable")
 	}
 }
 
@@ -225,7 +235,7 @@ func (e *Env) readAndroidLibArch(file string) ArchEnum {
 	//   Machine:                           AArch64
 	colonIdx := strings.Index(output, ":")
 	if colonIdx == -1 {
-		panic(fmt.Sprintf("Cannot find Machine in %s", output))
+		e.shell.Quit(fmt.Sprintf("Cannot find Machine in %s", output))
 	}
 	archStr := strings.TrimSpace(output[colonIdx+1:])
 	switch archStr {
@@ -236,7 +246,8 @@ func (e *Env) readAndroidLibArch(file string) ArchEnum {
 	case "Advanced Micro Devices X86-64":
 		return ArchX86_64
 	default:
-		panic(fmt.Sprintf("Unexpected arch: %s", archStr))
+		e.shell.Quit(fmt.Sprintf("Unexpected arch: %s", archStr))
+		panic("unreachable")
 	}
 }
 
@@ -253,7 +264,7 @@ func (e *Env) VerifyFileArch(libType LibType, file string) {
 		logger.Log(j9.LogLevelError, fmt.Sprintf("Arch mismatch for file %s, expected: %s, actual: %s", file, e.Arch, actualArch))
 		os.Exit(1)
 	} else {
-		logger.Log(j9.LogLevelInfo, fmt.Sprintf("Arch match for file %s, expected: %s, actual: %s", file, e.Arch, actualArch))
+		logger.Log(j9.LogLevelSuccess, fmt.Sprintf("Arch verified for file %s, expected: %s", file, e.Arch))
 	}
 }
 
@@ -264,12 +275,12 @@ func (e *Env) checkStaticLibMinSDKVer(file string, minSDKVer string) {
 	if strings.HasPrefix(output, "minos ") {
 		verStr := strings.TrimPrefix(output, "minos ")
 		if verStr != minSDKVer {
-			panic(fmt.Sprintf("Unexpected min SDK version: %s, expected: %s for file %s", verStr, minSDKVer, file))
+			e.shell.Quit(fmt.Sprintf("Unexpected min SDK version: %s, expected: %s for file %s", verStr, minSDKVer, file))
 		}
 		// Success,
 		return
 	}
-	panic(fmt.Sprintf("Cannot find minos in %s", file))
+	e.shell.Quit(fmt.Sprintf("Cannot find minos in %s", file))
 }
 
 func (e *Env) MinDarwinSDKVer() string {
@@ -281,7 +292,8 @@ func (e *Env) MinDarwinSDKVer() string {
 	case SDKIosSimulator:
 		return MinIosVersion
 	}
-	panic(e.UnsupportedError())
+	e.ThrowUnsupportedError()
+	panic("unreachable")
 }
 
 func (e *Env) CheckLocalStaticLibMinSDKVer(file string) {
@@ -319,7 +331,8 @@ func (e *Env) GetAutoconfHost() string {
 func (e *Env) MustGetAutoconfHost() string {
 	host := e.GetAutoconfHost()
 	if host == "" {
-		panic(e.UnsupportedError())
+		e.ThrowUnsupportedError()
+		panic("unreachable")
 	}
 	return host
 }

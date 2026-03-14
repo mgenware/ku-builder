@@ -2,7 +2,7 @@ module github.com/mgenware/ku-builder
 
 go 1.25.0
 
-require github.com/mgenware/j9/v3 v3.2.0
+require github.com/mgenware/j9/v3 v3.3.0
 
 require (
 	github.com/fatih/color v1.18.0 // indirect
