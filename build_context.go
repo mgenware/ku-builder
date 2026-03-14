@@ -322,7 +322,7 @@ func (ctx *BuildContext) RunCmakeInstall(outFile []string) {
 }
 
 func (ctx *BuildContext) LogContext() {
-	ctx.Shell.Logger().Log(j9.LogLevelWarning, "Building target: "+ctx.CLIArgs.Target+"-"+string(ctx.Arch)+"-"+string(ctx.SDK)+"-"+string(ctx.LibType))
+	ctx.Shell.Logger().Log(j9.LogLevelWarning, "Building target: "+ctx.CLIArgs.Target+"-"+string(ctx.Arch)+"-"+string(ctx.SDK)+"-"+ctx.LibType.String())
 }
 
 type GetCompilerFlagsOptions struct {

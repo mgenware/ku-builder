@@ -78,12 +78,23 @@ var SDKArchs = map[SDKEnum][]ArchEnum{
 	SDKAndroid:      {ArchArm64, ArchX86_64},
 }
 
-type LibType string
+type LibType int
 
 const (
-	LibTypeStatic  LibType = "static"
-	LibTypeDynamic LibType = "dynamic"
+	LibTypeStatic LibType = iota
+	LibTypeDynamic
 )
+
+func (t LibType) String() string {
+	switch t {
+	case LibTypeStatic:
+		return "static"
+	case LibTypeDynamic:
+		return "dynamic"
+	default:
+		return "unknown"
+	}
+}
 
 var SupportedLibTypes = map[LibType]bool{
 	LibTypeStatic:  true,
