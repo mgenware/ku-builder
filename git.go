@@ -25,22 +25,22 @@ func GetRepoDir(repo *SourceRepo) string {
 	return filepath.Join(ProjectRepoDir, string(repo.Name), ver)
 }
 
-func CloneAndGotoRepo(t *j9.Tunnel, repo *SourceRepo) string {
+func CloneAndGotoRepo(shell *Shell, repo *SourceRepo) string {
 	dir := GetRepoDir(repo)
 
 	if io2.DirectoryExists(dir) && !checkDirEmpty(dir) {
-		t.CD(dir)
+		shell.CD(dir)
 		return dir
 	}
 
 	io2.Mkdirp(dir)
-	t.CD(dir)
+	shell.CD(dir)
 
 	if repo.UrlArchiveName != "" {
 		if !repo.CreateArchiveDirName {
 			// If `CreateArchiveDirName` is false, we assume the archive contains a root directory named `ArchiveDirName`.
 			// We go to the parent directory.
-			t.CD("..")
+			shell.CD("..")
 		}
 		// Download the archive and extract it.
 		tmpFile, err := os.CreateTemp("", "ku_download")
@@ -49,7 +49,7 @@ func CloneAndGotoRepo(t *j9.Tunnel, repo *SourceRepo) string {
 		}
 		defer os.Remove(tmpFile.Name())
 
-		t.Spawn(&j9.SpawnOpt{
+		shell.Spawn(&j9.SpawnOpt{
 			Name: "curl",
 			Args: []string{"-L", "-o", tmpFile.Name(), repo.Url},
 		})
@@ -60,13 +60,13 @@ func CloneAndGotoRepo(t *j9.Tunnel, repo *SourceRepo) string {
 		} else {
 			tarFlags = "-xvf"
 		}
-		t.Spawn(&j9.SpawnOpt{
+		shell.Spawn(&j9.SpawnOpt{
 			Name: "tar",
 			Args: []string{tarFlags, tmpFile.Name()},
 		})
 
 		if !repo.CreateArchiveDirName {
-			t.CD(dir)
+			shell.CD(dir)
 		}
 
 		return dir
@@ -85,13 +85,13 @@ func CloneAndGotoRepo(t *j9.Tunnel, repo *SourceRepo) string {
 		args = []string{"clone", "--depth", "1", repo.Url, dir}
 	}
 
-	t.Spawn(&j9.SpawnOpt{
+	shell.Spawn(&j9.SpawnOpt{
 		Name: "git",
 		Args: args,
 	})
 
 	if needCheckout {
-		t.Spawn(&j9.SpawnOpt{
+		shell.Spawn(&j9.SpawnOpt{
 			Name: "git",
 			Args: []string{"-C", dir, "checkout", repo.Commit},
 		})
@@ -99,7 +99,7 @@ func CloneAndGotoRepo(t *j9.Tunnel, repo *SourceRepo) string {
 
 	if repo.PostCheckoutCommands != nil {
 		for _, cmd := range repo.PostCheckoutCommands {
-			t.Spawn(&j9.SpawnOpt{
+			shell.Spawn(&j9.SpawnOpt{
 				Name: cmd[0],
 				Args: cmd[1:],
 			})

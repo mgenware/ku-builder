@@ -11,11 +11,11 @@ func main() {
 		DefaultTarget: example.LibName,
 	}
 	ku.StartLoop(cliOpt, func(ctx *ku.BuildContext) {
-		ctx.Tunnel.Logger().Log(j9.LogLevelWarning, "Building target: "+ctx.CLIArgs.Target+" for "+string(ctx.Arch)+" with SDK: "+string(ctx.SDK))
+		ctx.Shell.Logger().Log(j9.LogLevelWarning, "Building target: "+ctx.CLIArgs.Target+" for "+string(ctx.Arch)+" with SDK: "+string(ctx.SDK))
 
 		libInfo := example.BuildOgg(ctx, ku.LibTypeStatic)
 
 		// Go back to the repo root dir.
-		ctx.Tunnel.CD(libInfo.RepoDir)
+		ctx.Shell.CD(libInfo.RepoDir)
 	})
 }

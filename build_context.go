@@ -2,7 +2,6 @@ package ku
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"runtime"
 	"slices"
@@ -13,7 +12,8 @@ import (
 )
 
 type BuildContext struct {
-	Tunnel  *j9.Tunnel
+	Shell   *Shell
+	Env     *Env
 	CLIArgs *CLIArgs
 
 	SDK  SDKEnum
@@ -55,8 +55,6 @@ type BuildContext struct {
 
 	DebugBuild bool
 	CleanBuild bool
-
-	NDKInput string
 
 	stringCache map[string]string
 }
@@ -101,9 +99,13 @@ func NewBuildContext(opt *BuildContextInitOptions) *BuildContext {
 	io2.Mkdirp(outIncludeDir)
 	io2.Mkdirp(outLibDir)
 
+	shell := NewShell(opt.Tunnel)
+	env := NewEnv(shell, cliArgs, opt.SDK, opt.Arch)
+
 	ctx := &BuildContext{
-		Tunnel:  opt.Tunnel,
+		Shell:   shell,
 		CLIArgs: opt.CLIArgs,
+		Env:     env,
 
 		SDK:    opt.SDK,
 		Arch:   opt.Arch,
@@ -119,11 +121,10 @@ func NewBuildContext(opt *BuildContextInitOptions) *BuildContext {
 		OutLibDir:     outLibDir,
 		DebugBuild:    cliArgs.DebugBuild,
 		CleanBuild:    cliArgs.CleanBuild,
-		NDKInput:      cliArgs.NDK,
 	}
 
 	targetLibName := GetTargetLibName(target)
-	targetLibFileName := targetLibName + ctx.GetDylibExt()
+	targetLibFileName := targetLibName + ctx.Env.GetDylibExt()
 
 	ctx.TargetLibName = targetLibName
 	ctx.TargetLibFileName = targetLibFileName
@@ -145,7 +146,7 @@ func NewBuildContext(opt *BuildContextInitOptions) *BuildContext {
 
 func (ctx *BuildContext) RunMakeInstall() {
 	env := ctx.GetCoreKuEnv()
-	ctx.Tunnel.Spawn(&j9.SpawnOpt{
+	ctx.Shell.Spawn(&j9.SpawnOpt{
 		Name: "make",
 		Args: []string{"install"},
 		Env:  env,
@@ -154,7 +155,7 @@ func (ctx *BuildContext) RunMakeInstall() {
 
 func (ctx *BuildContext) RunMakeCleanRaw() error {
 	env := ctx.GetCoreKuEnv()
-	return ctx.Tunnel.SpawnRaw(&j9.SpawnOpt{
+	return ctx.Shell.SpawnRaw(&j9.SpawnOpt{
 		Name: "make",
 		Args: []string{"clean"},
 		Env:  env,
@@ -177,7 +178,7 @@ func (ctx *BuildContext) RunMakeWithArgs(opt *j9.SpawnOpt) {
 	// Note: `opt.Env` should be set after `GetCoreKuEnv`.
 	env := append(ctx.GetCoreKuEnv(), opt.Env...)
 
-	ctx.Tunnel.Spawn(&j9.SpawnOpt{
+	ctx.Shell.Spawn(&j9.SpawnOpt{
 		Name: "make",
 		Args: []string{fmt.Sprintf("-j%v", numCores)},
 		Env:  env,
@@ -209,7 +210,7 @@ func (ctx *BuildContext) RunCmakeGen(opt *RunCmakeGenOptions) {
 		"KU_CMAKE_ACTION=gen",
 	)
 
-	ctx.Tunnel.Spawn(&j9.SpawnOpt{
+	ctx.Shell.Spawn(&j9.SpawnOpt{
 		Name: "cmake",
 		Args: args,
 		Env:  env,
@@ -271,7 +272,7 @@ func (ctx *BuildContext) RunCmakeBuildOrInstall(opt *RunCmakeBuildOrInstallOptio
 	env = append(env,
 		"KU_CMAKE_ACTION="+opt.Action,
 	)
-	ctx.Tunnel.Spawn(&j9.SpawnOpt{
+	ctx.Shell.Spawn(&j9.SpawnOpt{
 		Name: "cmake",
 		Args: args,
 		Env:  env,
@@ -297,42 +298,10 @@ func (ctx *BuildContext) RunCmakeInstall() {
 	ctx.RunCmakeBuildOrInstall(opt)
 }
 
-func (ctx *BuildContext) getSDKPathImpl() string {
-	switch ctx.SDK {
-	case SDKMacos:
-		return ctx.ShellCmd("xcrun --sdk macosx --show-sdk-path")
-	case SDKIos:
-		return ctx.ShellCmd("xcrun --sdk iphoneos --show-sdk-path")
-	case SDKIosSimulator:
-		return ctx.ShellCmd("xcrun --sdk iphonesimulator --show-sdk-path")
-	case SDKAndroid:
-		return filepath.Join(ctx.getNDKToolchainRootPath(), "sysroot")
-	}
-	panic(ctx.UnsupportedError())
-}
-
-func (ctx *BuildContext) GetSDKPath() string {
-	return ctx.cacheSDKArchString("sdk", func() string {
-		return io2.DirectoryMustExist(ctx.getSDKPathImpl())
-	})
-}
-
 type GetCompilerFlagsOptions struct {
 	LD          bool
 	DisableArch bool
 	EnablePIC   bool
-}
-
-func (ctx *BuildContext) IsIosPlatform() bool {
-	return ctx.SDK == SDKIos || ctx.SDK == SDKIosSimulator
-}
-
-func (ctx *BuildContext) IsDarwinPlatform() bool {
-	return ctx.SDK == SDKMacos || ctx.IsIosPlatform()
-}
-
-func (ctx *BuildContext) IsAndroidPlatform() bool {
-	return ctx.SDK == SDKAndroid
 }
 
 func (ctx *BuildContext) getCompilerFlagsList(opt *GetCompilerFlagsOptions) []string {
@@ -341,13 +310,13 @@ func (ctx *BuildContext) getCompilerFlagsList(opt *GetCompilerFlagsOptions) []st
 	}
 	args := []string{}
 
-	if ctx.IsDarwinPlatform() {
+	if ctx.Env.IsDarwinPlatform() {
 		archStr := string(ctx.Arch)
 		if !opt.DisableArch {
 			args = append(args, "-arch", archStr)
 		}
 
-		args = append(args, "-isysroot", ctx.GetSDKPath())
+		args = append(args, "-isysroot", ctx.Env.GetSDKRootPath())
 
 		// Darwin -target and min SDK version.
 		switch ctx.SDK {
@@ -378,142 +347,6 @@ func (ctx *BuildContext) GetCompilerFlags(opt *GetCompilerFlagsOptions) string {
 	return strings.Join(ctx.getCompilerFlagsList(opt), " ")
 }
 
-func (ctx *BuildContext) getCCPathImpl() string {
-	if ctx.IsDarwinPlatform() {
-		return ctx.ShellCmd("xcodebuild -find clang")
-	}
-	if ctx.IsAndroidPlatform() {
-		return ctx.getNDKClangPath(false)
-	}
-	panic(ctx.UnsupportedError())
-}
-
-func (ctx *BuildContext) GetCCPath() string {
-	return ctx.cacheSDKArchString("cc", ctx.getCCPathImpl)
-}
-
-func (ctx *BuildContext) getCXXPathImpl() string {
-	if ctx.IsDarwinPlatform() {
-		return ctx.ShellCmd("xcodebuild -find clang++")
-	}
-	if ctx.IsAndroidPlatform() {
-		return ctx.getNDKClangPath(true)
-	}
-	panic(ctx.UnsupportedError())
-}
-
-func (ctx *BuildContext) GetCXXPath() string {
-	return ctx.cacheSDKArchString("cxx", ctx.getCXXPathImpl)
-}
-
-func (ctx *BuildContext) getLDPathImpl() string {
-	if ctx.IsDarwinPlatform() {
-		return ctx.GetCCPath()
-	}
-	if ctx.IsAndroidPlatform() {
-		return ctx.getNDKClangPath(false)
-	}
-	panic(ctx.UnsupportedError())
-}
-
-func (ctx *BuildContext) GetLDPath() string {
-	return ctx.cacheSDKArchString("ld", ctx.getLDPathImpl)
-}
-
-func (ctx *BuildContext) GetAndroidSDKPath() string {
-	if ctx.IsAndroidPlatform() {
-		return ctx.cacheSDKArchString("android_sdk", func() string {
-			path := os.Getenv("ANDROID_SDK_PATH")
-			if path != "" {
-				return path
-			}
-			usr, err := os.UserHomeDir()
-			if err != nil {
-				panic(err)
-			}
-			path = filepath.Join(usr, "Library/Android/sdk")
-			return path
-		})
-	}
-	panic(ctx.UnsupportedError())
-}
-
-func (ctx *BuildContext) GetNDKPath() string {
-	if ctx.IsAndroidPlatform() {
-		return ctx.cacheSDKArchString("ndk", func() string {
-			path := os.Getenv("ANDROID_NDK_PATH")
-			if path != "" {
-				return path
-			}
-			path = ctx.NDKInput
-			// If `NDKInput` is not an absolute path, it's considered an NDK version.
-			if !strings.HasPrefix(path, "/") {
-				path = filepath.Join(ctx.GetAndroidSDKPath(), "ndk", path)
-			}
-			io2.DirectoryMustExist(path)
-			return path
-		})
-	}
-	panic(ctx.UnsupportedError())
-}
-
-func (ctx *BuildContext) GetNDKCmakeToolchainFile() string {
-	if ctx.IsAndroidPlatform() {
-		return ctx.cacheSDKArchString("ndk_cmake_toolchain", func() string {
-			path := filepath.Join(ctx.GetNDKPath(), "build/cmake/android.toolchain.cmake")
-			io2.FileMustExist(path)
-			return path
-		})
-	}
-	panic(ctx.UnsupportedError())
-}
-
-func (ctx *BuildContext) GetDylibExt() string {
-	if ctx.IsDarwinPlatform() {
-		return ".dylib"
-	}
-	return ".so"
-}
-
-func (ctx *BuildContext) getNDKToolchainRootPath() string {
-	ndkPath := ctx.GetNDKPath()
-	return ctx.cacheSDKArchString("ndk-toolchain-root", func() string {
-		path := filepath.Join(ndkPath, "toolchains", "llvm", "prebuilt", "darwin-x86_64")
-		return io2.DirectoryMustExist(path)
-	})
-}
-
-func (ctx *BuildContext) GetNDKToolchainBinPath(name string) string {
-	return ctx.cacheSDKArchString("ndk-toolchain-bin-"+name, func() string {
-		path := filepath.Join(ctx.getNDKToolchainRootPath(), "bin", name)
-		return io2.FileMustExist(path)
-	})
-}
-
-func (ctx *BuildContext) StripFile(src, dst string) {
-	var stripBin string
-	var args []string
-	if ctx.IsDarwinPlatform() {
-		stripBin = ctx.ShellCmd("xcodebuild -find strip")
-		args = []string{"-x"}
-	} else {
-		stripBin = ctx.GetNDKToolchainBinPath("llvm-strip")
-	}
-
-	ctx.Tunnel.Spawn(&j9.SpawnOpt{
-		Name: stripBin,
-		Args: append(args, src, "-o", dst),
-	})
-}
-
-func (ctx *BuildContext) getNDKClangPath(cpp bool) string {
-	binName := GetOldArch(ctx.Arch) + "-linux-android" + MinAndroidAPI + "-clang"
-	if cpp {
-		binName += "++"
-	}
-	return ctx.GetNDKToolchainBinPath(binName)
-}
-
 type GetCompilerConfigureEnvOptions struct {
 	// When true, override CFLAGS, CXXFLAGS, LDFLAGS.
 	// Useful for make projects using `./configure`.
@@ -531,16 +364,16 @@ func (ctx *BuildContext) GetCompilerConfigureEnv(opt *GetCompilerConfigureEnvOpt
 	}
 
 	args := []string{
-		"CC=" + ctx.GetCCPath(),
-		"CXX=" + ctx.GetCXXPath(),
-		"LD=" + ctx.GetLDPath(),
+		"CC=" + ctx.Env.GetCCPath(),
+		"CXX=" + ctx.Env.GetCXXPath(),
+		"LD=" + ctx.Env.GetLDPath(),
 	}
-	if ctx.IsAndroidPlatform() {
-		args = append(args, "AR="+ctx.GetNDKToolchainBinPath("llvm-ar"))
-		args = append(args, "AS="+ctx.GetNDKToolchainBinPath("llvm-as"))
-		args = append(args, "RANLIB="+ctx.GetNDKToolchainBinPath("llvm-ranlib"))
-		args = append(args, "STRIP="+ctx.GetNDKToolchainBinPath("llvm-strip"))
-		args = append(args, "NM="+ctx.GetNDKToolchainBinPath("llvm-nm"))
+	if ctx.Env.IsAndroidPlatform() {
+		args = append(args, "AR="+ctx.Env.GetNDKToolchainBinPath("llvm-ar"))
+		args = append(args, "AS="+ctx.Env.GetNDKToolchainBinPath("llvm-as"))
+		args = append(args, "RANLIB="+ctx.Env.GetNDKToolchainBinPath("llvm-ranlib"))
+		args = append(args, "STRIP="+ctx.Env.GetNDKToolchainBinPath("llvm-strip"))
+		args = append(args, "NM="+ctx.Env.GetNDKToolchainBinPath("llvm-nm"))
 	}
 
 	if opt.OverrideCompilerFlags {
@@ -555,93 +388,6 @@ func (ctx *BuildContext) GetCompilerConfigureEnv(opt *GetCompilerConfigureEnvOpt
 	return args
 }
 
-func (ctx *BuildContext) ShellCmd(cmd string) string {
-	output := ctx.Tunnel.Shell(&j9.ShellOpt{
-		Cmd: cmd})
-	return strings.TrimSpace(string(output))
-}
-
-func (ctx *BuildContext) lipoStaticLibArch(file string) ArchEnum {
-	output := ctx.ShellCmd(fmt.Sprintf("lipo -archs %s", file))
-	switch output {
-	case "arm64":
-		return ArchArm64
-	case "x86_64":
-		return ArchX86_64
-	default:
-		panic(fmt.Sprintf("Unexpected arch: %s", output))
-	}
-}
-
-func (ctx *BuildContext) androidReadStaticLibArch(file string) ArchEnum {
-	ndkReadelf := ctx.GetNDKToolchainBinPath("llvm-readelf")
-	output := ctx.ShellCmd(fmt.Sprintf("%s -h %s | grep -m1 Machine", ndkReadelf, file))
-	// Sample output:
-	//   Machine:                           AArch64
-	colonIdx := strings.Index(output, ":")
-	if colonIdx == -1 {
-		panic(fmt.Sprintf("Cannot find Machine in %s", output))
-	}
-	archStr := strings.TrimSpace(output[colonIdx+1:])
-	switch archStr {
-	case "AArch64":
-		return ArchArm64
-	case "x86_64":
-		fallthrough
-	case "Advanced Micro Devices X86-64":
-		return ArchX86_64
-	default:
-		panic(fmt.Sprintf("Unexpected arch: %s", archStr))
-	}
-}
-
-func (ctx *BuildContext) CheckLocalStaticLibArch(fileName string) {
-	var actualArch ArchEnum
-	file := filepath.Join(ctx.OutLibDir, fileName)
-	if ctx.IsDarwinPlatform() {
-		actualArch = ctx.lipoStaticLibArch(file)
-	} else if ctx.IsAndroidPlatform() {
-		actualArch = ctx.androidReadStaticLibArch(file)
-	}
-	if actualArch != ctx.Arch {
-		panic(fmt.Sprintf("Unexpected arch: %s, expected: %s for file %s", actualArch, ctx.Arch, file))
-	}
-}
-
-func (ctx *BuildContext) checkStaticLibMinSDKVer(file string, minSDKVer string) {
-	output := ctx.ShellCmd(fmt.Sprintf("otool -l %s | grep -m 1 minos", file))
-	// output looks like:
-	// minos 18.2
-	if strings.HasPrefix(output, "minos ") {
-		verStr := strings.TrimPrefix(output, "minos ")
-		if verStr != minSDKVer {
-			panic(fmt.Sprintf("Unexpected min SDK version: %s, expected: %s for file %s", verStr, minSDKVer, file))
-		}
-		// Success,
-		return
-	}
-	panic(fmt.Sprintf("Cannot find minos in %s", file))
-}
-
-func (ctx *BuildContext) MinDarwinSDKVer() string {
-	switch ctx.SDK {
-	case SDKMacos:
-		return MinMacosVersion
-	case SDKIos:
-		fallthrough
-	case SDKIosSimulator:
-		return MinIosVersion
-	}
-	panic(ctx.UnsupportedError())
-}
-
-func (ctx *BuildContext) CheckLocalStaticLibMinSDKVer(fileName string) {
-	file := filepath.Join(ctx.OutLibDir, fileName)
-	if ctx.IsDarwinPlatform() {
-		ctx.checkStaticLibMinSDKVer(file, ctx.MinDarwinSDKVer())
-	}
-}
-
 func (ctx *BuildContext) GetArchBuildDir(repoName string) string {
 	buildDir := filepath.Join(ctx.TmpDir, repoName)
 	if ctx.CleanBuild {
@@ -650,10 +396,6 @@ func (ctx *BuildContext) GetArchBuildDir(repoName string) string {
 		io2.Mkdirp(buildDir)
 	}
 	return buildDir
-}
-
-func (ctx *BuildContext) UnsupportedError() error {
-	return fmt.Errorf("unsupported config. SDK: %s, Arch: %s", ctx.SDK, ctx.Arch)
 }
 
 type CommonCmakeArgsOptions struct {
@@ -688,7 +430,7 @@ func (ctx *BuildContext) CommonCmakeArgsWithOptions(libType LibType, opt *Common
 	case SDKAndroid:
 		targetOS = "Android"
 	}
-	ctx.Tunnel.Logger().Log(j9.LogLevelVerbose, "[Cmake] Target OS: "+targetOS)
+	ctx.Shell.Logger().Log(j9.LogLevelVerbose, "[Cmake] Target OS: "+targetOS)
 
 	args := []string{
 		"-DCMAKE_SYSTEM_NAME=" + targetOS,
@@ -716,12 +458,12 @@ func (ctx *BuildContext) CommonCmakeArgsWithOptions(libType LibType, opt *Common
 	}
 	args = append(args, "-DBUILD_SHARED_LIBS="+isDylibStr)
 
-	if ctx.IsDarwinPlatform() {
+	if ctx.Env.IsDarwinPlatform() {
 		args = append(args,
 			// SDK
-			"-DCMAKE_OSX_SYSROOT="+ctx.GetSDKPath(),
+			"-DCMAKE_OSX_SYSROOT="+ctx.Env.GetSDKRootPath(),
 			// Min SDK
-			"-DCMAKE_OSX_DEPLOYMENT_TARGET="+ctx.MinDarwinSDKVer(),
+			"-DCMAKE_OSX_DEPLOYMENT_TARGET="+ctx.Env.MinDarwinSDKVer(),
 			// -arch
 			"-DCMAKE_OSX_ARCHITECTURES="+string(ctx.Arch),
 			"-DCMAKE_MACOSX_BUNDLE=0",
@@ -731,15 +473,15 @@ func (ctx *BuildContext) CommonCmakeArgsWithOptions(libType LibType, opt *Common
 		)
 	}
 
-	if ctx.IsAndroidPlatform() {
-		ndk := ctx.GetNDKPath()
+	if ctx.Env.IsAndroidPlatform() {
+		ndk := ctx.Env.GetNDKPath()
 		abi := GetABI(ctx.Arch)
 		args = append(args,
 			"-DANDROID_NDK="+ndk,
 			"-DANDROID_ABI="+abi,
 			"-DANDROID_PLATFORM=android-"+MinAndroidAPI,
 			"-DCMAKE_ANDROID_NDK="+ndk,
-			"-DCMAKE_TOOLCHAIN_FILE="+ctx.GetNDKCmakeToolchainFile(),
+			"-DCMAKE_TOOLCHAIN_FILE="+ctx.Env.GetNDKCmakeToolchainFile(),
 			"-DCMAKE_ANDROID_ARCH_ABI="+abi,
 			"-DCMAKE_SYSTEM_VERSION="+MinAndroidAPI,
 		)
@@ -753,32 +495,6 @@ func (ctx *BuildContext) CommonCmakeArgsWithOptions(libType LibType, opt *Common
 	}
 	args = append(args, "-DCMAKE_BUILD_TYPE="+buildType)
 	return args
-}
-
-func (ctx *BuildContext) GetAutoconfHost() string {
-	switch ctx.SDK {
-	case SDKIos:
-		fallthrough
-	case SDKIosSimulator:
-		switch ctx.Arch {
-		case ArchArm64:
-			return "arm64-apple-darwin"
-		case ArchX86_64:
-			return "x86_64-apple-darwin"
-		default:
-			return ""
-		}
-	case SDKMacos:
-		switch ctx.Arch {
-		case ArchArm64:
-			return "arm64-apple-darwin"
-		case ArchX86_64:
-			return "x86_64-apple-darwin"
-		}
-	case SDKAndroid:
-		return GetOldArch(ctx.Arch) + "-linux-android" + MinAndroidAPI
-	}
-	return ""
 }
 
 func (ctx *BuildContext) GetCoreKuEnv() []string {
@@ -802,27 +518,4 @@ func (ctx *BuildContext) GetCoreKuEnv() []string {
 		)
 	}
 	return env
-}
-
-func (ctx *BuildContext) MustGetAutoconfHost() string {
-	host := ctx.GetAutoconfHost()
-	if host == "" {
-		panic(ctx.UnsupportedError())
-	}
-	return host
-}
-
-type cacheStringFunc func() string
-
-func (ctx *BuildContext) cacheSDKArchString(key string, fn cacheStringFunc) string {
-	if ctx.stringCache == nil {
-		ctx.stringCache = map[string]string{}
-	}
-	key = string(ctx.SDK) + "_" + string(ctx.Arch) + "_" + key
-	if val, ok := ctx.stringCache[key]; ok {
-		return val
-	}
-	val := fn()
-	ctx.stringCache[key] = val
-	return val
 }

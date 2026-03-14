@@ -11,10 +11,10 @@ var Repo = &ku.SourceRepo{
 }
 
 func BuildOgg(ctx *ku.BuildContext, libType ku.LibType) *ku.SourceInfo {
-	repoDir := ku.CloneAndGotoRepo(ctx.Tunnel, Repo)
+	repoDir := ku.CloneAndGotoRepo(ctx.Shell, Repo)
 
 	buildDir := ctx.GetArchBuildDir(Repo.Name)
-	ctx.Tunnel.CD(buildDir)
+	ctx.Shell.CD(buildDir)
 
 	args := ctx.CommonCmakeArgs(libType)
 	// repo dir is passed as the last argument.
