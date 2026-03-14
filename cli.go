@@ -95,6 +95,11 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 		os.Exit(1)
 	}
 
+	if *platformPtr == "" && *ndkPtr != "" {
+		// Make platform default to android if NDK is specified.
+		*platformPtr = string(PlatformAndroid)
+	}
+
 	var sdks []SDKEnum
 	// Validate platform if specified.
 	if *platformPtr != "" {
