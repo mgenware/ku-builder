@@ -478,7 +478,7 @@ func (ctx *BuildContext) GetDylibExt() string {
 func (ctx *BuildContext) getNDKToolchainRootPath() string {
 	ndkPath := ctx.GetNDKPath()
 	return ctx.cacheSDKArchString("ndk-toolchain-root", func() string {
-		path := filepath.Join(ndkPath, "toolchains/llvm/prebuilt/darwin-x86_64")
+		path := filepath.Join(ndkPath, "toolchains", "llvm", "prebuilt", "darwin-x86_64")
 		return io2.DirectoryMustExist(path)
 	})
 }
