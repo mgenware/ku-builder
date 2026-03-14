@@ -264,7 +264,7 @@ func (e *Env) VerifyFileArch(libType LibType, file string) {
 		logger.Log(j9.LogLevelError, fmt.Sprintf("Arch mismatch for file %s, expected: %s, actual: %s", file, e.Arch, actualArch))
 		os.Exit(1)
 	} else {
-		logger.Log(j9.LogLevelSuccess, fmt.Sprintf("Arch verified for file %s, expected: %s", file, e.Arch))
+		logger.Log(j9.LogLevelSuccess, fmt.Sprintf("✅ Arch verified for file %s, expected: %s", file, e.Arch))
 	}
 }
 
