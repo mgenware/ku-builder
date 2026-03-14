@@ -153,7 +153,10 @@ func (e *Env) GetNDKCmakeToolchainFile() string {
 	panic(e.UnsupportedError())
 }
 
-func (e *Env) GetDylibExt() string {
+func (e *Env) GetLibExt(libType LibType) string {
+	if libType == LibTypeStatic {
+		return ".a"
+	}
 	if e.IsDarwinPlatform() {
 		return ".dylib"
 	}
@@ -203,7 +206,7 @@ func (e *Env) UnsupportedError() error {
 	return fmt.Errorf("unsupported environment. SDK: %s, Arch: %s", e.SDK, e.Arch)
 }
 
-func (e *Env) lipoStaticLibArch(file string) ArchEnum {
+func (e *Env) readDarwinLibArch(file string) ArchEnum {
 	output := e.shell.Shell(fmt.Sprintf("lipo -archs %s", file))
 	switch output {
 	case "arm64":
@@ -215,7 +218,7 @@ func (e *Env) lipoStaticLibArch(file string) ArchEnum {
 	}
 }
 
-func (e *Env) androidReadStaticLibArch(file string) ArchEnum {
+func (e *Env) readAndroidLibArch(file string) ArchEnum {
 	ndkReadelf := e.GetNDKToolchainBinPath("llvm-readelf")
 	output := e.shell.Shell(fmt.Sprintf("%s -h %s | grep -m1 Machine", ndkReadelf, file))
 	// Sample output:
@@ -237,15 +240,20 @@ func (e *Env) androidReadStaticLibArch(file string) ArchEnum {
 	}
 }
 
-func (e *Env) CheckLocalStaticLibArch(file string) {
+func (e *Env) VerifyFileArch(libType LibType, file string) {
 	var actualArch ArchEnum
 	if e.IsDarwinPlatform() {
-		actualArch = e.lipoStaticLibArch(file)
+		actualArch = e.readDarwinLibArch(file)
 	} else if e.IsAndroidPlatform() {
-		actualArch = e.androidReadStaticLibArch(file)
+		actualArch = e.readAndroidLibArch(file)
 	}
+
+	logger := e.shell.Logger()
 	if actualArch != e.Arch {
-		panic(fmt.Sprintf("Unexpected arch: %s, expected: %s for file %s", actualArch, e.Arch, file))
+		logger.Log(j9.LogLevelError, fmt.Sprintf("Arch mismatch for file %s, expected: %s, actual: %s", file, e.Arch, actualArch))
+		os.Exit(1)
+	} else {
+		logger.Log(j9.LogLevelInfo, fmt.Sprintf("Arch match for file %s, expected: %s, actual: %s", file, e.Arch, actualArch))
 	}
 }
 

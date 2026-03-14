@@ -15,6 +15,7 @@ type BuildContext struct {
 	Shell   *Shell
 	Env     *Env
 	CLIArgs *CLIArgs
+	LibType LibType
 
 	SDK  SDKEnum
 	Arch ArchEnum
@@ -64,14 +65,16 @@ type BuildContextInitOptions struct {
 	SDK     SDKEnum
 	Arch    ArchEnum
 	CLIArgs *CLIArgs
+	LibType LibType
 }
 
-func NewBuildContextInitOpt(tunnel *j9.Tunnel, sdk SDKEnum, arch ArchEnum, cliArgs *CLIArgs) *BuildContextInitOptions {
+func NewBuildContextInitOpt(tunnel *j9.Tunnel, sdk SDKEnum, arch ArchEnum, cliArgs *CLIArgs, libType LibType) *BuildContextInitOptions {
 	return &BuildContextInitOptions{
 		Tunnel:  tunnel,
 		SDK:     sdk,
 		Arch:    arch,
 		CLIArgs: cliArgs,
+		LibType: libType,
 	}
 }
 
@@ -124,7 +127,7 @@ func NewBuildContext(opt *BuildContextInitOptions) *BuildContext {
 	}
 
 	targetLibName := GetTargetLibName(target)
-	targetLibFileName := targetLibName + ctx.Env.GetDylibExt()
+	targetLibFileName := targetLibName + ctx.Env.GetLibExt(ctx.LibType)
 
 	ctx.TargetLibName = targetLibName
 	ctx.TargetLibFileName = targetLibFileName
@@ -144,13 +147,23 @@ func NewBuildContext(opt *BuildContextInitOptions) *BuildContext {
 	return ctx
 }
 
-func (ctx *BuildContext) RunMakeInstall() {
+func (ctx *BuildContext) RunMakeInstall(outFile []string) {
 	env := ctx.GetCoreKuEnv()
 	ctx.Shell.Spawn(&j9.SpawnOpt{
 		Name: "make",
 		Args: []string{"install"},
 		Env:  env,
 	})
+	ctx.VerifyOutFileArch(outFile)
+}
+
+func (ctx *BuildContext) VerifyOutFileArch(outFile []string) {
+	if len(outFile) > 0 {
+		parts := append([]string{ctx.OutLibDir}, outFile...)
+		outPath := filepath.Join(parts...)
+		outPath = outPath + ctx.Env.GetLibExt(ctx.LibType)
+		ctx.Env.VerifyFileArch(ctx.LibType, outPath)
+	}
 }
 
 func (ctx *BuildContext) RunMakeCleanRaw() error {
@@ -217,16 +230,23 @@ func (ctx *BuildContext) RunCmakeGen(opt *RunCmakeGenOptions) {
 	})
 }
 
+type CmakeActionType string
+
+const (
+	CmakeActionBuild   CmakeActionType = "build"
+	CmakeActionInstall CmakeActionType = "install"
+)
+
 type RunCmakeBuildOrInstallOptions struct {
 	// Required.
-	Action string
+	Action CmakeActionType
 
 	Target    string
 	ExtraArgs []string
 	Env       []string
 }
 
-func (ctx *BuildContext) RunCmakeBuildOrInstall(opt *RunCmakeBuildOrInstallOptions) {
+func (ctx *BuildContext) RunCmakeBuildOrInstall(opt *RunCmakeBuildOrInstallOptions, outFile []string) {
 	if opt == nil {
 		panic("opt is nil")
 	}
@@ -235,11 +255,11 @@ func (ctx *BuildContext) RunCmakeBuildOrInstall(opt *RunCmakeBuildOrInstallOptio
 	}
 
 	args := []string{
-		"--" + opt.Action, ".",
+		"--" + string(opt.Action), ".",
 	}
 
 	if opt.Target != "" {
-		if opt.Action == "install" {
+		if opt.Action == CmakeActionInstall {
 			panic("opt.Target is not supported for install")
 		}
 		args = append(args, "--target", opt.Target)
@@ -254,7 +274,7 @@ func (ctx *BuildContext) RunCmakeBuildOrInstall(opt *RunCmakeBuildOrInstallOptio
 	args = append(args, "--config", config)
 
 	// Strip during production install.
-	if opt.Action == "install" && !ctx.DebugBuild {
+	if opt.Action == CmakeActionInstall && !ctx.DebugBuild {
 		// This uses `CMAKE_STRIP`, which is set by Android toolchain.
 		args = append(args, "--strip")
 	}
@@ -270,13 +290,15 @@ func (ctx *BuildContext) RunCmakeBuildOrInstall(opt *RunCmakeBuildOrInstallOptio
 	// Note: `opt.Env` should be set after `GetCoreKuEnv`.
 	env := append(ctx.GetCoreKuEnv(), opt.Env...)
 	env = append(env,
-		"KU_CMAKE_ACTION="+opt.Action,
+		"KU_CMAKE_ACTION="+string(opt.Action),
 	)
 	ctx.Shell.Spawn(&j9.SpawnOpt{
 		Name: "cmake",
 		Args: args,
 		Env:  env,
 	})
+
+	ctx.VerifyOutFileArch(outFile)
 }
 
 func (ctx *BuildContext) RunCmakeBuild() {
@@ -285,17 +307,21 @@ func (ctx *BuildContext) RunCmakeBuild() {
 
 func (ctx *BuildContext) RunCmakeBuildTarget(target string) {
 	opt := &RunCmakeBuildOrInstallOptions{
-		Action: "build",
+		Action: CmakeActionBuild,
 		Target: target,
 	}
-	ctx.RunCmakeBuildOrInstall(opt)
+	ctx.RunCmakeBuildOrInstall(opt, nil)
 }
 
-func (ctx *BuildContext) RunCmakeInstall() {
+func (ctx *BuildContext) RunCmakeInstall(outFile []string) {
 	opt := &RunCmakeBuildOrInstallOptions{
-		Action: "install",
+		Action: CmakeActionInstall,
 	}
-	ctx.RunCmakeBuildOrInstall(opt)
+	ctx.RunCmakeBuildOrInstall(opt, outFile)
+}
+
+func (ctx *BuildContext) LogContext() {
+	ctx.Shell.Logger().Log(j9.LogLevelWarning, "Building target: "+ctx.CLIArgs.Target+"-"+string(ctx.Arch)+"-"+string(ctx.SDK)+"-"+string(ctx.LibType))
 }
 
 type GetCompilerFlagsOptions struct {
@@ -403,15 +429,16 @@ type CommonCmakeArgsOptions struct {
 	DisablePIC       bool
 }
 
-func (ctx *BuildContext) CommonCmakeArgs(libType LibType) []string {
-	return ctx.CommonCmakeArgsWithOptions(libType, nil)
+func (ctx *BuildContext) CommonCmakeArgs() []string {
+	return ctx.CommonCmakeArgsWithOptions(nil)
 }
 
-func (ctx *BuildContext) CommonCmakeArgsWithOptions(libType LibType, opt *CommonCmakeArgsOptions) []string {
+func (ctx *BuildContext) CommonCmakeArgsWithOptions(opt *CommonCmakeArgsOptions) []string {
 	if opt == nil {
 		opt = &CommonCmakeArgsOptions{}
 	}
 
+	libType := ctx.LibType
 	var isDylib bool
 	if SupportedLibTypes[libType] {
 		isDylib = libType == LibTypeDynamic

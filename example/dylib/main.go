@@ -10,11 +10,12 @@ func main() {
 	cliOpt := &ku.CLIOptions{
 		DefaultTarget: example.LibName,
 	}
+	libType := ku.LibTypeDynamic
 	loopOpt := &ku.StartLoopOptions{
 		ContextFn: func(ctx *ku.BuildContext) {
-			ctx.Shell.Logger().Log(j9.LogLevelWarning, "Building target: "+ctx.CLIArgs.Target+" for "+string(ctx.Arch)+" with SDK: "+string(ctx.SDK))
+			ctx.LogContext()
 
-			libInfo := example.BuildOgg(ctx, ku.LibTypeDynamic)
+			libInfo := example.BuildOgg(ctx)
 
 			// Go back to the repo root dir.
 			ctx.Shell.CD(libInfo.RepoDir)
@@ -23,5 +24,5 @@ func main() {
 			ku.CopyJNILibs(c, t, []string{example.LibName + ".so"}, []string{"ogg"})
 		},
 	}
-	ku.StartLoopWithOptions(cliOpt, loopOpt)
+	ku.StartLoopWithOptions(libType, cliOpt, loopOpt)
 }

@@ -1,6 +1,7 @@
 package ku
 
 import (
+	"os"
 	"strings"
 
 	"github.com/mgenware/j9/v3"
@@ -34,4 +35,9 @@ func (s *Shell) Logger() j9.Logger {
 
 func (s *Shell) CD(dir string) {
 	s.Tunnel.CD(dir)
+}
+
+func (s *Shell) Quit(msg string) {
+	s.Tunnel.Logger().Log(j9.LogLevelError, msg)
+	os.Exit(1)
 }
