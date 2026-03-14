@@ -278,7 +278,6 @@ func Build(opt *XCBuildOptions) {
 	// Create xcframeworks.
 	for _, dylibInfo := range dylibInfoList {
 		xcLibDir := filepath.Join(xcDir, dylibInfo.Name+".xcframework")
-		io2.CleanDir(xcLibDir)
 
 		var xcArgs []string
 		sdkFwList := fwMap[dylibInfo.Name]

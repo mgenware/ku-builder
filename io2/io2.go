@@ -76,7 +76,10 @@ func Mkdirp(dir string) {
 }
 
 func CleanDir(dir string) {
-	os.RemoveAll(dir)
+	err := os.RemoveAll(dir)
+	if err != nil {
+		panic(err)
+	}
 	Mkdirp(dir)
 }
 
