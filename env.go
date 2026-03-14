@@ -268,6 +268,23 @@ func (e *Env) VerifyFileArch(libType LibType, file string) {
 	}
 }
 
+func (e *Env) GetDarwinClangTargetTriple() string {
+	if !e.IsDarwinPlatform() {
+		e.ThrowUnsupportedError()
+	}
+	archStr := string(e.Arch)
+	switch e.SDK {
+	case SDKMacos:
+		return archStr + "-apple-macosx" + MinMacosVersion
+	case SDKIosSimulator:
+		return archStr + "-apple-ios" + MinIosVersion + "-simulator"
+	case SDKIos:
+		return archStr + "-apple-ios" + MinIosVersion
+	}
+	e.ThrowUnsupportedError()
+	panic("unreachable")
+}
+
 func (e *Env) checkStaticLibMinSDKVer(file string, minSDKVer string) {
 	output := e.shell.Shell(fmt.Sprintf("otool -l %s | grep -m 1 minos", file))
 	// output looks like:

@@ -345,16 +345,15 @@ func (ctx *BuildContext) getCompilerFlagsList(opt *GetCompilerFlagsOptions) []st
 
 		args = append(args, "-isysroot", ctx.Env.GetSDKRootPath())
 
-		// Darwin -target and min SDK version.
+		// clang -target and min SDK version.
+		args = append(args, "-target", ctx.Env.GetDarwinClangTargetTriple())
+
 		switch ctx.SDK {
 		case SDKMacos:
-			args = append(args, "-target", archStr+"-apple-macosx"+MinMacosVersion)
 			args = append(args, "-mmacosx-version-min="+MinMacosVersion)
 		case SDKIosSimulator:
-			args = append(args, "-target", archStr+"-apple-ios"+MinIosVersion+"-simulator")
 			args = append(args, "-mios-simulator-version-min="+MinIosVersion)
 		case SDKIos:
-			args = append(args, "-target", archStr+"-apple-ios"+MinIosVersion)
 			args = append(args, "-miphoneos-version-min="+MinIosVersion)
 		}
 	}
