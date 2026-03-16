@@ -56,8 +56,6 @@ type BuildContext struct {
 
 	DebugBuild bool
 	CleanBuild bool
-
-	stringCache map[string]string
 }
 
 type BuildContextInitOptions struct {
@@ -422,6 +420,24 @@ func (ctx *BuildContext) GetArchBuildDir(repoName string) string {
 		io2.Mkdirp(buildDir)
 	}
 	return buildDir
+}
+
+func (ctx *BuildContext) Copy() *BuildContext {
+	if ctx == nil {
+		return nil
+	}
+	copy := *ctx
+	return &copy
+}
+
+func (ctx *BuildContext) WithLibType(libType LibType) *BuildContext {
+	copy := ctx.Copy()
+	copy.LibType = libType
+	return copy
+}
+
+func (ctx *BuildContext) WithStaticLib() *BuildContext {
+	return ctx.WithLibType(LibTypeStatic)
 }
 
 type CommonCmakeArgsOptions struct {
