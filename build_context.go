@@ -15,7 +15,6 @@ type BuildContext struct {
 	Shell   *Shell
 	Env     *Env
 	CLIArgs *CLIArgs
-	LibType LibType
 
 	SDK  SDKEnum
 	Arch ArchEnum
@@ -23,8 +22,6 @@ type BuildContext struct {
 	Target string
 	// Example: libffmpeg
 	TargetLibName string
-	// Example: libffmpeg.dylib
-	TargetLibFileName string
 
 	// BuildDir = ${RootBuildDir}/${release/debug}
 	BuildDir string
@@ -63,16 +60,14 @@ type BuildContextInitOptions struct {
 	SDK     SDKEnum
 	Arch    ArchEnum
 	CLIArgs *CLIArgs
-	LibType LibType
 }
 
-func NewBuildContextInitOpt(tunnel *j9.Tunnel, sdk SDKEnum, arch ArchEnum, cliArgs *CLIArgs, libType LibType) *BuildContextInitOptions {
+func NewBuildContextInitOpt(tunnel *j9.Tunnel, sdk SDKEnum, arch ArchEnum, cliArgs *CLIArgs) *BuildContextInitOptions {
 	return &BuildContextInitOptions{
 		Tunnel:  tunnel,
 		SDK:     sdk,
 		Arch:    arch,
 		CLIArgs: cliArgs,
-		LibType: libType,
 	}
 }
 
@@ -108,10 +103,9 @@ func NewBuildContext(opt *BuildContextInitOptions) *BuildContext {
 		CLIArgs: opt.CLIArgs,
 		Env:     env,
 
-		SDK:     opt.SDK,
-		Arch:    opt.Arch,
-		LibType: opt.LibType,
-		Target:  target,
+		SDK:    opt.SDK,
+		Arch:   opt.Arch,
+		Target: target,
 
 		BuildDir:      buildDir,
 		SDKDir:        sdkDir,
@@ -126,10 +120,7 @@ func NewBuildContext(opt *BuildContextInitOptions) *BuildContext {
 	}
 
 	targetLibName := GetTargetLibName(target)
-	targetLibFileName := targetLibName + ctx.Env.GetLibExt(ctx.LibType)
-
 	ctx.TargetLibName = targetLibName
-	ctx.TargetLibFileName = targetLibFileName
 
 	if cliArgs.Options != nil && cliArgs.Options.CreateDistDir {
 		distDir := filepath.Join(targetDir, DistDirName)
@@ -158,10 +149,22 @@ func (ctx *BuildContext) RunMakeInstall(outFile []string) {
 
 func (ctx *BuildContext) VerifyOutFileArch(outFile []string) {
 	if len(outFile) > 0 {
-		parts := append([]string{ctx.OutLibDir}, outFile...)
-		outPath := filepath.Join(parts...)
-		outPath = outPath + ctx.Env.GetLibExt(ctx.LibType)
-		ctx.Env.VerifyFileArch(ctx.LibType, outPath)
+		// Don't update the `outFile` slice in-place.
+		outFileCopy := make([]string, len(outFile))
+		copy(outFileCopy, outFile)
+
+		// Call `ExpandFilenameLibType` on last element, which is the filename with lib type suffix.
+		lastIndex := len(outFileCopy) - 1
+		filename, libType := ctx.Env.ExpandFilenameLibType(outFileCopy[lastIndex])
+		if filename == "" {
+			ctx.Shell.Quit(fmt.Sprintf("Invalid output filename %s, should end with %s for static library or %s for dynamic library", outFileCopy[lastIndex], LibFilenameSuffixStatic, LibFilenameSuffixDynamic))
+		}
+		outFileCopy[lastIndex] = filename
+
+		parts := append([]string{ctx.OutLibDir}, outFileCopy...)
+		fullPath := filepath.Join(parts...)
+
+		ctx.Env.VerifyFileArch(libType, fullPath)
 	}
 }
 
@@ -320,7 +323,7 @@ func (ctx *BuildContext) RunCmakeInstall(outFile []string) {
 }
 
 func (ctx *BuildContext) LogContext() {
-	ctx.Shell.Logger().Log(j9.LogLevelWarning, "Building target: "+ctx.CLIArgs.Target+"-"+string(ctx.Arch)+"-"+string(ctx.SDK)+"-"+ctx.LibType.String())
+	ctx.Shell.Logger().Log(j9.LogLevelWarning, "Building target: "+ctx.CLIArgs.Target+"-"+string(ctx.Arch)+"-"+string(ctx.SDK))
 }
 
 type GetCompilerFlagsOptions struct {
@@ -422,44 +425,25 @@ func (ctx *BuildContext) GetArchBuildDir(repoName string) string {
 	return buildDir
 }
 
-func (ctx *BuildContext) Copy() *BuildContext {
-	if ctx == nil {
-		return nil
-	}
-	copy := *ctx
-	return &copy
-}
-
-func (ctx *BuildContext) WithLibType(libType LibType) *BuildContext {
-	copy := ctx.Copy()
-	copy.LibType = libType
-	return copy
-}
-
-func (ctx *BuildContext) WithStaticLib() *BuildContext {
-	return ctx.WithLibType(LibTypeStatic)
-}
-
 type CommonCmakeArgsOptions struct {
 	EnableSystemPath bool
 	DisablePIC       bool
 }
 
-func (ctx *BuildContext) CommonCmakeArgs() []string {
-	return ctx.CommonCmakeArgsWithOptions(nil)
+func (ctx *BuildContext) CommonCmakeArgs(libType LibType) []string {
+	return ctx.CommonCmakeArgsWithOptions(nil, libType)
 }
 
-func (ctx *BuildContext) CommonCmakeArgsWithOptions(opt *CommonCmakeArgsOptions) []string {
+func (ctx *BuildContext) CommonCmakeArgsWithOptions(opt *CommonCmakeArgsOptions, libType LibType) []string {
 	if opt == nil {
 		opt = &CommonCmakeArgsOptions{}
 	}
 
-	libType := ctx.LibType
 	var isDylib bool
 	if SupportedLibTypes[libType] {
 		isDylib = libType == LibTypeDynamic
 	} else {
-		ctx.Shell.Quit(fmt.Sprintf("Invalid libType: %s, valid types: %v", libType, SupportedLibTypes))
+		ctx.Shell.Quit(fmt.Sprintf("Invalid libType: %v, valid types: %v", libType, SupportedLibTypes))
 	}
 
 	var targetOS string
@@ -547,7 +531,6 @@ func (ctx *BuildContext) GetCoreKuEnv() []string {
 		"KU_ARCH_DIR=" + ctx.ArchDir,
 		"KU_TARGET=" + ctx.Target,
 		"KU_TARGET_LIB_NAME=" + ctx.TargetLibName,
-		"KU_TARGET_LIB_FILENAME=" + ctx.TargetLibFileName,
 		"KU_TARGET_DIR=" + ctx.TargetDir,
 		"KU_OUT_DIR=" + ctx.OutDir,
 		"KU_OUT_INCLUDE_DIR=" + ctx.OutIncludeDir,

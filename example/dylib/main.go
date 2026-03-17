@@ -15,7 +15,7 @@ func main() {
 		ContextFn: func(ctx *ku.BuildContext) {
 			ctx.LogContext()
 
-			libInfo := example.BuildOgg(ctx)
+			libInfo := example.BuildOgg(ctx, libType)
 
 			// Go back to the repo root dir.
 			ctx.Shell.CD(libInfo.RepoDir)
@@ -24,5 +24,5 @@ func main() {
 			ku.CopyJNILibs(c, t, []string{example.LibName + ".so"}, []string{"ogg"})
 		},
 	}
-	ku.StartLoopWithOptions(libType, cliOpt, loopOpt)
+	ku.StartLoopWithOptions(cliOpt, loopOpt)
 }

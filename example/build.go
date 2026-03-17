@@ -10,13 +10,13 @@ var Repo = &ku.SourceRepo{
 	Name: LibName,
 }
 
-func BuildOgg(ctx *ku.BuildContext) *ku.SourceInfo {
+func BuildOgg(ctx *ku.BuildContext, libType ku.LibType) *ku.SourceInfo {
 	repoDir := ku.CloneAndGotoRepo(ctx.Shell, Repo)
 
 	buildDir := ctx.GetArchBuildDir(Repo.Name)
 	ctx.Shell.CD(buildDir)
 
-	args := ctx.CommonCmakeArgs()
+	args := ctx.CommonCmakeArgs(libType)
 	// repo dir is passed as the last argument.
 	args = append(args, repoDir)
 
@@ -27,7 +27,7 @@ func BuildOgg(ctx *ku.BuildContext) *ku.SourceInfo {
 	})
 
 	ctx.RunCmakeBuild()
-	ctx.RunCmakeInstall([]string{"libogg"})
+	ctx.RunCmakeInstall([]string{"libogg" + libType.ToFilenameSuffix()})
 
 	libInfo := ku.NewSourceInfo(Repo, repoDir)
 	return libInfo

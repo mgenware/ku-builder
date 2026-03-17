@@ -160,14 +160,24 @@ func (e *Env) GetNDKCmakeToolchainFile() string {
 	panic("unreachable")
 }
 
-func (e *Env) GetLibExt(libType LibType) string {
-	if libType == LibTypeStatic {
-		return ".a"
+// Replaces the extension of a library file based on the platform and lib type.
+// 'liba.<s>' -> 'liba.a' for static library on all platforms.
+// 'liba.<d>' -> 'liba.dylib' or 'liba.so' for dynamic library on different platforms.
+func (e *Env) ExpandFilenameLibType(s string) (string, LibType) {
+	if strings.HasSuffix(s, LibFilenameSuffixStatic) {
+		trimmed := strings.TrimSuffix(s, LibFilenameSuffixStatic)
+		libType := LibTypeStatic
+		return trimmed + ".a", libType
 	}
-	if e.IsDarwinPlatform() {
-		return ".dylib"
+	if strings.HasSuffix(s, LibFilenameSuffixDynamic) {
+		trimmed := strings.TrimSuffix(s, LibFilenameSuffixDynamic)
+		libType := LibTypeDynamic
+		if e.IsDarwinPlatform() {
+			return trimmed + ".dylib", libType
+		}
+		return trimmed + ".so", libType
 	}
-	return ".so"
+	return "", LibTypeStatic
 }
 
 func (e *Env) getNDKToolchainRootPath() string {

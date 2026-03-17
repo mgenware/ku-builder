@@ -11,7 +11,7 @@ type StartLoopOptions struct {
 	AfterAllFn  func(*CLIArgs, *j9.Tunnel)
 }
 
-func StartLoopWithOptions(libType LibType, cliOpt *CLIOptions, opt *StartLoopOptions) {
+func StartLoopWithOptions(cliOpt *CLIOptions, opt *StartLoopOptions) {
 	if opt == nil || opt.ContextFn == nil {
 		panic("StartLoopWithOptions: ContextFn is required")
 	}
@@ -31,7 +31,7 @@ func StartLoopWithOptions(libType LibType, cliOpt *CLIOptions, opt *StartLoopOpt
 		}
 
 		for _, arch := range archs {
-			ctxOpt := NewBuildContextInitOpt(tunnel, sdk, arch, cliArgs, libType)
+			ctxOpt := NewBuildContextInitOpt(tunnel, sdk, arch, cliArgs)
 			ctx := NewBuildContext(ctxOpt)
 
 			io2.CleanDir(ctx.OutDir)
@@ -44,8 +44,8 @@ func StartLoopWithOptions(libType LibType, cliOpt *CLIOptions, opt *StartLoopOpt
 	}
 }
 
-func StartLoop(libType LibType, cliOpt *CLIOptions, fn func(*BuildContext)) {
-	StartLoopWithOptions(libType, cliOpt, &StartLoopOptions{
+func StartLoop(cliOpt *CLIOptions, fn func(*BuildContext)) {
+	StartLoopWithOptions(cliOpt, &StartLoopOptions{
 		ContextFn: fn,
 	})
 }
