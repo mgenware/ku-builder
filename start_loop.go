@@ -12,8 +12,8 @@ type StartLoopOptions struct {
 	BeforeAllFn func(*CLIArgs, *j9.Tunnel)
 	// Called after the loop ends, can be used for teardown.
 	AfterAllFn func(*CLIArgs, *j9.Tunnel)
-	// When set, verifies file archs in the dist directory after the loop.
-	VerifyDistFileArch []string
+	// When set, verifies file archs in the dist/lib directory after the loop.
+	VerifyDistLibFileArch []string
 }
 
 func StartLoopWithOptions(cliOpt *CLIOptions, opt *StartLoopOptions) {
@@ -42,8 +42,8 @@ func StartLoopWithOptions(cliOpt *CLIOptions, opt *StartLoopOptions) {
 			io2.CleanDir(ctx.OutDir)
 			opt.LoopFn(ctx)
 
-			if len(opt.VerifyDistFileArch) > 0 {
-				ctx.VerifyDistFileArch(opt.VerifyDistFileArch)
+			if len(opt.VerifyDistLibFileArch) > 0 {
+				ctx.VerifyDistLibFileArch(opt.VerifyDistLibFileArch)
 			}
 		}
 	}

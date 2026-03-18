@@ -144,15 +144,15 @@ func (ctx *BuildContext) RunMakeInstall(outFile []string) {
 		Args: []string{"install"},
 		Env:  env,
 	})
-	ctx.VerifyLibFileArch(outFile)
+	ctx.VerifyOutLibFileArch(outFile)
 }
 
-func (ctx *BuildContext) VerifyLibFileArch(outFile []string) {
+func (ctx *BuildContext) VerifyOutLibFileArch(outFile []string) {
 	baseDir := ctx.OutLibDir
 	ctx.Env.AutoVerifyFileArch(baseDir, outFile)
 }
 
-func (ctx *BuildContext) VerifyDistFileArch(outFile []string) {
+func (ctx *BuildContext) VerifyDistLibFileArch(outFile []string) {
 	baseDir := ctx.DistLibDir
 	ctx.Env.AutoVerifyFileArch(baseDir, outFile)
 }
@@ -289,7 +289,7 @@ func (ctx *BuildContext) RunCmakeBuildOrInstall(opt *RunCmakeBuildOrInstallOptio
 		Env:  env,
 	})
 
-	ctx.VerifyLibFileArch(outFile)
+	ctx.VerifyOutLibFileArch(outFile)
 }
 
 func (ctx *BuildContext) RunCmakeBuild() {
