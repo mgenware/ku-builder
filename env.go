@@ -283,6 +283,9 @@ func (e *Env) AutoVerifyFileArch(baseDir string, outFile []string) {
 }
 
 func (e *Env) VerifyFileArch(libType LibType, file string) {
+	logger := e.shell.Logger()
+
+	logger.Log(j9.LogLevelVerbose, "🔍 Verifying arch for file "+file)
 	var actualArch ArchEnum
 	if e.IsDarwinPlatform() {
 		actualArch = e.readDarwinLibArch(file)
@@ -290,7 +293,6 @@ func (e *Env) VerifyFileArch(libType LibType, file string) {
 		actualArch = e.readAndroidLibArch(file)
 	}
 
-	logger := e.shell.Logger()
 	if actualArch != e.Arch {
 		logger.Log(j9.LogLevelError, fmt.Sprintf("Arch mismatch for file %s, expected: %s, actual: %s", file, e.Arch, actualArch))
 		os.Exit(1)
