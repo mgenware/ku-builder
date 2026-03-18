@@ -431,10 +431,10 @@ type CommonCmakeArgsOptions struct {
 }
 
 func (ctx *BuildContext) CommonCmakeArgs(libType LibType) []string {
-	return ctx.CommonCmakeArgsWithOptions(nil, libType)
+	return ctx.CommonCmakeArgsWithOptions(libType, nil)
 }
 
-func (ctx *BuildContext) CommonCmakeArgsWithOptions(opt *CommonCmakeArgsOptions, libType LibType) []string {
+func (ctx *BuildContext) CommonCmakeArgsWithOptions(libType LibType, opt *CommonCmakeArgsOptions) []string {
 	if opt == nil {
 		opt = &CommonCmakeArgsOptions{}
 	}
