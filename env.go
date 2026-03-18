@@ -261,6 +261,27 @@ func (e *Env) readAndroidLibArch(file string) ArchEnum {
 	}
 }
 
+func (e *Env) AutoVerifyFileArch(baseDir string, outFile []string) {
+	if len(outFile) > 0 {
+		// Don't update the `outFile` slice in-place.
+		outFileCopy := make([]string, len(outFile))
+		copy(outFileCopy, outFile)
+
+		// Call `ExpandFilenameLibType` on last element, which is the filename with lib type suffix.
+		lastIndex := len(outFileCopy) - 1
+		filename, libType := e.ExpandFilenameLibType(outFileCopy[lastIndex])
+		if filename == "" {
+			e.shell.Quit(fmt.Sprintf("Invalid output filename %s, should end with %s for static library or %s for dynamic library", outFileCopy[lastIndex], LibFilenameSuffixStatic, LibFilenameSuffixDynamic))
+		}
+		outFileCopy[lastIndex] = filename
+
+		parts := append([]string{baseDir}, outFileCopy...)
+		fullPath := filepath.Join(parts...)
+
+		e.VerifyFileArch(libType, fullPath)
+	}
+}
+
 func (e *Env) VerifyFileArch(libType LibType, file string) {
 	var actualArch ArchEnum
 	if e.IsDarwinPlatform() {

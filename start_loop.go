@@ -6,9 +6,10 @@ import (
 )
 
 type StartLoopOptions struct {
-	ContextFn   func(*BuildContext)
-	BeforeAllFn func(*CLIArgs, *j9.Tunnel)
-	AfterAllFn  func(*CLIArgs, *j9.Tunnel)
+	ContextFn          func(*BuildContext)
+	BeforeAllFn        func(*CLIArgs, *j9.Tunnel)
+	AfterAllFn         func(*CLIArgs, *j9.Tunnel)
+	VerifyDistFileArch []string
 }
 
 func StartLoopWithOptions(cliOpt *CLIOptions, opt *StartLoopOptions) {
@@ -36,6 +37,10 @@ func StartLoopWithOptions(cliOpt *CLIOptions, opt *StartLoopOptions) {
 
 			io2.CleanDir(ctx.OutDir)
 			opt.ContextFn(ctx)
+
+			if len(opt.VerifyDistFileArch) > 0 {
+				ctx.VerifyDistFileArch(opt.VerifyDistFileArch)
+			}
 		}
 	}
 

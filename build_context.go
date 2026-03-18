@@ -144,28 +144,17 @@ func (ctx *BuildContext) RunMakeInstall(outFile []string) {
 		Args: []string{"install"},
 		Env:  env,
 	})
-	ctx.VerifyOutFileArch(outFile)
+	ctx.VerifyLibFileArch(outFile)
 }
 
-func (ctx *BuildContext) VerifyOutFileArch(outFile []string) {
-	if len(outFile) > 0 {
-		// Don't update the `outFile` slice in-place.
-		outFileCopy := make([]string, len(outFile))
-		copy(outFileCopy, outFile)
+func (ctx *BuildContext) VerifyLibFileArch(outFile []string) {
+	baseDir := ctx.OutLibDir
+	ctx.Env.AutoVerifyFileArch(baseDir, outFile)
+}
 
-		// Call `ExpandFilenameLibType` on last element, which is the filename with lib type suffix.
-		lastIndex := len(outFileCopy) - 1
-		filename, libType := ctx.Env.ExpandFilenameLibType(outFileCopy[lastIndex])
-		if filename == "" {
-			ctx.Shell.Quit(fmt.Sprintf("Invalid output filename %s, should end with %s for static library or %s for dynamic library", outFileCopy[lastIndex], LibFilenameSuffixStatic, LibFilenameSuffixDynamic))
-		}
-		outFileCopy[lastIndex] = filename
-
-		parts := append([]string{ctx.OutLibDir}, outFileCopy...)
-		fullPath := filepath.Join(parts...)
-
-		ctx.Env.VerifyFileArch(libType, fullPath)
-	}
+func (ctx *BuildContext) VerifyDistFileArch(outFile []string) {
+	baseDir := ctx.DistLibDir
+	ctx.Env.AutoVerifyFileArch(baseDir, outFile)
 }
 
 func (ctx *BuildContext) RunMakeCleanRaw() error {
@@ -300,7 +289,7 @@ func (ctx *BuildContext) RunCmakeBuildOrInstall(opt *RunCmakeBuildOrInstallOptio
 		Env:  env,
 	})
 
-	ctx.VerifyOutFileArch(outFile)
+	ctx.VerifyLibFileArch(outFile)
 }
 
 func (ctx *BuildContext) RunCmakeBuild() {
