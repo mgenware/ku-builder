@@ -6,15 +6,19 @@ import (
 )
 
 type StartLoopOptions struct {
-	ContextFn          func(*BuildContext)
-	BeforeAllFn        func(*CLIArgs, *j9.Tunnel)
-	AfterAllFn         func(*CLIArgs, *j9.Tunnel)
+	// The main function to execute for each SDK/arch combination.
+	LoopFn func(*BuildContext)
+	// Called before the loop starts, can be used for setup.
+	BeforeAllFn func(*CLIArgs, *j9.Tunnel)
+	// Called after the loop ends, can be used for teardown.
+	AfterAllFn func(*CLIArgs, *j9.Tunnel)
+	// When set, verifies file archs in the dist directory after the loop.
 	VerifyDistFileArch []string
 }
 
 func StartLoopWithOptions(cliOpt *CLIOptions, opt *StartLoopOptions) {
-	if opt == nil || opt.ContextFn == nil {
-		panic("StartLoopWithOptions: ContextFn is required")
+	if opt == nil || opt.LoopFn == nil {
+		panic("StartLoopWithOptions: LoopFn is required")
 	}
 	cliArgs := ParseCLIArgs(cliOpt)
 	tunnel := CreateDefaultTunnel()
@@ -36,7 +40,7 @@ func StartLoopWithOptions(cliOpt *CLIOptions, opt *StartLoopOptions) {
 			ctx := NewBuildContext(ctxOpt)
 
 			io2.CleanDir(ctx.OutDir)
-			opt.ContextFn(ctx)
+			opt.LoopFn(ctx)
 
 			if len(opt.VerifyDistFileArch) > 0 {
 				ctx.VerifyDistFileArch(opt.VerifyDistFileArch)
@@ -51,6 +55,6 @@ func StartLoopWithOptions(cliOpt *CLIOptions, opt *StartLoopOptions) {
 
 func StartLoop(cliOpt *CLIOptions, fn func(*BuildContext)) {
 	StartLoopWithOptions(cliOpt, &StartLoopOptions{
-		ContextFn: fn,
+		LoopFn: fn,
 	})
 }

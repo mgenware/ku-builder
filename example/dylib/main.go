@@ -12,7 +12,7 @@ func main() {
 	}
 	libType := ku.LibTypeDynamic
 	loopOpt := &ku.StartLoopOptions{
-		ContextFn: func(ctx *ku.BuildContext) {
+		LoopFn: func(ctx *ku.BuildContext) {
 			ctx.LogContext()
 
 			libInfo := example.BuildOgg(ctx, libType)
