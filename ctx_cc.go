@@ -8,7 +8,7 @@ type GetCompilerFlagsOptions struct {
 	EnablePIC   bool
 }
 
-func (ctx *BuildContext) getCompilerFlagsList(opt *GetCompilerFlagsOptions) []string {
+func (ctx *BuildContext) GetCompilerFlagList(opt *GetCompilerFlagsOptions) []string {
 	if opt == nil {
 		opt = &GetCompilerFlagsOptions{}
 	}
@@ -47,7 +47,7 @@ func (ctx *BuildContext) getCompilerFlagsList(opt *GetCompilerFlagsOptions) []st
 }
 
 func (ctx *BuildContext) GetCompilerFlags(opt *GetCompilerFlagsOptions) string {
-	return strings.Join(ctx.getCompilerFlagsList(opt), " ")
+	return strings.Join(ctx.GetCompilerFlagList(opt), " ")
 }
 
 type GetCompilerConfigureEnvOptions struct {
@@ -58,6 +58,23 @@ type GetCompilerConfigureEnvOptions struct {
 	OverrideCompilerFlags bool
 }
 
+func (ctx *BuildContext) GetCompilerPathMap() [][]string {
+	env := ctx.Env
+	list := [][]string{
+		{"CC", env.GetCCPath()},
+		{"CXX", env.GetCXXPath()},
+		{"LD", env.GetLDPath()},
+	}
+	if env.IsAndroidPlatform() {
+		list = append(list, []string{"AR", env.GetNDKToolchainBinPath("llvm-ar")})
+		list = append(list, []string{"AS", env.GetNDKToolchainBinPath("llvm-as")})
+		list = append(list, []string{"RANLIB", env.GetNDKToolchainBinPath("llvm-ranlib")})
+		list = append(list, []string{"STRIP", env.GetNDKToolchainBinPath("llvm-strip")})
+		list = append(list, []string{"NM", env.GetNDKToolchainBinPath("llvm-nm")})
+	}
+	return list
+}
+
 // GetCompilerConfigureEnv returns environment variables for compiler configuration.
 // This includes CC, CXX, LD, and optionally CFLAGS, CXXFLAGS, LDFLAGS (when OverrideCompilerFlags is true).
 // On Android, it also includes AR, AS, RANLIB, STRIP, NM.
@@ -66,17 +83,11 @@ func (ctx *BuildContext) GetCompilerConfigureEnv(opt *GetCompilerConfigureEnvOpt
 		opt = &GetCompilerConfigureEnvOptions{}
 	}
 
-	args := []string{
-		"CC=" + ctx.Env.GetCCPath(),
-		"CXX=" + ctx.Env.GetCXXPath(),
-		"LD=" + ctx.Env.GetLDPath(),
-	}
-	if ctx.Env.IsAndroidPlatform() {
-		args = append(args, "AR="+ctx.Env.GetNDKToolchainBinPath("llvm-ar"))
-		args = append(args, "AS="+ctx.Env.GetNDKToolchainBinPath("llvm-as"))
-		args = append(args, "RANLIB="+ctx.Env.GetNDKToolchainBinPath("llvm-ranlib"))
-		args = append(args, "STRIP="+ctx.Env.GetNDKToolchainBinPath("llvm-strip"))
-		args = append(args, "NM="+ctx.Env.GetNDKToolchainBinPath("llvm-nm"))
+	args := []string{}
+
+	compilerPathMap := ctx.GetCompilerPathMap()
+	for _, pair := range compilerPathMap {
+		args = append(args, pair[0]+"="+pair[1])
 	}
 
 	if opt.OverrideCompilerFlags {
