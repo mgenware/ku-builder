@@ -3,7 +3,76 @@ package ku
 import (
 	"fmt"
 	"strings"
+
+	"github.com/mgenware/j9/v3"
+	"github.com/mgenware/ku-builder/util"
 )
+
+const kMesonCrossFileDir = "meson_cross_files"
+
+var mesonCrossFileCache = make(map[SDKEnum]string)
+
+type RunMesonSetupOptions struct {
+	Args []string
+	Env  []string
+}
+
+func (ctx *BuildContext) RunMesonSetup(opt *RunMesonSetupOptions) {
+	args := []string{
+		"setup",
+	}
+	// Add `opt.Args` after `setup`.
+	args = append(args, opt.Args...)
+
+	if ctx.CleanBuild {
+		args = append(args, "--wipe")
+	}
+	var buildType string
+	if ctx.DebugBuild {
+		buildType = "debug"
+	} else {
+		buildType = "release"
+	}
+	args = append(args, "--buildtype="+buildType)
+
+	crossFilePath, err := ctx.getOrCreateCrossFilePath()
+	if err != nil {
+		ctx.Shell.Quit(fmt.Sprintf("Failed to create Meson cross file: %v", err))
+		return
+	}
+	args = append(args, "--cross-file="+crossFilePath)
+
+	// Note: `opt.Env` should be set after `GetCoreKuEnv`.
+	env := append(ctx.GetCoreKuEnv(), opt.Env...)
+
+	ctx.Shell.Spawn(&j9.SpawnOpt{
+		Name: "meson",
+		Args: args,
+		Env:  env,
+	})
+}
+
+func (ctx *BuildContext) getOrCreateCrossFilePath() (string, error) {
+	if path, ok := mesonCrossFileCache[ctx.SDK]; ok {
+		return path, nil
+	}
+	path, err := ctx.writeCrossFile()
+	if err != nil {
+		return "", err
+	}
+	mesonCrossFileCache[ctx.SDK] = path
+	return path, nil
+}
+
+func (ctx *BuildContext) writeCrossFile() (string, error) {
+	paths := []string{kMesonCrossFileDir, string(ctx.SDK) + ".txt"}
+	content := ctx.createCrossFile()
+	path, err := util.WriteKuCacheFile(content, paths)
+	if err != nil {
+		return "", err
+	}
+	return path, nil
+}
 
 func (ctx *BuildContext) createCrossFile() string {
 	var sb strings.Builder
