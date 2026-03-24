@@ -16,7 +16,7 @@ func BuildOgg(ctx *ku.BuildContext, libType ku.LibType) *ku.SourceInfo {
 	buildDir := ctx.GetArchBuildDir(Repo.Name)
 	ctx.Shell.CD(buildDir)
 
-	args := ctx.CommonCmakeArgs(libType)
+	args := ctx.CommonCmakeGenArgs(libType)
 	// repo dir is passed as the last argument.
 	args = append(args, repoDir)
 

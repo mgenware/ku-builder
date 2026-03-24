@@ -419,11 +419,11 @@ type CommonCmakeArgsOptions struct {
 	DisablePIC       bool
 }
 
-func (ctx *BuildContext) CommonCmakeArgs(libType LibType) []string {
-	return ctx.CommonCmakeArgsWithOptions(libType, nil)
+func (ctx *BuildContext) CommonCmakeGenArgs(libType LibType) []string {
+	return ctx.CommonCmakeGenArgsWithOptions(libType, nil)
 }
 
-func (ctx *BuildContext) CommonCmakeArgsWithOptions(libType LibType, opt *CommonCmakeArgsOptions) []string {
+func (ctx *BuildContext) CommonCmakeGenArgsWithOptions(libType LibType, opt *CommonCmakeArgsOptions) []string {
 	if opt == nil {
 		opt = &CommonCmakeArgsOptions{}
 	}
