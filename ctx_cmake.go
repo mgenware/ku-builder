@@ -148,7 +148,6 @@ func (ctx *BuildContext) GetCmakeGenArgsWithOptions(libType LibType, buildDir st
 	case SDKAndroid:
 		targetOS = "Android"
 	}
-	ctx.Shell.Logger().Log(j9.LogLevelVerbose, "[Cmake] Target OS: "+targetOS)
 
 	args := []string{
 		"-S",
