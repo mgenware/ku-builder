@@ -221,7 +221,7 @@ func (ctx *BuildContext) GetCmakeGenArgsWithOptions(libType LibType, buildDir st
 	}
 
 	// Append build dir as the last argument.
-	args = append(args, buildDir)
+	args = append(args, "-B", buildDir)
 
 	return args
 }
