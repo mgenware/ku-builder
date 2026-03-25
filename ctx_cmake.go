@@ -151,6 +151,8 @@ func (ctx *BuildContext) GetCmakeGenArgsWithOptions(libType LibType, buildDir st
 	ctx.Shell.Logger().Log(j9.LogLevelVerbose, "[Cmake] Target OS: "+targetOS)
 
 	args := []string{
+		"-S",
+		".",
 		"-DCMAKE_SYSTEM_NAME=" + targetOS,
 		"-DCMAKE_INSTALL_PREFIX=" + ctx.OutDir,
 		"-DCMAKE_PREFIX_PATH=" + ctx.OutDir,
