@@ -14,11 +14,7 @@ func BuildOgg(ctx *ku.BuildContext, libType ku.LibType) *ku.SourceInfo {
 	repoDir := ku.CloneAndGotoRepo(ctx.Shell, Repo)
 
 	buildDir := ctx.GetArchBuildDir(Repo.Name)
-	ctx.Shell.CD(buildDir)
-
-	args := ctx.CommonCmakeGenArgs(libType)
-	// repo dir is passed as the last argument.
-	args = append(args, repoDir)
+	args := ctx.GetCmakeGenArgs(libType, buildDir)
 
 	env := ctx.GetCompilerConfigureEnv(nil)
 	ctx.RunCmakeGen(&ku.RunCmakeGenOptions{
@@ -26,6 +22,7 @@ func BuildOgg(ctx *ku.BuildContext, libType ku.LibType) *ku.SourceInfo {
 		Env:  env,
 	})
 
+	ctx.Shell.CD(buildDir)
 	ctx.RunCmakeBuild()
 	ctx.RunCmakeInstall([]string{"libogg" + libType.ToFilenameSuffix()})
 

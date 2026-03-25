@@ -58,11 +58,32 @@ type GetCompilerConfigureEnvOptions struct {
 	OverrideCompilerFlags bool
 }
 
+type GetCompilerPathMapOptions struct {
+	Meson bool
+}
+
 func (ctx *BuildContext) GetCompilerPathMap() [][]string {
+	return ctx.GetCompilerPathMapWithOptions(nil)
+}
+
+func (ctx *BuildContext) GetCompilerPathMapWithOptions(opt *GetCompilerPathMapOptions) [][]string {
+	if opt == nil {
+		opt = &GetCompilerPathMapOptions{}
+	}
 	env := ctx.Env
+
+	cc := "CC"
+	if opt.Meson {
+		cc = "C"
+	}
+	cxx := "CXX"
+	if opt.Meson {
+		cxx = "CPP"
+	}
+
 	list := [][]string{
-		{"CC", env.GetCCPath()},
-		{"CXX", env.GetCXXPath()},
+		{cc, env.GetCCPath()},
+		{cxx, env.GetCXXPath()},
 		{"LD", env.GetLDPath()},
 	}
 	if env.IsAndroidPlatform() {

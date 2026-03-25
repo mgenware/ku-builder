@@ -180,3 +180,9 @@ func (ctx *BuildContext) GetCoreKuEnv() []string {
 	}
 	return env
 }
+
+func (ctx *BuildContext) NotNullOrQuit(v interface{}, name string) {
+	if v == nil {
+		ctx.Shell.Quit(fmt.Sprintf("%s should not be nil", name))
+	}
+}

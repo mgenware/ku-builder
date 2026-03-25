@@ -8,20 +8,12 @@ import (
 )
 
 type RunCmakeGenOptions struct {
-	Args   []string
-	Env    []string
-	Preset string
+	Args []string
+	Env  []string
 }
 
 func (ctx *BuildContext) RunCmakeGen(opt *RunCmakeGenOptions) {
-	args := opt.Args
-	if ctx.CleanBuild {
-		args = append(args, "--fresh")
-	}
-	if opt.Preset != "" {
-		args = append(args, "--preset", opt.Preset)
-	}
-
+	ctx.NotNullOrQuit(opt, "opt")
 	// Note: `opt.Env` should be set after `GetCoreKuEnv`.
 	env := append(ctx.GetCoreKuEnv(), opt.Env...)
 	env = append(env,
@@ -30,7 +22,7 @@ func (ctx *BuildContext) RunCmakeGen(opt *RunCmakeGenOptions) {
 
 	ctx.Shell.Spawn(&j9.SpawnOpt{
 		Name: "cmake",
-		Args: args,
+		Args: opt.Args,
 		Env:  env,
 	})
 }
@@ -52,12 +44,8 @@ type RunCmakeBuildOrInstallOptions struct {
 }
 
 func (ctx *BuildContext) RunCmakeBuildOrInstall(opt *RunCmakeBuildOrInstallOptions, outFile []string) {
-	if opt == nil {
-		panic("opt is nil")
-	}
-	if opt.Action == "" {
-		panic("opt.Action is empty")
-	}
+	ctx.NotNullOrQuit(opt, "opt")
+	ctx.NotNullOrQuit(opt.Action, "opt.Action")
 
 	args := []string{
 		"--" + string(opt.Action), ".",
@@ -65,7 +53,7 @@ func (ctx *BuildContext) RunCmakeBuildOrInstall(opt *RunCmakeBuildOrInstallOptio
 
 	if opt.Target != "" {
 		if opt.Action == CmakeActionInstall {
-			panic("opt.Target is not supported for install")
+			ctx.Shell.Quit("opt.Target is not supported for install")
 		}
 		args = append(args, "--target", opt.Target)
 	}
@@ -84,8 +72,10 @@ func (ctx *BuildContext) RunCmakeBuildOrInstall(opt *RunCmakeBuildOrInstallOptio
 		args = append(args, "--strip")
 	}
 
-	numCores := runtime.NumCPU()
-	args = append(args, "-j", fmt.Sprintf("%v", numCores))
+	if opt.Action == CmakeActionBuild {
+		numCores := runtime.NumCPU()
+		args = append(args, "-j", fmt.Sprintf("%v", numCores))
+	}
 
 	// Extra args.
 	if len(opt.ExtraArgs) > 0 {
@@ -125,18 +115,19 @@ func (ctx *BuildContext) RunCmakeInstall(outFile []string) {
 	ctx.RunCmakeBuildOrInstall(opt, outFile)
 }
 
-type CommonCmakeArgsOptions struct {
+type GetCmakeArgsOptions struct {
 	EnableSystemPath bool
 	DisablePIC       bool
+	Preset           string
 }
 
-func (ctx *BuildContext) CommonCmakeGenArgs(libType LibType) []string {
-	return ctx.CommonCmakeGenArgsWithOptions(libType, nil)
+func (ctx *BuildContext) GetCmakeGenArgs(libType LibType, buildDir string) []string {
+	return ctx.GetCmakeGenArgsWithOptions(libType, buildDir, nil)
 }
 
-func (ctx *BuildContext) CommonCmakeGenArgsWithOptions(libType LibType, opt *CommonCmakeArgsOptions) []string {
+func (ctx *BuildContext) GetCmakeGenArgsWithOptions(libType LibType, buildDir string, opt *GetCmakeArgsOptions) []string {
 	if opt == nil {
-		opt = &CommonCmakeArgsOptions{}
+		opt = &GetCmakeArgsOptions{}
 	}
 
 	var isDylib bool
@@ -221,5 +212,16 @@ func (ctx *BuildContext) CommonCmakeGenArgsWithOptions(libType LibType, opt *Com
 		buildType = "Release"
 	}
 	args = append(args, "-DCMAKE_BUILD_TYPE="+buildType)
+
+	if ctx.CleanBuild {
+		args = append(args, "--fresh")
+	}
+	if opt.Preset != "" {
+		args = append(args, "--preset", opt.Preset)
+	}
+
+	// Append build dir as the last argument.
+	args = append(args, buildDir)
+
 	return args
 }

@@ -98,6 +98,10 @@ func (e *Env) GetLDPath() string {
 	return e.cachedString("ld", e.fetchLDPath)
 }
 
+func (e *Env) GetSDKArchString() string {
+	return string(e.SDK) + "-" + string(e.Arch)
+}
+
 func (e *Env) fetchLDPath() string {
 	if e.IsDarwinPlatform() {
 		return e.GetCCPath()

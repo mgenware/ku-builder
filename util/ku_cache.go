@@ -15,7 +15,7 @@ func WriteKuCacheFile(content string, paths []string) (string, error) {
 		return "", err
 	}
 
-	path := filepath.Join(userDir, kKuCacheDirName)
+	path := filepath.Join(userDir, kKuCacheDirName, filepath.Join(paths...))
 	dirPath := filepath.Dir(path)
 
 	io2.Mkdirp(dirPath)
