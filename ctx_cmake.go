@@ -150,8 +150,6 @@ func (ctx *BuildContext) GetCmakeGenArgsWithOptions(libType LibType, buildDir st
 	}
 
 	args := []string{
-		"-S",
-		".",
 		"-DCMAKE_SYSTEM_NAME=" + targetOS,
 		"-DCMAKE_INSTALL_PREFIX=" + ctx.OutDir,
 		"-DCMAKE_PREFIX_PATH=" + ctx.OutDir,
@@ -221,7 +219,8 @@ func (ctx *BuildContext) GetCmakeGenArgsWithOptions(libType LibType, buildDir st
 		args = append(args, "--preset", opt.Preset)
 	}
 
-	// Append build dir as the last argument.
+	// Put source and build dir arguments at the end.
+	args = append(args, "-S", ".")
 	args = append(args, "-B", buildDir)
 
 	return args
