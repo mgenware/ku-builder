@@ -14,6 +14,8 @@ type StartLoopOptions struct {
 	AfterAllFn func(*CLIArgs, *j9.Tunnel)
 	// When set, verifies file archs in the dist/lib directory after the loop.
 	VerifyDistLibFileArch []string
+	// When set, prevents automatic cleaning of the output directory before each loop iteration.
+	DisableAutoClean bool
 }
 
 func StartLoopWithOptions(cliOpt *CLIOptions, opt *StartLoopOptions) {
@@ -36,10 +38,11 @@ func StartLoopWithOptions(cliOpt *CLIOptions, opt *StartLoopOptions) {
 		}
 
 		for _, arch := range archs {
-			ctxOpt := NewBuildContextInitOpt(tunnel, sdk, arch, cliArgs)
-			ctx := NewBuildContext(ctxOpt)
+			ctx := NewBuildContext(NewBuildContextInitOpt(tunnel, sdk, arch, cliArgs))
 
-			io2.CleanDir(ctx.OutDir)
+			if !opt.DisableAutoClean {
+				io2.CleanDir(ctx.OutDir)
+			}
 			opt.LoopFn(ctx)
 
 			if len(opt.VerifyDistLibFileArch) > 0 {
