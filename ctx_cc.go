@@ -71,6 +71,7 @@ func (ctx *BuildContext) GetCompilerPathMapWithOptions(opt *GetCompilerPathMapOp
 		opt = &GetCompilerPathMapOptions{}
 	}
 	env := ctx.Env
+	isDarwin := env.IsDarwinPlatform()
 
 	cc := "CC"
 	if opt.Meson {
@@ -86,6 +87,16 @@ func (ctx *BuildContext) GetCompilerPathMapWithOptions(opt *GetCompilerPathMapOp
 		{cxx, env.GetCXXPath()},
 		{"LD", env.GetLDPath()},
 	}
+
+	if isDarwin {
+		objCXX := "OBJCXX"
+		if opt.Meson {
+			objCXX = "OBJCPP"
+		}
+		list = append(list, []string{"OBJC", env.GetCCPath()})
+		list = append(list, []string{objCXX, env.GetCXXPath()})
+	}
+
 	if env.IsAndroidPlatform() {
 		list = append(list, []string{"AR", env.GetNDKToolchainBinPath("llvm-ar")})
 		list = append(list, []string{"AS", env.GetNDKToolchainBinPath("llvm-as")})
