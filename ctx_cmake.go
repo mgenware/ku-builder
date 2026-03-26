@@ -115,7 +115,7 @@ func (ctx *BuildContext) RunCmakeInstall(outFile []string) {
 	ctx.RunCmakeBuildOrInstall(opt, outFile)
 }
 
-type GetCmakeArgsOptions struct {
+type GetCmakeGenArgsOptions struct {
 	EnableSystemPath bool
 	DisablePIC       bool
 	Preset           string
@@ -125,9 +125,9 @@ func (ctx *BuildContext) GetCmakeGenArgs(libType LibType, buildDir string) []str
 	return ctx.GetCmakeGenArgsWithOptions(libType, buildDir, nil)
 }
 
-func (ctx *BuildContext) GetCmakeGenArgsWithOptions(libType LibType, buildDir string, opt *GetCmakeArgsOptions) []string {
+func (ctx *BuildContext) GetCmakeGenArgsWithOptions(libType LibType, buildDir string, opt *GetCmakeGenArgsOptions) []string {
 	if opt == nil {
-		opt = &GetCmakeArgsOptions{}
+		opt = &GetCmakeGenArgsOptions{}
 	}
 
 	var isDylib bool
