@@ -36,24 +36,26 @@ func NewBuildProject(repo *RepoInfo, buildEnv *BuildEnv, libType LibType) *Build
 }
 
 func (bp *BuildProject) GetKuBuiltinEnv() []string {
-	b := bp.BuildEnv
-	e := b.OSEnv
+	be := bp.BuildEnv
+	e := be.OSEnv
 	env := []string{
 		"KU_SDK=" + string(e.SDK),
 		"KU_ARCH=" + string(e.Arch),
-		"KU_ARCH_DIR=" + b.ArchDir,
-		"KU_TARGET=" + b.Target,
-		"KU_TARGET_LIB_NAME=" + b.TargetLibName,
-		"KU_TARGET_DIR=" + b.TargetDir,
-		"KU_OUT_DIR=" + b.OutDir,
-		"KU_OUT_INCLUDE_DIR=" + b.OutIncludeDir,
-		"KU_OUT_LIB_DIR=" + b.OutLibDir,
+		"KU_ARCH_DIR=" + be.ArchDir,
+		"KU_TARGET=" + be.Target,
+		"KU_TARGET_LIB_NAME=" + be.TargetLibName,
+		"KU_TARGET_DIR=" + be.TargetDir,
+		"KU_OUT_DIR=" + be.OutDir,
+		"KU_OUT_INCLUDE_DIR=" + be.OutIncludeDir,
+		"KU_OUT_LIB_DIR=" + be.OutLibDir,
+		"KU_LIB_TYPE=" + bp.LibType.String(),
+		"KU_LIB_TYPE_EXT=" + e.LibTypeExt(bp.LibType),
 	}
-	if b.DistDir != "" {
+	if be.DistDir != "" {
 		env = append(env,
-			"KU_DIST_DIR="+b.DistDir,
-			"KU_DIST_INCLUDE_DIR="+b.DistIncludeDir,
-			"KU_DIST_LIB_DIR="+b.DistLibDir,
+			"KU_DIST_DIR="+be.DistDir,
+			"KU_DIST_INCLUDE_DIR="+be.DistIncludeDir,
+			"KU_DIST_LIB_DIR="+be.DistLibDir,
 		)
 	}
 	return env

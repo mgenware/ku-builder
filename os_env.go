@@ -162,24 +162,37 @@ func (e *OSEnv) GetNDKCmakeToolchainFile() string {
 	panic("unreachable")
 }
 
+func (e *OSEnv) LibTypeExt(libType LibType) string {
+	if libType == LibTypeStatic {
+		return ".a"
+	}
+	if e.IsDarwinPlatform() {
+		return ".dylib"
+	}
+	if e.IsAndroidPlatform() {
+		return ".so"
+	}
+	e.ThrowUnsupportedError()
+	panic("unreachable")
+}
+
 // Replaces the extension of a library file based on the platform and lib type.
 // 'liba.<s>' -> 'liba.a' for static library on all platforms.
 // 'liba.<d>' -> 'liba.dylib' or 'liba.so' for dynamic library on different platforms.
-func (e *OSEnv) ExpandFilenameLibType(s string) (string, LibType) {
-	if strings.HasSuffix(s, LibFilenameSuffixStatic) {
-		trimmed := strings.TrimSuffix(s, LibFilenameSuffixStatic)
-		libType := LibTypeStatic
-		return trimmed + ".a", libType
+func (e *OSEnv) ExpandFilenameLibType(name string) (string, LibType) {
+	var libType LibType
+	var timmedName string
+	if strings.HasSuffix(name, LibFilenameSuffixStatic) {
+		timmedName = strings.TrimSuffix(name, LibFilenameSuffixStatic)
+		libType = LibTypeStatic
+	} else if strings.HasSuffix(name, LibFilenameSuffixDynamic) {
+		timmedName = strings.TrimSuffix(name, LibFilenameSuffixDynamic)
+		libType = LibTypeDynamic
+	} else {
+		return "", LibTypeStatic
 	}
-	if strings.HasSuffix(s, LibFilenameSuffixDynamic) {
-		trimmed := strings.TrimSuffix(s, LibFilenameSuffixDynamic)
-		libType := LibTypeDynamic
-		if e.IsDarwinPlatform() {
-			return trimmed + ".dylib", libType
-		}
-		return trimmed + ".so", libType
-	}
-	return "", LibTypeStatic
+
+	return timmedName + e.LibTypeExt(libType), libType
 }
 
 func (e *OSEnv) getNDKToolchainRootPath() string {
