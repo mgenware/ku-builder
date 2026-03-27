@@ -2,28 +2,31 @@ package ku
 
 import (
 	"fmt"
+	"path/filepath"
+
+	"github.com/mgenware/ku-builder/io2"
 )
 
 type BuildProject struct {
 	Repo     *RepoInfo
 	BuildEnv *BuildEnv
 
-	LibType  LibType
-	BuildDir string
+	LibType LibType
 
 	// For convenience.
 	Shell   *Shell
 	OS      *OSEnv
 	CLIArgs *CLIArgs
+
+	// Could be empty for non-CMake or non-Meson projects.
+	buildDir string
 }
 
 func NewBuildProject(repo *RepoInfo, buildEnv *BuildEnv, libType LibType) *BuildProject {
-	buildDir := buildEnv.CreateBuildDir(repo.Name)
 	return &BuildProject{
 		Repo:     repo,
 		BuildEnv: buildEnv,
 		LibType:  libType,
-		BuildDir: buildDir,
 		Shell:    buildEnv.Shell,
 		OS:       buildEnv.OSEnv,
 		CLIArgs:  buildEnv.Shell.Args,
@@ -58,4 +61,27 @@ func (bp *BuildProject) NotNullOrQuit(v interface{}, name string) {
 	if v == nil {
 		bp.BuildEnv.Shell.Quit(fmt.Sprintf("%s should not be nil", name))
 	}
+}
+
+func (bp *BuildProject) createBuildDir(repoName string) {
+	buildEnv := bp.BuildEnv
+	buildDir := filepath.Join(buildEnv.TmpDir, repoName)
+	if buildEnv.Shell.Args.CleanBuild {
+		io2.CleanDir(buildDir)
+	} else {
+		io2.Mkdirp(buildDir)
+	}
+	bp.buildDir = buildDir
+}
+
+func (bp *BuildProject) mustGetBuildDir() string {
+	if bp.buildDir == "" {
+		bp.createBuildDir(bp.Repo.Name)
+	}
+	return bp.buildDir
+}
+
+// Could be empty for non-CMake or non-Meson projects.
+func (bp *BuildProject) GetBuildDir() string {
+	return bp.buildDir
 }

@@ -22,7 +22,6 @@ func (bp *BuildProject) GetMesonSetupArgs() []string {
 	cliArgs := bp.CLIArgs
 	buildEnv := bp.BuildEnv
 	libType := bp.LibType
-	buildDir := bp.BuildDir
 
 	if cliArgs.CleanBuild {
 		args = append(args, "--wipe")
@@ -58,7 +57,7 @@ func (bp *BuildProject) GetMesonSetupArgs() []string {
 	args = append(args, "--cross-file="+crossFilePath)
 
 	// Append the build dir as the last argument.
-	args = append(args, buildDir)
+	args = append(args, bp.mustGetBuildDir())
 	return args
 }
 

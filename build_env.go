@@ -130,13 +130,3 @@ func (e *BuildEnv) VerifyDistLibFileArch(outFile []string) {
 	baseDir := e.DistLibDir
 	e.OSEnv.AutoVerifyFileArch(baseDir, outFile)
 }
-
-func (e *BuildEnv) CreateBuildDir(repoName string) string {
-	buildDir := filepath.Join(e.TmpDir, repoName)
-	if e.Shell.Args.CleanBuild {
-		io2.CleanDir(buildDir)
-	} else {
-		io2.Mkdirp(buildDir)
-	}
-	return buildDir
-}
