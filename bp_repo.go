@@ -108,7 +108,12 @@ func (bp *BuildProject) CloneAndGotoRepo() string {
 		}
 	}
 
+	bp.repoDir = repoDir
 	return repoDir
+}
+
+func (bp *BuildProject) GetRepoDir() string {
+	return bp.repoDir
 }
 
 func checkDirEmpty(path string) bool {

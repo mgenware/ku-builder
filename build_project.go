@@ -20,6 +20,8 @@ type BuildProject struct {
 
 	// Could be empty for non-CMake or non-Meson projects.
 	buildDir string
+
+	repoDir string
 }
 
 func NewBuildProject(repo *RepoInfo, buildEnv *BuildEnv, libType LibType) *BuildProject {
