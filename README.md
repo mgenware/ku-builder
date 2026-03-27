@@ -1,6 +1,6 @@
 # ku-builder
 
-CMake / Makefile build util using [j9](https://github.com/mgenware/j9) for C/C++ projects.
+CMake / Makefile / Meson build util using [j9](https://github.com/mgenware/j9) for C/C++ projects.
 
 Supported cross-compile targets:
 
