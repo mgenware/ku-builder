@@ -2,8 +2,6 @@ package ku
 
 import (
 	"fmt"
-
-	"github.com/mgenware/j9/v3"
 )
 
 type BuildProject struct {
@@ -30,15 +28,6 @@ func NewBuildProject(repo *RepoInfo, buildEnv *BuildEnv, libType LibType) *Build
 		OS:       buildEnv.OSEnv,
 		CLIArgs:  buildEnv.Shell.Args,
 	}
-}
-
-func (bp *BuildProject) LogSummary() {
-	buildEnv := bp.BuildEnv
-	shell := buildEnv.Shell
-	cliArgs := shell.Args
-	osEnv := buildEnv.OSEnv
-
-	shell.Logger().Log(j9.LogLevelWarning, "Building target: "+cliArgs.Target+"-"+string(osEnv.SDK)+"-"+string(osEnv.Arch)+"-"+bp.LibType.String())
 }
 
 func (bp *BuildProject) GetKuBuiltinEnv() []string {

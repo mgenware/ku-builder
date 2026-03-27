@@ -10,22 +10,18 @@ var Repo = &ku.RepoInfo{
 	Name: LibName,
 }
 
-func BuildOgg(env *ku.BuildEnv, libType ku.LibType) *ku.SourceInfo {
-	repoDir := ku.CloneAndGotoRepo(env.Shell, Repo)
+func BuildOgg(be *ku.BuildEnv, libType ku.LibType) {
+	bp := ku.NewBuildProject(Repo, be, libType)
+	bp.CloneAndGotoRepo()
+	args := bp.GetCmakeGenArgs()
 
-	buildDir := ctx.GetArchBuildDir(Repo.Name)
-	args := ctx.GetCmakeGenArgs(libType, buildDir)
-
-	env := ctx.GetCompilerConfigureEnv(nil)
-	ctx.RunCmakeGen(&ku.RunCmakeGenOptions{
+	env := bp.GetCompilerConfigureEnv(nil)
+	bp.RunCmakeGen(&ku.RunCmakeGenOptions{
 		Args: args,
 		Env:  env,
 	})
 
-	ctx.Shell.CD(buildDir)
-	ctx.RunCmakeBuild()
-	ctx.RunCmakeInstall([]string{"libogg" + libType.ToFilenameSuffix()})
-
-	libInfo := ku.NewSourceInfo(Repo, repoDir)
-	return libInfo
+	bp.GoToBuildDir()
+	bp.RunCmakeBuild()
+	bp.RunCmakeInstall([]string{"libogg" + libType.ToFilenameSuffix()})
 }

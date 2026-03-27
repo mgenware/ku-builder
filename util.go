@@ -22,8 +22,8 @@ func CopyJNILibs(cliArgs *CLIArgs, tunnel *j9.Tunnel, libFileNames []string, hea
 	if !slices.Contains(cliArgs.SDKs, SDKAndroid) {
 		return
 	}
-	buildDir := GetBuildDir(cliArgs.DebugBuild)
-	sdkDir := GetSDKDir(buildDir, SDKAndroid)
+	buildTypeDir := GetBuildTypeDir(cliArgs.DebugBuild)
+	sdkDir := GetSDKDir(buildTypeDir, SDKAndroid)
 
 	jniBuildDir := filepath.Join(sdkDir, "jni", cliArgs.Target)
 	libsDir := filepath.Join(jniBuildDir, "jniLibs")

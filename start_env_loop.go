@@ -58,7 +58,7 @@ func StartEnvLoopWithOptions(cliOpt *CLIOptions, opt *StartEnvLoopOptions) {
 	}
 }
 
-func StartLoop(cliOpt *CLIOptions, fn func(*BuildEnv)) {
+func StartEnvLoop(cliOpt *CLIOptions, fn func(*BuildEnv)) {
 	StartEnvLoopWithOptions(cliOpt, &StartEnvLoopOptions{
 		LoopFn: fn,
 	})

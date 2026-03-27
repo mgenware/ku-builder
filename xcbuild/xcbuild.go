@@ -26,8 +26,8 @@ func Build(opt *XCBuildOptions) {
 
 	cliArgs := ku.ParseCLIArgs(cliOpt)
 	tunnel := ku.CreateDefaultTunnel()
-	shell := ku.NewShell(tunnel)
-	buildDir := ku.GetBuildDir(cliArgs.DebugBuild)
+	shell := ku.NewShell(tunnel, cliArgs)
+	buildTypeDir := ku.GetBuildTypeDir(cliArgs.DebugBuild)
 	target := cliArgs.Target
 
 	xcCtx := &XCContext{
@@ -76,7 +76,7 @@ func Build(opt *XCBuildOptions) {
 	fwMap := make(map[string][]iFrameworkInfo)
 
 	for _, sdk := range sdks {
-		sdkDir := ku.GetSDKDir(buildDir, sdk)
+		sdkDir := ku.GetSDKDir(buildTypeDir, sdk)
 		archs := ku.SDKArchs[sdk]
 		sdkFwDir := ku.GetSDKFrameworkDir(sdkDir)
 
@@ -189,7 +189,7 @@ func Build(opt *XCBuildOptions) {
 				})
 
 				// Set rpath of dependencies.
-				updateDylibDepRpath(tunnel, archDylibPath, buildDir, opt.AggressiveDepRpathUpdates)
+				updateDylibDepRpath(tunnel, archDylibPath, buildTypeDir, opt.AggressiveDepRpathUpdates)
 			}
 
 			// lipo
@@ -272,7 +272,7 @@ func Build(opt *XCBuildOptions) {
 		}
 	} // end of `for sdks`.
 
-	xcDir := filepath.Join(buildDir, "xcframework", platformStr)
+	xcDir := filepath.Join(buildTypeDir, "xcframework", platformStr)
 	io2.CleanDir(xcDir)
 	var xcList []string
 

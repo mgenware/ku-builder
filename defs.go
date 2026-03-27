@@ -11,8 +11,8 @@ const MinAndroidAPI = "26"
 const OutDirName = "out"
 const DistDirName = "dist"
 
-var ProjectRepoDir string
-var buildDir string
+var GlobalRepoDir string
+var globalBuildDir string
 
 type PlatformEnum string
 
@@ -117,11 +117,11 @@ var SupportedLibTypes = map[LibType]bool{
 	LibTypeDynamic: true,
 }
 
-func GetBuildDir(debug bool) string {
+func GetBuildTypeDir(debug bool) string {
 	if debug {
-		return filepath.Join(buildDir, "debug")
+		return filepath.Join(globalBuildDir, "debug")
 	}
-	return filepath.Join(buildDir, "release")
+	return filepath.Join(globalBuildDir, "release")
 }
 
 func GetSDKDir(buildDir string, sdk SDKEnum) string {
@@ -170,6 +170,6 @@ func mustAbs(path string) string {
 }
 
 func init() {
-	ProjectRepoDir = mustAbs("./repo")
-	buildDir = mustAbs("./build")
+	GlobalRepoDir = mustAbs("./repo")
+	globalBuildDir = mustAbs("./build")
 }

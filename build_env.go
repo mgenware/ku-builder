@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"slices"
 
+	"github.com/mgenware/j9/v3"
 	"github.com/mgenware/ku-builder/io2"
 )
 
@@ -49,7 +50,7 @@ type BuildEnv struct {
 func NewBuildEnv(shell *Shell, env *OSEnv) *BuildEnv {
 	cliArgs := shell.Args
 
-	buildTypeDir := GetBuildDir(cliArgs.DebugBuild)
+	buildTypeDir := GetBuildTypeDir(cliArgs.DebugBuild)
 	sdkDir := GetSDKDir(buildTypeDir, env.SDK)
 	archDir := filepath.Join(sdkDir, string(env.Arch))
 	target := cliArgs.Target
@@ -100,6 +101,14 @@ func NewBuildEnv(shell *Shell, env *OSEnv) *BuildEnv {
 	}
 
 	return ctx
+}
+
+func (be *BuildEnv) LogSummary() {
+	shell := be.Shell
+	cliArgs := shell.Args
+	osEnv := be.OSEnv
+
+	shell.Logger().Log(j9.LogLevelWarning, "Building target: "+cliArgs.Target+"-"+string(osEnv.SDK)+"-"+string(osEnv.Arch))
 }
 
 func (e *BuildEnv) VerifyOutLibFileArch(outFile []string) {

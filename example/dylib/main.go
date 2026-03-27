@@ -11,18 +11,14 @@ func main() {
 		DefaultTarget: example.LibName,
 	}
 	libType := ku.LibTypeDynamic
-	loopOpt := &ku.StartLoopOptions{
-		LoopFn: func(ctx *ku.BuildContext) {
-			ctx.LogContext()
-
-			libInfo := example.BuildOgg(ctx, libType)
-
-			// Go back to the repo root dir.
-			ctx.Shell.CD(libInfo.RepoDir)
+	loopOpt := &ku.StartEnvLoopOptions{
+		LoopFn: func(be *ku.BuildEnv) {
+			be.LogSummary()
+			example.BuildOgg(be, libType)
 		},
 		AfterAllFn: func(c *ku.CLIArgs, t *j9.Tunnel) {
 			ku.CopyJNILibs(c, t, []string{example.LibName + ".so"}, []string{"ogg"})
 		},
 	}
-	ku.StartLoopWithOptions(cliOpt, loopOpt)
+	ku.StartEnvLoopWithOptions(cliOpt, loopOpt)
 }

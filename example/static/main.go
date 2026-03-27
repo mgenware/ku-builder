@@ -10,12 +10,8 @@ func main() {
 		DefaultTarget: example.LibName,
 	}
 	libType := ku.LibTypeStatic
-	ku.StartLoop(cliOpt, func(ctx *ku.BuildContext) {
-		ctx.LogContext()
-
-		libInfo := example.BuildOgg(ctx, libType)
-
-		// Go back to the repo root dir.
-		ctx.Shell.CD(libInfo.RepoDir)
+	ku.StartEnvLoop(cliOpt, func(be *ku.BuildEnv) {
+		be.LogSummary()
+		example.BuildOgg(be, libType)
 	})
 }

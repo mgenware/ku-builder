@@ -122,15 +122,16 @@ type GetCmakeGenArgsOptions struct {
 	Preset           string
 }
 
-func (bp *BuildProject) GetCmakeGenArgs(libType LibType, buildDir string) []string {
-	return bp.GetCmakeGenArgsWithOptions(libType, buildDir, nil)
+func (bp *BuildProject) GetCmakeGenArgs() []string {
+	return bp.GetCmakeGenArgsWithOptions(nil)
 }
 
-func (bp *BuildProject) GetCmakeGenArgsWithOptions(libType LibType, buildDir string, opt *GetCmakeGenArgsOptions) []string {
+func (bp *BuildProject) GetCmakeGenArgsWithOptions(opt *GetCmakeGenArgsOptions) []string {
 	if opt == nil {
 		opt = &GetCmakeGenArgsOptions{}
 	}
 
+	libType := bp.LibType
 	var isDylib bool
 	if SupportedLibTypes[libType] {
 		isDylib = libType == LibTypeDynamic
@@ -226,7 +227,11 @@ func (bp *BuildProject) GetCmakeGenArgsWithOptions(libType LibType, buildDir str
 
 	// Put source and build dir arguments at the end.
 	args = append(args, "-S", ".")
-	args = append(args, "-B", buildDir)
+	args = append(args, "-B", bp.BuildDir)
 
 	return args
+}
+
+func (bp *BuildProject) GoToBuildDir() {
+	bp.Shell.CD(bp.BuildDir)
 }

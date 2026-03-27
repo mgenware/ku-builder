@@ -9,7 +9,7 @@ import (
 	"github.com/mgenware/ku-builder/io2"
 )
 
-func GetRepoDir(repo *SourceRepo) string {
+func getRepoDir(repo *RepoInfo) string {
 	var ver string
 	if repo.Tag != "" {
 		ver = repo.Tag
@@ -22,19 +22,21 @@ func GetRepoDir(repo *SourceRepo) string {
 	} else {
 		ver = "_latest_"
 	}
-	return filepath.Join(ProjectRepoDir, string(repo.Name), ver)
+	return filepath.Join(GlobalRepoDir, string(repo.Name), ver)
 }
 
-func CloneAndGotoRepo(shell *Shell, repo *SourceRepo) string {
-	dir := GetRepoDir(repo)
+func (bp *BuildProject) CloneAndGotoRepo() string {
+	repo := bp.Repo
+	shell := bp.Shell
+	repoDir := getRepoDir(repo)
 
-	if io2.DirectoryExists(dir) && !checkDirEmpty(dir) {
-		shell.CD(dir)
-		return dir
+	if io2.DirectoryExists(repoDir) && !checkDirEmpty(repoDir) {
+		shell.CD(repoDir)
+		return repoDir
 	}
 
-	io2.Mkdirp(dir)
-	shell.CD(dir)
+	io2.Mkdirp(repoDir)
+	shell.CD(repoDir)
 
 	if repo.UrlArchiveName != "" {
 		if !repo.CreateArchiveDirName {
@@ -66,23 +68,23 @@ func CloneAndGotoRepo(shell *Shell, repo *SourceRepo) string {
 		})
 
 		if !repo.CreateArchiveDirName {
-			shell.CD(dir)
+			shell.CD(repoDir)
 		}
 
-		return dir
+		return repoDir
 	}
 
 	var args []string
 	needCheckout := false
 	if repo.Tag != "" {
-		args = []string{"clone", "--branch", repo.Tag, "--depth", "1", repo.Url, dir}
+		args = []string{"clone", "--branch", repo.Tag, "--depth", "1", repo.Url, repoDir}
 	} else if repo.Commit != "" {
-		args = []string{"clone", repo.Url, dir}
+		args = []string{"clone", repo.Url, repoDir}
 		needCheckout = true
 	} else if repo.Branch != "" {
-		args = []string{"clone", "--branch", repo.Branch, "--depth", "1", repo.Url, dir}
+		args = []string{"clone", "--branch", repo.Branch, "--depth", "1", repo.Url, repoDir}
 	} else {
-		args = []string{"clone", "--depth", "1", repo.Url, dir}
+		args = []string{"clone", "--depth", "1", repo.Url, repoDir}
 	}
 
 	shell.Spawn(&j9.SpawnOpt{
@@ -93,7 +95,7 @@ func CloneAndGotoRepo(shell *Shell, repo *SourceRepo) string {
 	if needCheckout {
 		shell.Spawn(&j9.SpawnOpt{
 			Name: "git",
-			Args: []string{"-C", dir, "checkout", repo.Commit},
+			Args: []string{"-C", repoDir, "checkout", repo.Commit},
 		})
 	}
 
@@ -106,7 +108,7 @@ func CloneAndGotoRepo(shell *Shell, repo *SourceRepo) string {
 		}
 	}
 
-	return dir
+	return repoDir
 }
 
 func checkDirEmpty(path string) bool {
