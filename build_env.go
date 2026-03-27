@@ -10,9 +10,15 @@ import (
 )
 
 type BuildEnv struct {
-	Shell   *Shell
-	OSEnv   *OSEnv
+	Shell *Shell
+	OSEnv *OSEnv
+
+	// Returns Shell.Args.
 	CLIArgs *CLIArgs
+	// Returns OSEnv.SDK.
+	SDK SDKEnum
+	// Returns OSEnv.Arch.
+	Arch ArchEnum
 
 	// Example: ffmpeg
 	Target string
@@ -74,6 +80,8 @@ func NewBuildEnv(shell *Shell, env *OSEnv) *BuildEnv {
 		Shell:   shell,
 		OSEnv:   env,
 		CLIArgs: shell.Args,
+		SDK:     env.SDK,
+		Arch:    env.Arch,
 
 		Target: target,
 
