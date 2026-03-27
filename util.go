@@ -18,7 +18,8 @@ func GetTargetDistDir(targetDir string) string {
 	return distDir
 }
 
-func CopyJNILibs(cliArgs *CLIArgs, tunnel *j9.Tunnel, libFileNames []string, headerFileNames []string) {
+func CopyJNILibs(shell *Shell, libFileNames []string, headerFileNames []string) {
+	cliArgs := shell.Args
 	if !slices.Contains(cliArgs.SDKs, SDKAndroid) {
 		return
 	}
@@ -55,7 +56,7 @@ func CopyJNILibs(cliArgs *CLIArgs, tunnel *j9.Tunnel, libFileNames []string, hea
 			io2.Mkdirp(jniArchDir)
 
 			// Copy the lib file to the jniLibs directory.
-			tunnel.Spawn(&j9.SpawnOpt{
+			shell.Spawn(&j9.SpawnOpt{
 				Name: "cp",
 				Args: []string{srcLibFile, jniArchDir + "/"}},
 			)
@@ -70,7 +71,7 @@ func CopyJNILibs(cliArgs *CLIArgs, tunnel *j9.Tunnel, libFileNames []string, hea
 		srcHeaderFile := filepath.Join(headerSrcDir, headerFileName)
 
 		// Copy the header file to the include directory.
-		tunnel.Spawn(&j9.SpawnOpt{
+		shell.Spawn(&j9.SpawnOpt{
 			Name: "cp",
 			Args: []string{"-R", srcHeaderFile, includeDir + "/"}},
 		)

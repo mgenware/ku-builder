@@ -10,8 +10,9 @@ import (
 )
 
 type BuildEnv struct {
-	Shell *Shell
-	OSEnv *OSEnv
+	Shell   *Shell
+	OSEnv   *OSEnv
+	CLIArgs *CLIArgs
 
 	// Example: ffmpeg
 	Target string
@@ -70,8 +71,9 @@ func NewBuildEnv(shell *Shell, env *OSEnv) *BuildEnv {
 	io2.Mkdirp(outLibDir)
 
 	ctx := &BuildEnv{
-		Shell: shell,
-		OSEnv: env,
+		Shell:   shell,
+		OSEnv:   env,
+		CLIArgs: shell.Args,
 
 		Target: target,
 
