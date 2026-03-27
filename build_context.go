@@ -21,11 +21,11 @@ type BuildContext struct {
 	// Example: libffmpeg
 	TargetLibName string
 
-	// BuildDir = ${RootBuildDir}/${release/debug}
-	BuildDir string
-	// SDKDir = ${BuildDir}/${Platform}/${SDK}
+	// BuildTypeDir = ${RootBuildDir}/${release/debug}
+	BuildTypeDir string
+	// SDKDir = ${BuildTypeDir}/${Platform}/${SDK}
 	SDKDir string
-	// ArchDir = ${BuildDir}/${Platform}/${SDK}/${Arch}
+	// ArchDir = ${BuildTypeDir}/${Platform}/${SDK}/${Arch}
 	ArchDir string
 
 	// TargetDir: ${ArchDir}/${Target}
@@ -74,8 +74,8 @@ func NewBuildContext(opt *BuildContextInitOptions) *BuildContext {
 		panic("opt is nil")
 	}
 	cliArgs := opt.CLIArgs
-	buildDir := GetBuildDir(cliArgs.DebugBuild)
-	sdkDir := GetSDKDir(buildDir, opt.SDK)
+	buildTypeDir := GetBuildDir(cliArgs.DebugBuild)
+	sdkDir := GetSDKDir(buildTypeDir, opt.SDK)
 	archDir := filepath.Join(sdkDir, string(opt.Arch))
 	target := cliArgs.Target
 	targetDir := filepath.Join(archDir, target)
@@ -105,7 +105,7 @@ func NewBuildContext(opt *BuildContextInitOptions) *BuildContext {
 		Arch:   opt.Arch,
 		Target: target,
 
-		BuildDir:      buildDir,
+		BuildTypeDir:  buildTypeDir,
 		SDKDir:        sdkDir,
 		ArchDir:       archDir,
 		TmpDir:        tmpDir,
