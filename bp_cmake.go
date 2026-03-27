@@ -12,15 +12,15 @@ type RunCmakeGenOptions struct {
 	Env  []string
 }
 
-func (ctx *BuildContext) RunCmakeGen(opt *RunCmakeGenOptions) {
-	ctx.NotNullOrQuit(opt, "opt")
-	// Note: `opt.Env` should be set after `GetCoreKuEnv`.
-	env := append(ctx.GetCoreKuEnv(), opt.Env...)
+func (bp *BuildProject) RunCmakeGen(opt *RunCmakeGenOptions) {
+	bp.NotNullOrQuit(opt, "opt")
+	// Note: `opt.Env` should be set after `GetKuBuiltinEnv`.
+	env := append(bp.GetKuBuiltinEnv(), opt.Env...)
 	env = append(env,
 		"KU_CMAKE_ACTION=gen",
 	)
 
-	ctx.Shell.Spawn(&j9.SpawnOpt{
+	bp.Shell.Spawn(&j9.SpawnOpt{
 		Name: "cmake",
 		Args: opt.Args,
 		Env:  env,
@@ -43,9 +43,9 @@ type RunCmakeBuildOrInstallOptions struct {
 	Env       []string
 }
 
-func (ctx *BuildContext) RunCmakeBuildOrInstall(opt *RunCmakeBuildOrInstallOptions, outFile []string) {
-	ctx.NotNullOrQuit(opt, "opt")
-	ctx.NotNullOrQuit(opt.Action, "opt.Action")
+func (bp *BuildProject) RunCmakeBuildOrInstall(opt *RunCmakeBuildOrInstallOptions, outFile []string) {
+	bp.NotNullOrQuit(opt, "opt")
+	bp.NotNullOrQuit(opt.Action, "opt.Action")
 
 	args := []string{
 		"--" + string(opt.Action), ".",
@@ -53,13 +53,14 @@ func (ctx *BuildContext) RunCmakeBuildOrInstall(opt *RunCmakeBuildOrInstallOptio
 
 	if opt.Target != "" {
 		if opt.Action == CmakeActionInstall {
-			ctx.Shell.Quit("opt.Target is not supported for install")
+			bp.Shell.Quit("opt.Target is not supported for install")
 		}
 		args = append(args, "--target", opt.Target)
 	}
 
 	var config string
-	if ctx.DebugBuild {
+	cliArgs := bp.Shell.Args
+	if cliArgs.DebugBuild {
 		config = "Debug"
 	} else {
 		config = "Release"
@@ -67,7 +68,7 @@ func (ctx *BuildContext) RunCmakeBuildOrInstall(opt *RunCmakeBuildOrInstallOptio
 	args = append(args, "--config", config)
 
 	// Strip during production install.
-	if opt.Action == CmakeActionInstall && !ctx.DebugBuild {
+	if opt.Action == CmakeActionInstall && !cliArgs.DebugBuild {
 		// This uses `CMAKE_STRIP`, which is set by Android toolchain.
 		args = append(args, "--strip")
 	}
@@ -82,37 +83,37 @@ func (ctx *BuildContext) RunCmakeBuildOrInstall(opt *RunCmakeBuildOrInstallOptio
 		args = append(args, opt.ExtraArgs...)
 	}
 
-	// Note: `opt.Env` should be set after `GetCoreKuEnv`.
-	env := append(ctx.GetCoreKuEnv(), opt.Env...)
+	// Note: `opt.Env` should be set after `GetKuBuiltinEnv`.
+	env := append(bp.GetKuBuiltinEnv(), opt.Env...)
 	env = append(env,
 		"KU_CMAKE_ACTION="+string(opt.Action),
 	)
-	ctx.Shell.Spawn(&j9.SpawnOpt{
+	bp.Shell.Spawn(&j9.SpawnOpt{
 		Name: "cmake",
 		Args: args,
 		Env:  env,
 	})
 
-	ctx.VerifyOutLibFileArch(outFile)
+	bp.BuildEnv.VerifyOutLibFileArch(outFile)
 }
 
-func (ctx *BuildContext) RunCmakeBuild() {
-	ctx.RunCmakeBuildTarget("")
+func (bp *BuildProject) RunCmakeBuild() {
+	bp.RunCmakeBuildTarget("")
 }
 
-func (ctx *BuildContext) RunCmakeBuildTarget(target string) {
+func (bp *BuildProject) RunCmakeBuildTarget(target string) {
 	opt := &RunCmakeBuildOrInstallOptions{
 		Action: CmakeActionBuild,
 		Target: target,
 	}
-	ctx.RunCmakeBuildOrInstall(opt, nil)
+	bp.RunCmakeBuildOrInstall(opt, nil)
 }
 
-func (ctx *BuildContext) RunCmakeInstall(outFile []string) {
+func (bp *BuildProject) RunCmakeInstall(outFile []string) {
 	opt := &RunCmakeBuildOrInstallOptions{
 		Action: CmakeActionInstall,
 	}
-	ctx.RunCmakeBuildOrInstall(opt, outFile)
+	bp.RunCmakeBuildOrInstall(opt, outFile)
 }
 
 type GetCmakeGenArgsOptions struct {
@@ -121,11 +122,11 @@ type GetCmakeGenArgsOptions struct {
 	Preset           string
 }
 
-func (ctx *BuildContext) GetCmakeGenArgs(libType LibType, buildDir string) []string {
-	return ctx.GetCmakeGenArgsWithOptions(libType, buildDir, nil)
+func (bp *BuildProject) GetCmakeGenArgs(libType LibType, buildDir string) []string {
+	return bp.GetCmakeGenArgsWithOptions(libType, buildDir, nil)
 }
 
-func (ctx *BuildContext) GetCmakeGenArgsWithOptions(libType LibType, buildDir string, opt *GetCmakeGenArgsOptions) []string {
+func (bp *BuildProject) GetCmakeGenArgsWithOptions(libType LibType, buildDir string, opt *GetCmakeGenArgsOptions) []string {
 	if opt == nil {
 		opt = &GetCmakeGenArgsOptions{}
 	}
@@ -134,11 +135,15 @@ func (ctx *BuildContext) GetCmakeGenArgsWithOptions(libType LibType, buildDir st
 	if SupportedLibTypes[libType] {
 		isDylib = libType == LibTypeDynamic
 	} else {
-		ctx.Shell.Quit(fmt.Sprintf("Invalid libType: %v, valid types: %v", libType, SupportedLibTypes))
+		bp.Shell.Quit(fmt.Sprintf("Invalid libType: %v, valid types: %v", libType, SupportedLibTypes))
 	}
 
 	var targetOS string
-	switch ctx.SDK {
+	osEnv := bp.OS
+	buildEnv := bp.BuildEnv
+	cliArgs := bp.Shell.Args
+
+	switch osEnv.SDK {
 	case SDKMacos:
 		targetOS = "Darwin"
 	case SDKIos:
@@ -151,9 +156,9 @@ func (ctx *BuildContext) GetCmakeGenArgsWithOptions(libType LibType, buildDir st
 
 	args := []string{
 		"-DCMAKE_SYSTEM_NAME=" + targetOS,
-		"-DCMAKE_INSTALL_PREFIX=" + ctx.OutDir,
-		"-DCMAKE_PREFIX_PATH=" + ctx.OutDir,
-		"-DCMAKE_LIBRARY_PATH=" + ctx.OutLibDir,
+		"-DCMAKE_INSTALL_PREFIX=" + buildEnv.OutDir,
+		"-DCMAKE_PREFIX_PATH=" + buildEnv.OutDir,
+		"-DCMAKE_LIBRARY_PATH=" + buildEnv.OutLibDir,
 	}
 
 	if !opt.EnableSystemPath {
@@ -175,44 +180,44 @@ func (ctx *BuildContext) GetCmakeGenArgsWithOptions(libType LibType, buildDir st
 	}
 	args = append(args, "-DBUILD_SHARED_LIBS="+isDylibStr)
 
-	if ctx.Env.IsDarwinPlatform() {
+	if osEnv.IsDarwinPlatform() {
 		args = append(args,
 			// SDK
-			"-DCMAKE_OSX_SYSROOT="+ctx.Env.GetSDKRootPath(),
+			"-DCMAKE_OSX_SYSROOT="+osEnv.GetSDKRootPath(),
 			// Min SDK
-			"-DCMAKE_OSX_DEPLOYMENT_TARGET="+ctx.Env.MinDarwinSDKVer(),
+			"-DCMAKE_OSX_DEPLOYMENT_TARGET="+osEnv.MinDarwinSDKVer(),
 			// -arch
-			"-DCMAKE_OSX_ARCHITECTURES="+string(ctx.Arch),
+			"-DCMAKE_OSX_ARCHITECTURES="+string(osEnv.Arch),
 			"-DCMAKE_MACOSX_BUNDLE=0",
 			"-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=0",
 			// On Android, this should be set by `DCMAKE_TOOLCHAIN_FILE`.
-			"-DCMAKE_SYSTEM_PROCESSOR="+string(ctx.Arch),
+			"-DCMAKE_SYSTEM_PROCESSOR="+string(osEnv.Arch),
 		)
 	}
 
-	if ctx.Env.IsAndroidPlatform() {
-		ndk := ctx.Env.GetNDKPath()
-		abi := GetABI(ctx.Arch)
+	if osEnv.IsAndroidPlatform() {
+		ndk := osEnv.GetNDKPath()
+		abi := GetABI(osEnv.Arch)
 		args = append(args,
 			"-DANDROID_NDK="+ndk,
 			"-DANDROID_ABI="+abi,
 			"-DANDROID_PLATFORM=android-"+MinAndroidAPI,
 			"-DCMAKE_ANDROID_NDK="+ndk,
-			"-DCMAKE_TOOLCHAIN_FILE="+ctx.Env.GetNDKCmakeToolchainFile(),
+			"-DCMAKE_TOOLCHAIN_FILE="+osEnv.GetNDKCmakeToolchainFile(),
 			"-DCMAKE_ANDROID_ARCH_ABI="+abi,
 			"-DCMAKE_SYSTEM_VERSION="+MinAndroidAPI,
 		)
 	}
 
 	var buildType string
-	if ctx.DebugBuild {
+	if cliArgs.DebugBuild {
 		buildType = "Debug"
 	} else {
 		buildType = "Release"
 	}
 	args = append(args, "-DCMAKE_BUILD_TYPE="+buildType)
 
-	if ctx.CleanBuild {
+	if cliArgs.CleanBuild {
 		args = append(args, "--fresh")
 	}
 	if opt.Preset != "" {

@@ -8,24 +8,26 @@ type GetCompilerFlagsOptions struct {
 	EnablePIC   bool
 }
 
-func (ctx *BuildContext) GetCompilerFlagList(opt *GetCompilerFlagsOptions) []string {
+func (bp *BuildProject) GetCompilerFlagList(opt *GetCompilerFlagsOptions) []string {
 	if opt == nil {
 		opt = &GetCompilerFlagsOptions{}
 	}
 	args := []string{}
+	osEnv := bp.OS
+	cliArgs := bp.Shell.Args
 
-	if ctx.Env.IsDarwinPlatform() {
-		archStr := string(ctx.Arch)
+	if osEnv.IsDarwinPlatform() {
+		archStr := string(osEnv.Arch)
 		if !opt.DisableArch {
 			args = append(args, "-arch", archStr)
 		}
 
-		args = append(args, "-isysroot", ctx.Env.GetSDKRootPath())
+		args = append(args, "-isysroot", osEnv.GetSDKRootPath())
 
 		// clang -target and min SDK version.
-		args = append(args, "-target", ctx.Env.GetDarwinClangTargetTriple())
+		args = append(args, "-target", osEnv.GetDarwinClangTargetTriple())
 
-		switch ctx.SDK {
+		switch osEnv.SDK {
 		case SDKMacos:
 			args = append(args, "-mmacosx-version-min="+MinMacosVersion)
 		case SDKIosSimulator:
@@ -35,7 +37,7 @@ func (ctx *BuildContext) GetCompilerFlagList(opt *GetCompilerFlagsOptions) []str
 		}
 	}
 
-	if ctx.DebugBuild {
+	if cliArgs.DebugBuild {
 		args = append(args, "-g")
 	}
 
@@ -46,8 +48,8 @@ func (ctx *BuildContext) GetCompilerFlagList(opt *GetCompilerFlagsOptions) []str
 	return args
 }
 
-func (ctx *BuildContext) GetCompilerFlags(opt *GetCompilerFlagsOptions) string {
-	return strings.Join(ctx.GetCompilerFlagList(opt), " ")
+func (bp *BuildProject) GetCompilerFlags(opt *GetCompilerFlagsOptions) string {
+	return strings.Join(bp.GetCompilerFlagList(opt), " ")
 }
 
 type GetCompilerConfigureEnvOptions struct {
@@ -62,15 +64,15 @@ type GetCompilerPathMapOptions struct {
 	Meson bool
 }
 
-func (ctx *BuildContext) GetCompilerPathMap() [][]string {
-	return ctx.GetCompilerPathMapWithOptions(nil)
+func (bp *BuildProject) GetCompilerPathMap() [][]string {
+	return bp.GetCompilerPathMapWithOptions(nil)
 }
 
-func (ctx *BuildContext) GetCompilerPathMapWithOptions(opt *GetCompilerPathMapOptions) [][]string {
+func (bp *BuildProject) GetCompilerPathMapWithOptions(opt *GetCompilerPathMapOptions) [][]string {
 	if opt == nil {
 		opt = &GetCompilerPathMapOptions{}
 	}
-	env := ctx.Env
+	env := bp.OS
 	isDarwin := env.IsDarwinPlatform()
 
 	cc := "CC"
@@ -110,21 +112,21 @@ func (ctx *BuildContext) GetCompilerPathMapWithOptions(opt *GetCompilerPathMapOp
 // GetCompilerConfigureEnv returns environment variables for compiler configuration.
 // This includes CC, CXX, LD, and optionally CFLAGS, CXXFLAGS, LDFLAGS (when OverrideCompilerFlags is true).
 // On Android, it also includes AR, AS, RANLIB, STRIP, NM.
-func (ctx *BuildContext) GetCompilerConfigureEnv(opt *GetCompilerConfigureEnvOptions) []string {
+func (bp *BuildProject) GetCompilerConfigureEnv(opt *GetCompilerConfigureEnvOptions) []string {
 	if opt == nil {
 		opt = &GetCompilerConfigureEnvOptions{}
 	}
 
 	args := []string{}
 
-	compilerPathMap := ctx.GetCompilerPathMap()
+	compilerPathMap := bp.GetCompilerPathMap()
 	for _, pair := range compilerPathMap {
 		args = append(args, pair[0]+"="+pair[1])
 	}
 
 	if opt.OverrideCompilerFlags {
-		cflags := ctx.GetCompilerFlags(nil)
-		ldflags := ctx.GetCompilerFlags(&GetCompilerFlagsOptions{LD: true})
+		cflags := bp.GetCompilerFlags(nil)
+		ldflags := bp.GetCompilerFlags(&GetCompilerFlagsOptions{LD: true})
 
 		args = append(args, "CFLAGS="+cflags)
 		args = append(args, "CXXFLAGS="+cflags)

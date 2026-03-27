@@ -8,11 +8,12 @@ import (
 )
 
 type Shell struct {
+	Args   *CLIArgs
 	Tunnel *j9.Tunnel
 }
 
-func NewShell(tunnel *j9.Tunnel) *Shell {
-	return &Shell{Tunnel: tunnel}
+func NewShell(tunnel *j9.Tunnel, args *CLIArgs) *Shell {
+	return &Shell{Tunnel: tunnel, Args: args}
 }
 
 func (s *Shell) Shell(cmd string) string {

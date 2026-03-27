@@ -11,19 +11,17 @@ import (
 	"github.com/mgenware/ku-builder/util"
 )
 
-// Env = SDK + Arch.
-type Env struct {
-	CLIArgs *CLIArgs
-	SDK     SDKEnum
-	Arch    ArchEnum
+// OSEnv = SDK + Arch.
+type OSEnv struct {
+	SDK  SDKEnum
+	Arch ArchEnum
 
 	shell       *Shell
 	stringCache *util.StringCache
 }
 
-func NewEnv(shell *Shell, cliArgs *CLIArgs, sdk SDKEnum, arch ArchEnum) *Env {
-	return &Env{
-		CLIArgs:     cliArgs,
+func NewOSEnv(shell *Shell, sdk SDKEnum, arch ArchEnum) *OSEnv {
+	return &OSEnv{
 		shell:       shell,
 		SDK:         sdk,
 		Arch:        arch,
@@ -31,25 +29,25 @@ func NewEnv(shell *Shell, cliArgs *CLIArgs, sdk SDKEnum, arch ArchEnum) *Env {
 	}
 }
 
-func (e *Env) IsIosPlatform() bool {
+func (e *OSEnv) IsIosPlatform() bool {
 	return e.SDK == SDKIos || e.SDK == SDKIosSimulator
 }
 
-func (e *Env) IsDarwinPlatform() bool {
+func (e *OSEnv) IsDarwinPlatform() bool {
 	return e.SDK == SDKMacos || e.IsIosPlatform()
 }
 
-func (e *Env) IsAndroidPlatform() bool {
+func (e *OSEnv) IsAndroidPlatform() bool {
 	return e.SDK == SDKAndroid
 }
 
-func (e *Env) GetSDKRootPath() string {
+func (e *OSEnv) GetSDKRootPath() string {
 	return e.cachedString("sdk-root", func() string {
 		return io2.DirectoryMustExist(e.fetchSDKRootPath())
 	})
 }
 
-func (e *Env) fetchSDKRootPath() string {
+func (e *OSEnv) fetchSDKRootPath() string {
 	switch e.SDK {
 	case SDKMacos:
 		return e.shell.Shell("xcrun --sdk macosx --show-sdk-path")
@@ -64,11 +62,11 @@ func (e *Env) fetchSDKRootPath() string {
 	panic("unreachable")
 }
 
-func (e *Env) GetCCPath() string {
+func (e *OSEnv) GetCCPath() string {
 	return e.cachedString("cc", e.fetchCCPath)
 }
 
-func (e *Env) fetchCCPath() string {
+func (e *OSEnv) fetchCCPath() string {
 	if e.IsDarwinPlatform() {
 		return e.shell.Shell("xcodebuild -find clang")
 	}
@@ -79,11 +77,11 @@ func (e *Env) fetchCCPath() string {
 	panic("unreachable")
 }
 
-func (e *Env) GetCXXPath() string {
+func (e *OSEnv) GetCXXPath() string {
 	return e.cachedString("cxx", e.fetchCXXPath)
 }
 
-func (e *Env) fetchCXXPath() string {
+func (e *OSEnv) fetchCXXPath() string {
 	if e.IsDarwinPlatform() {
 		return e.shell.Shell("xcodebuild -find clang++")
 	}
@@ -94,15 +92,15 @@ func (e *Env) fetchCXXPath() string {
 	panic("unreachable")
 }
 
-func (e *Env) GetLDPath() string {
+func (e *OSEnv) GetLDPath() string {
 	return e.cachedString("ld", e.fetchLDPath)
 }
 
-func (e *Env) GetSDKArchString() string {
+func (e *OSEnv) GetSDKArchString() string {
 	return string(e.SDK) + "-" + string(e.Arch)
 }
 
-func (e *Env) fetchLDPath() string {
+func (e *OSEnv) fetchLDPath() string {
 	if e.IsDarwinPlatform() {
 		return e.GetCCPath()
 	}
@@ -113,7 +111,7 @@ func (e *Env) fetchLDPath() string {
 	panic("unreachable")
 }
 
-func (e *Env) GetAndroidSDKPath() string {
+func (e *OSEnv) GetAndroidSDKPath() string {
 	if e.IsAndroidPlatform() {
 		return e.cachedString("android_sdk", func() string {
 			path := os.Getenv("ANDROID_SDK_PATH")
@@ -132,14 +130,14 @@ func (e *Env) GetAndroidSDKPath() string {
 	panic("unreachable")
 }
 
-func (e *Env) GetNDKPath() string {
+func (e *OSEnv) GetNDKPath() string {
 	if e.IsAndroidPlatform() {
 		return e.cachedString("ndk", func() string {
 			path := os.Getenv("ANDROID_NDK_PATH")
 			if path != "" {
 				return path
 			}
-			path = e.CLIArgs.NDK
+			path = e.shell.Args.NDK
 			// If `NDKInput` is not an absolute path, it's considered an NDK version.
 			if !strings.HasPrefix(path, "/") {
 				path = filepath.Join(e.GetAndroidSDKPath(), "ndk", path)
@@ -152,7 +150,7 @@ func (e *Env) GetNDKPath() string {
 	panic("unreachable")
 }
 
-func (e *Env) GetNDKCmakeToolchainFile() string {
+func (e *OSEnv) GetNDKCmakeToolchainFile() string {
 	if e.IsAndroidPlatform() {
 		return e.cachedString("ndk_cmake_toolchain", func() string {
 			path := filepath.Join(e.GetNDKPath(), "build/cmake/android.toolchain.cmake")
@@ -167,7 +165,7 @@ func (e *Env) GetNDKCmakeToolchainFile() string {
 // Replaces the extension of a library file based on the platform and lib type.
 // 'liba.<s>' -> 'liba.a' for static library on all platforms.
 // 'liba.<d>' -> 'liba.dylib' or 'liba.so' for dynamic library on different platforms.
-func (e *Env) ExpandFilenameLibType(s string) (string, LibType) {
+func (e *OSEnv) ExpandFilenameLibType(s string) (string, LibType) {
 	if strings.HasSuffix(s, LibFilenameSuffixStatic) {
 		trimmed := strings.TrimSuffix(s, LibFilenameSuffixStatic)
 		libType := LibTypeStatic
@@ -184,7 +182,7 @@ func (e *Env) ExpandFilenameLibType(s string) (string, LibType) {
 	return "", LibTypeStatic
 }
 
-func (e *Env) getNDKToolchainRootPath() string {
+func (e *OSEnv) getNDKToolchainRootPath() string {
 	ndkPath := e.GetNDKPath()
 	return e.cachedString("ndk-toolchain-root", func() string {
 		path := filepath.Join(ndkPath, "toolchains", "llvm", "prebuilt", "darwin-x86_64")
@@ -192,14 +190,14 @@ func (e *Env) getNDKToolchainRootPath() string {
 	})
 }
 
-func (e *Env) GetNDKToolchainBinPath(name string) string {
+func (e *OSEnv) GetNDKToolchainBinPath(name string) string {
 	return e.cachedString("ndk-toolchain-bin-"+name, func() string {
 		path := filepath.Join(e.getNDKToolchainRootPath(), "bin", name)
 		return io2.FileMustExist(path)
 	})
 }
 
-func (e *Env) StripFile(src, dst string) {
+func (e *OSEnv) StripFile(src, dst string) {
 	var stripBin string
 	var args []string
 	if e.IsDarwinPlatform() {
@@ -215,7 +213,7 @@ func (e *Env) StripFile(src, dst string) {
 	})
 }
 
-func (e *Env) getNDKClangPath(cpp bool) string {
+func (e *OSEnv) getNDKClangPath(cpp bool) string {
 	binName := GetOldArch(e.Arch) + "-linux-android" + MinAndroidAPI + "-clang"
 	if cpp {
 		binName += "++"
@@ -224,12 +222,12 @@ func (e *Env) getNDKClangPath(cpp bool) string {
 }
 
 //go:noreturn
-func (e *Env) ThrowUnsupportedError() error {
+func (e *OSEnv) ThrowUnsupportedError() error {
 	e.shell.Quit(fmt.Sprintf("unsupported environment. SDK: %s, Arch: %s", e.SDK, e.Arch))
 	panic("unreachable")
 }
 
-func (e *Env) readDarwinLibArch(file string) ArchEnum {
+func (e *OSEnv) readDarwinLibArch(file string) ArchEnum {
 	output := e.shell.Shell(fmt.Sprintf("lipo -archs %s", file))
 	switch output {
 	case "arm64":
@@ -242,7 +240,7 @@ func (e *Env) readDarwinLibArch(file string) ArchEnum {
 	}
 }
 
-func (e *Env) readAndroidLibArch(file string) ArchEnum {
+func (e *OSEnv) readAndroidLibArch(file string) ArchEnum {
 	ndkReadelf := e.GetNDKToolchainBinPath("llvm-readelf")
 	output := e.shell.Shell(fmt.Sprintf("%s -h %s | grep -m1 Machine", ndkReadelf, file))
 	// Sample output:
@@ -265,7 +263,7 @@ func (e *Env) readAndroidLibArch(file string) ArchEnum {
 	}
 }
 
-func (e *Env) AutoVerifyFileArch(baseDir string, outFile []string) {
+func (e *OSEnv) AutoVerifyFileArch(baseDir string, outFile []string) {
 	if len(outFile) > 0 {
 		// Don't update the `outFile` slice in-place.
 		outFileCopy := make([]string, len(outFile))
@@ -286,7 +284,7 @@ func (e *Env) AutoVerifyFileArch(baseDir string, outFile []string) {
 	}
 }
 
-func (e *Env) VerifyFileArch(libType LibType, file string) {
+func (e *OSEnv) VerifyFileArch(libType LibType, file string) {
 	logger := e.shell.Logger()
 
 	logger.Log(j9.LogLevelVerbose, "🔍 Verifying arch for file "+file)
@@ -305,7 +303,7 @@ func (e *Env) VerifyFileArch(libType LibType, file string) {
 	}
 }
 
-func (e *Env) GetDarwinClangTargetTriple() string {
+func (e *OSEnv) GetDarwinClangTargetTriple() string {
 	if !e.IsDarwinPlatform() {
 		e.ThrowUnsupportedError()
 	}
@@ -322,7 +320,7 @@ func (e *Env) GetDarwinClangTargetTriple() string {
 	panic("unreachable")
 }
 
-func (e *Env) checkStaticLibMinSDKVer(file string, minSDKVer string) {
+func (e *OSEnv) checkStaticLibMinSDKVer(file string, minSDKVer string) {
 	output := e.shell.Shell(fmt.Sprintf("otool -l %s | grep -m 1 minos", file))
 	// output looks like:
 	// minos 18.2
@@ -337,7 +335,7 @@ func (e *Env) checkStaticLibMinSDKVer(file string, minSDKVer string) {
 	e.shell.Quit(fmt.Sprintf("Cannot find minos in %s", file))
 }
 
-func (e *Env) MinDarwinSDKVer() string {
+func (e *OSEnv) MinDarwinSDKVer() string {
 	switch e.SDK {
 	case SDKMacos:
 		return MinMacosVersion
@@ -350,13 +348,13 @@ func (e *Env) MinDarwinSDKVer() string {
 	panic("unreachable")
 }
 
-func (e *Env) CheckLocalStaticLibMinSDKVer(file string) {
+func (e *OSEnv) CheckLocalStaticLibMinSDKVer(file string) {
 	if e.IsDarwinPlatform() {
 		e.checkStaticLibMinSDKVer(file, e.MinDarwinSDKVer())
 	}
 }
 
-func (e *Env) GetAutoconfHost() string {
+func (e *OSEnv) GetAutoconfHost() string {
 	switch e.SDK {
 	case SDKIos:
 		fallthrough
@@ -382,7 +380,7 @@ func (e *Env) GetAutoconfHost() string {
 	return ""
 }
 
-func (e *Env) MustGetAutoconfHost() string {
+func (e *OSEnv) MustGetAutoconfHost() string {
 	host := e.GetAutoconfHost()
 	if host == "" {
 		e.ThrowUnsupportedError()
@@ -391,7 +389,7 @@ func (e *Env) MustGetAutoconfHost() string {
 	return host
 }
 
-func (e *Env) cachedString(key string, fn util.StringCacheGetFn) string {
+func (e *OSEnv) cachedString(key string, fn util.StringCacheGetFn) string {
 	key = string(e.SDK) + "_" + string(e.Arch) + "_" + key
 	return e.stringCache.Get(key, fn)
 }

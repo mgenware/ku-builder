@@ -64,7 +64,7 @@ func main() {
 	}
 
 	t := j9.NewTunnel(j9.NewLocalNode(), j9.NewConsoleLogger())
-	shell := ku.NewShell(t)
+	shell := ku.NewShell(t, nil)
 
 	switch action {
 	case "deps":

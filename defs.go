@@ -101,6 +101,17 @@ func (t LibType) ToFilenameSuffix() string {
 	}
 }
 
+func (t LibType) String() string {
+	switch t {
+	case LibTypeStatic:
+		return "static"
+	case LibTypeDynamic:
+		return "dynamic"
+	default:
+		return "unknown"
+	}
+}
+
 var SupportedLibTypes = map[LibType]bool{
 	LibTypeStatic:  true,
 	LibTypeDynamic: true,

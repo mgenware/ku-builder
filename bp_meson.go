@@ -15,15 +15,18 @@ const kMesonCrossFileDir = "meson_cross_files"
 // K: `Env.GetSDKArchString()`, V: cached cross file path.
 var mesonCrossFileCache = make(map[string]string)
 
-func (ctx *BuildContext) GetMesonSetupArgs(libType LibType, buildDir string) []string {
+func (bp *BuildProject) GetMesonSetupArgs(libType LibType, buildDir string) []string {
 	args := []string{
 		"setup",
 	}
-	if ctx.CleanBuild {
+	cliArgs := bp.CLIArgs
+	buildEnv := bp.BuildEnv
+
+	if cliArgs.CleanBuild {
 		args = append(args, "--wipe")
 	}
 	var buildType string
-	if ctx.DebugBuild {
+	if cliArgs.DebugBuild {
 		buildType = "debug"
 		args = append(args, "--debug")
 	} else {
@@ -39,15 +42,15 @@ func (ctx *BuildContext) GetMesonSetupArgs(libType LibType, buildDir string) []s
 	}
 	args = append(args, "--default-library="+libTypeArg)
 
-	args = append(args, "--prefix="+ctx.OutDir)
-	args = append(args, "--cmake-prefix-path="+ctx.OutDir)
+	args = append(args, "--prefix="+buildEnv.OutDir)
+	args = append(args, "--cmake-prefix-path="+buildEnv.OutDir)
 
-	pkgConfigPath := filepath.Join(ctx.OutDir, "lib", "pkgconfig")
+	pkgConfigPath := filepath.Join(buildEnv.OutDir, "lib", "pkgconfig")
 	args = append(args, "--pkg-config-path="+pkgConfigPath)
 
-	crossFilePath, err := ctx.getOrCreateCrossFilePath()
+	crossFilePath, err := bp.getOrCreateCrossFilePath()
 	if err != nil {
-		ctx.Shell.Quit(fmt.Sprintf("Failed to create Meson cross file: %v", err))
+		bp.Shell.Quit(fmt.Sprintf("Failed to create Meson cross file: %v", err))
 		return nil
 	}
 	args = append(args, "--cross-file="+crossFilePath)
@@ -62,13 +65,13 @@ type RunMesonSetupOptions struct {
 	Env  []string
 }
 
-func (ctx *BuildContext) RunMesonSetup(opt *RunMesonSetupOptions) {
-	ctx.NotNullOrQuit(opt, "opt")
+func (bp *BuildProject) RunMesonSetup(opt *RunMesonSetupOptions) {
+	bp.NotNullOrQuit(opt, "opt")
 
-	// Note: `opt.Env` should be set after `GetCoreKuEnv`.
-	env := append(ctx.GetCoreKuEnv(), opt.Env...)
+	// Note: `opt.Env` should be set after `GetKuBuiltinEnv`.
+	env := append(bp.GetKuBuiltinEnv(), opt.Env...)
 
-	ctx.Shell.Spawn(&j9.SpawnOpt{
+	bp.Shell.Spawn(&j9.SpawnOpt{
 		Name: "meson",
 		Args: opt.Args,
 		Env:  env,
@@ -91,16 +94,18 @@ type RunMesonBuildOrInstallOptions struct {
 	Env       []string
 }
 
-func (ctx *BuildContext) RunMesonBuildOrInstall(opt *RunMesonBuildOrInstallOptions, outFile []string) {
-	ctx.NotNullOrQuit(opt, "opt")
-	ctx.NotNullOrQuit(opt.Action, "opt.Action")
+func (bp *BuildProject) RunMesonBuildOrInstall(opt *RunMesonBuildOrInstallOptions, outFile []string) {
+	bp.NotNullOrQuit(opt, "opt")
+	bp.NotNullOrQuit(opt.Action, "opt.Action")
+
+	cliArgs := bp.CLIArgs
 
 	args := []string{
 		string(opt.Action),
 	}
 
 	// Strip during production install.
-	if opt.Action == MesonActionInstall && !ctx.DebugBuild {
+	if opt.Action == MesonActionInstall && !cliArgs.DebugBuild {
 		args = append(args, "--strip")
 	}
 
@@ -117,50 +122,50 @@ func (ctx *BuildContext) RunMesonBuildOrInstall(opt *RunMesonBuildOrInstallOptio
 	// Target is the last argument.
 	if opt.Target != "" {
 		if opt.Action == MesonActionInstall {
-			ctx.Shell.Quit("opt.Target is not supported for install")
+			bp.Shell.Quit("opt.Target is not supported for install")
 		}
 		args = append(args, opt.Target)
 	}
 
-	// Note: `opt.Env` should be set after `GetCoreKuEnv`.
-	env := append(ctx.GetCoreKuEnv(), opt.Env...)
+	// Note: `opt.Env` should be set after `GetKuBuiltinEnv`.
+	env := append(bp.GetKuBuiltinEnv(), opt.Env...)
 	env = append(env,
 		"KU_MESON_ACTION="+string(opt.Action),
 	)
-	ctx.Shell.Spawn(&j9.SpawnOpt{
+	bp.Shell.Spawn(&j9.SpawnOpt{
 		Name: "meson",
 		Args: args,
 		Env:  env,
 	})
 
-	ctx.VerifyOutLibFileArch(outFile)
+	bp.BuildEnv.VerifyOutLibFileArch(outFile)
 }
 
-func (ctx *BuildContext) RunMesonCompile() {
-	ctx.RunMesonCompileTarget("")
+func (bp *BuildProject) RunMesonCompile() {
+	bp.RunMesonCompileTarget("")
 }
 
-func (ctx *BuildContext) RunMesonCompileTarget(target string) {
+func (bp *BuildProject) RunMesonCompileTarget(target string) {
 	opt := &RunMesonBuildOrInstallOptions{
 		Action: MesonActionCompile,
 		Target: target,
 	}
-	ctx.RunMesonBuildOrInstall(opt, nil)
+	bp.RunMesonBuildOrInstall(opt, nil)
 }
 
-func (ctx *BuildContext) RunMesonInstall(outFile []string) {
+func (bp *BuildProject) RunMesonInstall(outFile []string) {
 	opt := &RunMesonBuildOrInstallOptions{
 		Action: MesonActionInstall,
 	}
-	ctx.RunMesonBuildOrInstall(opt, outFile)
+	bp.RunMesonBuildOrInstall(opt, outFile)
 }
 
-func (ctx *BuildContext) getOrCreateCrossFilePath() (string, error) {
-	key := ctx.Env.GetSDKArchString()
+func (bp *BuildProject) getOrCreateCrossFilePath() (string, error) {
+	key := bp.OS.GetSDKArchString()
 	if path, ok := mesonCrossFileCache[key]; ok {
 		return path, nil
 	}
-	path, err := ctx.writeCrossFile()
+	path, err := bp.writeCrossFile()
 	if err != nil {
 		return "", err
 	}
@@ -168,9 +173,9 @@ func (ctx *BuildContext) getOrCreateCrossFilePath() (string, error) {
 	return path, nil
 }
 
-func (ctx *BuildContext) writeCrossFile() (string, error) {
-	paths := []string{kMesonCrossFileDir, ctx.Env.GetSDKArchString() + ".txt"}
-	content := ctx.createCrossFile()
+func (bp *BuildProject) writeCrossFile() (string, error) {
+	paths := []string{kMesonCrossFileDir, bp.OS.GetSDKArchString() + ".txt"}
+	content := bp.createCrossFile()
 	path, err := util.WriteKuCacheFile(content, paths)
 	if err != nil {
 		return "", err
@@ -178,18 +183,19 @@ func (ctx *BuildContext) writeCrossFile() (string, error) {
 	return path, nil
 }
 
-func (ctx *BuildContext) createCrossFile() string {
+func (bp *BuildProject) createCrossFile() string {
 	var sb strings.Builder
+	osEnv := bp.OS
 
 	sb.WriteString("[binaries]\n")
-	compilerPathMap := ctx.GetCompilerPathMapWithOptions(&GetCompilerPathMapOptions{Meson: true})
+	compilerPathMap := bp.GetCompilerPathMapWithOptions(&GetCompilerPathMapOptions{Meson: true})
 	for _, pair := range compilerPathMap {
 		sb.WriteString(strings.ToLower(pair[0]) + " = '" + pair[1] + "'\n")
 	}
 
 	sb.WriteString("[built-in options]\n")
-	cflags := ctx.GetCompilerFlagList(nil)
-	ldflags := ctx.GetCompilerFlagList(&GetCompilerFlagsOptions{LD: true})
+	cflags := bp.GetCompilerFlagList(nil)
+	ldflags := bp.GetCompilerFlagList(&GetCompilerFlagsOptions{LD: true})
 	sb.WriteString("c_args = " + joinStringsWithSingleQuotes(cflags) + "\n")
 	sb.WriteString("cpp_args = " + joinStringsWithSingleQuotes(cflags) + "\n")
 	sb.WriteString("c_link_args = " + joinStringsWithSingleQuotes(ldflags) + "\n")
@@ -197,11 +203,11 @@ func (ctx *BuildContext) createCrossFile() string {
 
 	sb.WriteString("[properties]\n")
 	sb.WriteString("needs_exe_wrapper = true\n")
-	sb.WriteString("root = '" + ctx.Env.GetSDKRootPath() + "'\n")
+	sb.WriteString("root = '" + osEnv.GetSDKRootPath() + "'\n")
 
 	sb.WriteString("[host_machine]\n")
 	var system string
-	isAndroid := ctx.Env.IsAndroidPlatform()
+	isAndroid := osEnv.IsAndroidPlatform()
 	if isAndroid {
 		system = "android"
 	} else {
@@ -209,12 +215,12 @@ func (ctx *BuildContext) createCrossFile() string {
 	}
 
 	var subSystem string
-	if ctx.SDK == SDKIosSimulator {
+	if osEnv.SDK == SDKIosSimulator {
 		subSystem = "ios-simulator"
 	}
 
 	var cpu string
-	switch ctx.Arch {
+	switch osEnv.Arch {
 	case ArchArm64:
 		cpu = "aarch64"
 	case ArchX86_64:

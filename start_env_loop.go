@@ -5,9 +5,9 @@ import (
 	"github.com/mgenware/ku-builder/io2"
 )
 
-type StartLoopOptions struct {
+type StartEnvLoopOptions struct {
 	// The main function to execute for each SDK/arch combination.
-	LoopFn func(*BuildContext)
+	LoopFn func(*BuildEnv)
 	// Called before the loop starts, can be used for setup.
 	BeforeAllFn func(*CLIArgs, *j9.Tunnel)
 	// Called after the loop ends, can be used for teardown.
@@ -18,12 +18,13 @@ type StartLoopOptions struct {
 	DisableAutoClean bool
 }
 
-func StartLoopWithOptions(cliOpt *CLIOptions, opt *StartLoopOptions) {
+func StartEnvLoopWithOptions(cliOpt *CLIOptions, opt *StartEnvLoopOptions) {
 	if opt == nil || opt.LoopFn == nil {
 		panic("StartLoopWithOptions: LoopFn is required")
 	}
 	cliArgs := ParseCLIArgs(cliOpt)
 	tunnel := CreateDefaultTunnel()
+	shell := NewShell(tunnel, cliArgs)
 
 	if opt.BeforeAllFn != nil {
 		opt.BeforeAllFn(cliArgs, tunnel)
@@ -38,15 +39,16 @@ func StartLoopWithOptions(cliOpt *CLIOptions, opt *StartLoopOptions) {
 		}
 
 		for _, arch := range archs {
-			ctx := NewBuildContext(NewBuildContextInitOpt(tunnel, sdk, arch, cliArgs))
+			osEnv := NewOSEnv(shell, sdk, arch)
+			env := NewBuildEnv(shell, osEnv)
 
 			if !opt.DisableAutoClean {
-				io2.CleanDir(ctx.OutDir)
+				io2.CleanDir(env.OutDir)
 			}
-			opt.LoopFn(ctx)
+			opt.LoopFn(env)
 
 			if len(opt.VerifyDistLibFileArch) > 0 {
-				ctx.VerifyDistLibFileArch(opt.VerifyDistLibFileArch)
+				env.VerifyDistLibFileArch(opt.VerifyDistLibFileArch)
 			}
 		}
 	}
@@ -56,8 +58,8 @@ func StartLoopWithOptions(cliOpt *CLIOptions, opt *StartLoopOptions) {
 	}
 }
 
-func StartLoop(cliOpt *CLIOptions, fn func(*BuildContext)) {
-	StartLoopWithOptions(cliOpt, &StartLoopOptions{
+func StartLoop(cliOpt *CLIOptions, fn func(*BuildEnv)) {
+	StartEnvLoopWithOptions(cliOpt, &StartEnvLoopOptions{
 		LoopFn: fn,
 	})
 }
