@@ -2,33 +2,16 @@ package ku
 
 import (
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/mgenware/j9/v3"
 	"github.com/mgenware/ku-builder/io2"
 )
 
-func getRepoDir(repo *RepoInfo) string {
-	var ver string
-	if repo.Tag != "" {
-		ver = repo.Tag
-	} else if repo.Commit != "" {
-		ver = repo.Commit
-	} else if repo.UrlArchiveName != "" {
-		ver = repo.UrlArchiveName
-	} else if repo.Branch != "" {
-		ver = repo.Branch
-	} else {
-		ver = "_latest_"
-	}
-	return filepath.Join(GlobalRepoDir, string(repo.Name), ver)
-}
-
 func (bp *BuildProject) CloneAndGotoRepo() string {
 	repo := bp.Repo
 	shell := bp.Shell
-	repoDir := getRepoDir(repo)
+	repoDir := bp.repoDir
 
 	if io2.DirectoryExists(repoDir) && !checkDirEmpty(repoDir) {
 		shell.CD(repoDir)
@@ -108,7 +91,6 @@ func (bp *BuildProject) CloneAndGotoRepo() string {
 		}
 	}
 
-	bp.repoDir = repoDir
 	return repoDir
 }
 

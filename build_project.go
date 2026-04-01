@@ -18,10 +18,9 @@ type BuildProject struct {
 	OS      *OSEnv
 	CLIArgs *CLIArgs
 
+	repoDir string
 	// Could be empty for non-CMake or non-Meson projects.
 	buildDir string
-
-	repoDir string
 }
 
 func NewBuildProject(repo *RepoInfo, buildEnv *BuildEnv, libType LibType) *BuildProject {
@@ -32,6 +31,7 @@ func NewBuildProject(repo *RepoInfo, buildEnv *BuildEnv, libType LibType) *Build
 		Shell:    buildEnv.Shell,
 		OS:       buildEnv.OSEnv,
 		CLIArgs:  buildEnv.Shell.Args,
+		repoDir:  generateRepoDir(repo),
 	}
 }
 
@@ -92,4 +92,20 @@ func (bp *BuildProject) mustGetBuildDir() string {
 // Could be empty for non-CMake or non-Meson projects.
 func (bp *BuildProject) GetBuildDir() string {
 	return bp.buildDir
+}
+
+func generateRepoDir(repo *RepoInfo) string {
+	var ver string
+	if repo.Tag != "" {
+		ver = repo.Tag
+	} else if repo.Commit != "" {
+		ver = repo.Commit
+	} else if repo.UrlArchiveName != "" {
+		ver = repo.UrlArchiveName
+	} else if repo.Branch != "" {
+		ver = repo.Branch
+	} else {
+		ver = "_latest_"
+	}
+	return filepath.Join(GlobalRepoDir, string(repo.Name), ver)
 }
