@@ -308,7 +308,7 @@ func Build(opt *XCBuildOptions) {
 		for _, xc := range xcList {
 			tunnel.Spawn(&j9.SpawnOpt{
 				Name: "codesign",
-				Args: []string{"--timestamp", "-s", cliArgs.SignArg, xc},
+				Args: []string{"--force", "--deep", "--timestamp", "-s", cliArgs.SignArg, xc},
 			})
 		}
 	}
