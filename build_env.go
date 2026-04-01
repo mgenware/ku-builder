@@ -13,6 +13,13 @@ type BuildEnv struct {
 	Shell *Shell
 	OSEnv *OSEnv
 
+	// Returns Shell.Args.
+	CLIArgs *CLIArgs
+	// Returns OSEnv.SDK.
+	SDK SDKEnum
+	// Returns OSEnv.Arch.
+	Arch ArchEnum
+
 	// Example: ffmpeg
 	Target string
 	// Example: libffmpeg
@@ -70,8 +77,11 @@ func NewBuildEnv(shell *Shell, env *OSEnv) *BuildEnv {
 	io2.Mkdirp(outLibDir)
 
 	ctx := &BuildEnv{
-		Shell: shell,
-		OSEnv: env,
+		Shell:   shell,
+		OSEnv:   env,
+		CLIArgs: shell.Args,
+		SDK:     env.SDK,
+		Arch:    env.Arch,
 
 		Target: target,
 
@@ -119,14 +129,4 @@ func (e *BuildEnv) VerifyOutLibFileArch(outFile []string) {
 func (e *BuildEnv) VerifyDistLibFileArch(outFile []string) {
 	baseDir := e.DistLibDir
 	e.OSEnv.AutoVerifyFileArch(baseDir, outFile)
-}
-
-func (e *BuildEnv) CreateBuildDir(repoName string) string {
-	buildDir := filepath.Join(e.TmpDir, repoName)
-	if e.Shell.Args.CleanBuild {
-		io2.CleanDir(buildDir)
-	} else {
-		io2.Mkdirp(buildDir)
-	}
-	return buildDir
 }

@@ -1,7 +1,6 @@
 package ku
 
 import (
-	"github.com/mgenware/j9/v3"
 	"github.com/mgenware/ku-builder/io2"
 )
 
@@ -9,9 +8,9 @@ type StartEnvLoopOptions struct {
 	// The main function to execute for each SDK/arch combination.
 	LoopFn func(*BuildEnv)
 	// Called before the loop starts, can be used for setup.
-	BeforeAllFn func(*CLIArgs, *j9.Tunnel)
+	BeforeAllFn func(*Shell)
 	// Called after the loop ends, can be used for teardown.
-	AfterAllFn func(*CLIArgs, *j9.Tunnel)
+	AfterAllFn func(*Shell)
 	// When set, verifies file archs in the dist/lib directory after the loop.
 	VerifyDistLibFileArch []string
 	// When set, prevents automatic cleaning of the output directory before each loop iteration.
@@ -27,7 +26,7 @@ func StartEnvLoopWithOptions(cliOpt *CLIOptions, opt *StartEnvLoopOptions) {
 	shell := NewShell(tunnel, cliArgs)
 
 	if opt.BeforeAllFn != nil {
-		opt.BeforeAllFn(cliArgs, tunnel)
+		opt.BeforeAllFn(shell)
 	}
 
 	for _, sdk := range cliArgs.SDKs {
@@ -54,7 +53,7 @@ func StartEnvLoopWithOptions(cliOpt *CLIOptions, opt *StartEnvLoopOptions) {
 	}
 
 	if opt.AfterAllFn != nil {
-		opt.AfterAllFn(cliArgs, tunnel)
+		opt.AfterAllFn(shell)
 	}
 }
 

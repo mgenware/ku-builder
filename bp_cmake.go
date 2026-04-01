@@ -227,11 +227,11 @@ func (bp *BuildProject) GetCmakeGenArgsWithOptions(opt *GetCmakeGenArgsOptions) 
 
 	// Put source and build dir arguments at the end.
 	args = append(args, "-S", ".")
-	args = append(args, "-B", bp.BuildDir)
+	args = append(args, "-B", bp.mustGetBuildDir())
 
 	return args
 }
 
 func (bp *BuildProject) GoToBuildDir() {
-	bp.Shell.CD(bp.BuildDir)
+	bp.Shell.CD(bp.mustGetBuildDir())
 }

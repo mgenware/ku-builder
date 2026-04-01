@@ -15,12 +15,13 @@ const kMesonCrossFileDir = "meson_cross_files"
 // K: `Env.GetSDKArchString()`, V: cached cross file path.
 var mesonCrossFileCache = make(map[string]string)
 
-func (bp *BuildProject) GetMesonSetupArgs(libType LibType, buildDir string) []string {
+func (bp *BuildProject) GetMesonSetupArgs() []string {
 	args := []string{
 		"setup",
 	}
 	cliArgs := bp.CLIArgs
 	buildEnv := bp.BuildEnv
+	libType := bp.LibType
 
 	if cliArgs.CleanBuild {
 		args = append(args, "--wipe")
@@ -56,7 +57,7 @@ func (bp *BuildProject) GetMesonSetupArgs(libType LibType, buildDir string) []st
 	args = append(args, "--cross-file="+crossFilePath)
 
 	// Append the build dir as the last argument.
-	args = append(args, buildDir)
+	args = append(args, bp.mustGetBuildDir())
 	return args
 }
 

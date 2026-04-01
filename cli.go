@@ -19,6 +19,7 @@ type CLIArgs struct {
 	CleanBuild  bool
 	SignArg     string
 	PlatformArg PlatformEnum
+	LibType     LibType
 
 	Options *CLIOptions
 }
@@ -79,6 +80,7 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 	ndkPtr := flag.String("ndk", "", "NDK name.")
 	debugPtr := flag.Bool("debug", false, "Debug build.")
 	cleanPtr := flag.Bool("clean", false, "Run a clean build.")
+	dylibPtr := flag.Bool("dylib", false, "Whether the output is a dynamic/shared library.")
 	signPtr := flag.String("sign", "", "Sign the output with the specified identity.")
 	if opt.BeforeParseFn != nil {
 		opt.BeforeParseFn()
@@ -155,6 +157,11 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 		}
 	}
 
+	libType := LibTypeStatic
+	if *dylibPtr {
+		libType = LibTypeDynamic
+	}
+
 	res := &CLIArgs{
 		SDKs:        sdks,
 		Arch:        ArchEnum(*archPtr),
@@ -165,6 +172,7 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 		NDK:         *ndkPtr,
 		SignArg:     *signPtr,
 		PlatformArg: PlatformEnum(*platformPtr),
+		LibType:     libType,
 		Options:     opt,
 	}
 
