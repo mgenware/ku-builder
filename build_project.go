@@ -95,6 +95,9 @@ func (bp *BuildProject) GetBuildDir() string {
 }
 
 func generateRepoDir(repo *RepoInfo) string {
+	if repo.LocalRepoDir != "" {
+		return repo.LocalRepoDir
+	}
 	var ver string
 	if repo.Tag != "" {
 		ver = repo.Tag

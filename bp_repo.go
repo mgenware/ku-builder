@@ -8,6 +8,20 @@ import (
 	"github.com/mgenware/ku-builder/io2"
 )
 
+type RepoInfo struct {
+	Url          string
+	Name         string
+	LocalRepoDir string
+
+	Tag            string
+	Commit         string
+	UrlArchiveName string
+	Branch         string
+
+	CreateArchiveDirName bool
+	PostCheckoutCommands [][]string
+}
+
 func (bp *BuildProject) CloneAndGotoRepo() string {
 	repo := bp.Repo
 	shell := bp.Shell
