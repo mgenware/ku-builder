@@ -276,9 +276,16 @@ func (e *OSEnv) readAndroidLibArch(file string) ArchEnum {
 	}
 }
 
-func (e *OSEnv) AutoVerifyFileArch(baseDir string, outFile []string) {
+func (e *OSEnv) AutoVerifyFileArch(outDir string, distDir string, outFile []string) {
 	if len(outFile) > 0 {
-		// Don't update the `outFile` slice in-place.
+		baseDir := outDir
+		// Check if the first element is '<dist>', which indicates the file is in dist dir.
+		if outFile[0] == "<dist>" {
+			baseDir = distDir
+			outFile = outFile[1:]
+		}
+
+		// Use a copy of outFile to avoid modifying the original slice.
 		outFileCopy := make([]string, len(outFile))
 		copy(outFileCopy, outFile)
 

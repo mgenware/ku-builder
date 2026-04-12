@@ -121,12 +121,6 @@ func (be *BuildEnv) LogSummary() {
 	shell.Logger().Log(j9.LogLevelWarning, "Building target: "+cliArgs.Target+"-"+string(osEnv.SDK)+"-"+string(osEnv.Arch))
 }
 
-func (e *BuildEnv) VerifyOutLibFileArch(outFile []string) {
-	baseDir := e.OutLibDir
-	e.OSEnv.AutoVerifyFileArch(baseDir, outFile)
-}
-
-func (e *BuildEnv) VerifyDistLibFileArch(outFile []string) {
-	baseDir := e.DistLibDir
-	e.OSEnv.AutoVerifyFileArch(baseDir, outFile)
+func (e *BuildEnv) VerifyLibFileArch(outFile []string) {
+	e.OSEnv.AutoVerifyFileArch(e.OutLibDir, e.DistLibDir, outFile)
 }

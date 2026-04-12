@@ -50,5 +50,5 @@ func (bp *BuildProject) RunMakeInstall(outFile []string) {
 		Args: []string{"install"},
 		Env:  env,
 	})
-	bp.BuildEnv.VerifyOutLibFileArch(outFile)
+	bp.BuildEnv.VerifyLibFileArch(outFile)
 }

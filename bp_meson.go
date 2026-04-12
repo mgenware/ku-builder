@@ -139,7 +139,7 @@ func (bp *BuildProject) RunMesonBuildOrInstall(opt *RunMesonBuildOrInstallOption
 		Env:  env,
 	})
 
-	bp.BuildEnv.VerifyOutLibFileArch(outFile)
+	bp.BuildEnv.VerifyLibFileArch(outFile)
 }
 
 func (bp *BuildProject) RunMesonCompile() {

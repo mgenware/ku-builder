@@ -94,7 +94,7 @@ func (bp *BuildProject) RunCmakeBuildOrInstall(opt *RunCmakeBuildOrInstallOption
 		Env:  env,
 	})
 
-	bp.BuildEnv.VerifyOutLibFileArch(outFile)
+	bp.BuildEnv.VerifyLibFileArch(outFile)
 }
 
 func (bp *BuildProject) RunCmakeBuild() {

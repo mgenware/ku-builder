@@ -15,8 +15,6 @@ type StartEnvLoopOptions struct {
 	BeforeAllFn func(*Shell)
 	// Called after the loop ends, can be used for teardown.
 	AfterAllFn func(*Shell)
-	// When set, verifies file archs in the dist/lib directory after the loop.
-	VerifyDistLibFileArch []string
 	// When set, prevents automatic cleaning of the output directory before each loop iteration.
 	DisableAutoClean bool
 }
@@ -49,10 +47,6 @@ func StartEnvLoopWithOptions(cliOpt *CLIOptions, opt *StartEnvLoopOptions) {
 				io2.CleanDir(env.OutDir)
 			}
 			opt.LoopFn(env)
-
-			if len(opt.VerifyDistLibFileArch) > 0 {
-				env.VerifyDistLibFileArch(opt.VerifyDistLibFileArch)
-			}
 		}
 	}
 
