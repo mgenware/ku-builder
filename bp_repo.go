@@ -22,6 +22,8 @@ type RepoInfo struct {
 	PostCheckoutCommands [][]string
 }
 
+var repoPulled = make(map[string]bool)
+
 func (bp *BuildProject) CloneAndGotoRepo() string {
 	repo := bp.Repo
 	shell := bp.Shell
@@ -32,10 +34,13 @@ func (bp *BuildProject) CloneAndGotoRepo() string {
 
 		// Call git pull if needed.
 		if repo.UrlArchiveName == "" && repo.Commit == "" {
-			shell.Spawn(&j9.SpawnOpt{
-				Name: "git",
-				Args: []string{"pull"},
-			})
+			if !repoPulled[repoDir] {
+				shell.Spawn(&j9.SpawnOpt{
+					Name: "git",
+					Args: []string{"pull"},
+				})
+				repoPulled[repoDir] = true
+			}
 		}
 
 		return repoDir
