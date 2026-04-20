@@ -29,6 +29,15 @@ func (bp *BuildProject) CloneAndGotoRepo() string {
 
 	if io2.DirectoryExists(repoDir) && !checkDirEmpty(repoDir) {
 		shell.CD(repoDir)
+
+		// Call git pull if needed.
+		if repo.UrlArchiveName == "" && repo.Commit == "" {
+			shell.Spawn(&j9.SpawnOpt{
+				Name: "git",
+				Args: []string{"pull"},
+			})
+		}
+
 		return repoDir
 	}
 
