@@ -255,6 +255,13 @@ func Build(opt *XCBuildOptions) {
 				}
 			}
 
+			// Sign the framework.
+			signType := kCodeSignTypeIosFramework
+			if isMacos {
+				signType = kCodeSignTypeMacFramework
+			}
+			codeSign(tunnel, fwBinPath, cliArgs.SignArg, signType)
+
 			// Save the dylib path.
 			fwInfo := iFrameworkInfo{
 				LibInfo:          dylibInfo,
@@ -306,12 +313,30 @@ func Build(opt *XCBuildOptions) {
 		}
 		tunnel.Logger().Log(j9.LogLevelWarning, "Signing xcframeworks")
 		for _, xc := range xcList {
-			tunnel.Spawn(&j9.SpawnOpt{
-				Name: "codesign",
-				Args: []string{"--force", "--timestamp", "-s", cliArgs.SignArg, xc},
-			})
+			codeSign(tunnel, xc, cliArgs.SignArg, kCodeSignTypeXCFramework)
 		}
 	}
+}
+
+type CodeSignType string
+
+const (
+	kCodeSignTypeXCFramework  CodeSignType = "xcframework"
+	kCodeSignTypeIosFramework CodeSignType = "ios_framework"
+	kCodeSignTypeMacFramework CodeSignType = "mac_framework"
+)
+
+func codeSign(t *j9.Tunnel, path string, signIdentity string, signType CodeSignType) {
+	args := []string{"--force", "--timestamp", "-s", signIdentity}
+	if signType == kCodeSignTypeMacFramework {
+		// For macOS framework, hardened runtime is required for notarization.
+		args = append(args, "--options", "runtime")
+	}
+	args = append(args, path)
+	t.Spawn(&j9.SpawnOpt{
+		Name: "codesign",
+		Args: args,
+	})
 }
 
 func getDylibsInfo(shell *ku.Shell, libDir string, userLibs map[string]bool) []XCDylibInfo {
