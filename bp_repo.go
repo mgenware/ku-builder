@@ -33,7 +33,7 @@ func (bp *BuildProject) CloneAndGotoRepo() string {
 		shell.CD(repoDir)
 
 		// Call git pull if needed.
-		if repo.UrlArchiveName == "" && repo.Commit == "" {
+		if repo.UrlArchiveName == "" && repo.Commit == "" && !bp.CLIArgs.NoPull {
 			if !repoPulled[repoDir] {
 				shell.Spawn(&j9.SpawnOpt{
 					Name: "git",

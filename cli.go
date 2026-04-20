@@ -20,6 +20,7 @@ type CLIArgs struct {
 	SignArg     string
 	PlatformArg PlatformEnum
 	LibType     LibType
+	NoPull      bool
 
 	Options *CLIOptions
 }
@@ -82,6 +83,7 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 	cleanPtr := flag.Bool("clean", false, "Run a clean build.")
 	dylibPtr := flag.Bool("dylib", false, "Whether the output is a dynamic/shared library.")
 	signPtr := flag.String("sign", "", "Sign the output with the specified identity.")
+	noPullPtr := flag.Bool("no-pull", false, "Whether to skip git pull")
 	if opt.BeforeParseFn != nil {
 		opt.BeforeParseFn()
 	}
@@ -174,6 +176,7 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 		PlatformArg: PlatformEnum(*platformPtr),
 		LibType:     libType,
 		Options:     opt,
+		NoPull:      *noPullPtr,
 	}
 
 	if opt.AfterParseFn != nil {
