@@ -25,14 +25,13 @@ func Build(opt *XCBuildOptions) {
 	}
 
 	cliArgs := ku.ParseCLIArgs(cliOpt)
-	tunnel := ku.CreateDefaultTunnel()
-	shell := ku.NewShell(tunnel, cliArgs)
+	shell := ku.NewShell(ku.CreateDefaultTunnel(), cliArgs)
 	buildTypeDir := ku.GetBuildTypeDir(cliArgs.DebugBuild)
 	target := cliArgs.Target
 
 	xcCtx := &XCContext{
 		CLIArgs: cliArgs,
-		Tunnel:  tunnel,
+		Tunnel:  shell.Tunnel,
 		Target:  target,
 	}
 
@@ -183,13 +182,13 @@ func Build(opt *XCBuildOptions) {
 			// Set dylib rpath before lipo.
 			for _, archDylibPath := range archDylibPaths {
 				// Set dylib rpath.
-				tunnel.Spawn(&j9.SpawnOpt{
+				shell.Spawn(&j9.SpawnOpt{
 					Name: "install_name_tool",
 					Args: []string{"-id", "@rpath/" + dylibInfo.Name + ".framework/" + dylibInfo.Name, archDylibPath},
 				})
 
 				// Set rpath of dependencies.
-				updateDylibDepRpath(tunnel, archDylibPath, buildTypeDir, opt.AggressiveDepRpathUpdates)
+				updateDylibDepRpath(shell, archDylibPath, buildTypeDir, opt.AggressiveDepRpathUpdates)
 			}
 
 			// lipo
@@ -199,7 +198,7 @@ func Build(opt *XCBuildOptions) {
 			lipoArgs = append(lipoArgs, archDylibPaths...)
 			lipoArgs = append(lipoArgs, "-output")
 			lipoArgs = append(lipoArgs, fwBinPath)
-			tunnel.Spawn(&j9.SpawnOpt{
+			shell.Spawn(&j9.SpawnOpt{
 				Name: "lipo",
 				Args: lipoArgs},
 			)
@@ -212,9 +211,7 @@ func Build(opt *XCBuildOptions) {
 			}
 
 			// Headers
-			tunnel.Shell(&j9.ShellOpt{
-				Cmd: "cp -R " + filepath.Join(srcDylibHeadersDir, "*") + " " + fwHeadersDir,
-			})
+			shell.Shell("cp -R " + filepath.Join(srcDylibHeadersDir, "*") + " " + fwHeadersDir)
 
 			// Modulemap for [target].framework.
 			if hasModuleMap {
@@ -238,7 +235,7 @@ func Build(opt *XCBuildOptions) {
 			if isMacos {
 				// Create Versions/Current symlink first.
 				// Other symlinks depend on this.
-				tunnel.Spawn(&j9.SpawnOpt{
+				shell.Spawn(&j9.SpawnOpt{
 					Name: "ln",
 					Args: []string{"-s", "A", filepath.Join(fwPath, "Versions/Current")},
 				})
@@ -247,7 +244,7 @@ func Build(opt *XCBuildOptions) {
 					symItems = append(symItems, "Modules")
 				}
 				for _, symName := range symItems {
-					tunnel.Spawn(&j9.SpawnOpt{
+					shell.Spawn(&j9.SpawnOpt{
 						Name:       "ln",
 						Args:       []string{"-s", "Versions/Current/" + symName, filepath.Join(fwPath, symName)},
 						WorkingDir: fwPath,
@@ -260,7 +257,7 @@ func Build(opt *XCBuildOptions) {
 			if isMacos {
 				signType = kCodeSignTypeMacFramework
 			}
-			codeSign(tunnel, fwBinPath, cliArgs.SignArg, signType)
+			codeSign(shell, fwBinPath, cliArgs.SignArg, signType)
 
 			// Save the dylib path.
 			fwInfo := iFrameworkInfo{
@@ -299,7 +296,7 @@ func Build(opt *XCBuildOptions) {
 		}
 		xcArgs = append(xcArgs, "-output")
 		xcArgs = append(xcArgs, xcLibDir)
-		tunnel.Spawn(&j9.SpawnOpt{
+		shell.Spawn(&j9.SpawnOpt{
 			Name: "xcodebuild",
 			Args: xcArgs},
 		)
@@ -311,9 +308,9 @@ func Build(opt *XCBuildOptions) {
 		if cliArgs.SignArg == "" {
 			shell.Quit("-sign is required for release build")
 		}
-		tunnel.Logger().Log(j9.LogLevelWarning, "Signing xcframeworks")
+		shell.Logger().Log(j9.LogLevelWarning, "Signing xcframeworks")
 		for _, xc := range xcList {
-			codeSign(tunnel, xc, cliArgs.SignArg, kCodeSignTypeXCFramework)
+			codeSign(shell, xc, cliArgs.SignArg, kCodeSignTypeXCFramework)
 		}
 	}
 }
@@ -326,17 +323,25 @@ const (
 	kCodeSignTypeMacFramework CodeSignType = "mac_framework"
 )
 
-func codeSign(t *j9.Tunnel, path string, signIdentity string, signType CodeSignType) {
+func codeSign(shell *ku.Shell, path string, signIdentity string, signType CodeSignType) {
 	args := []string{"--force", "--timestamp", "-s", signIdentity}
 	if signType == kCodeSignTypeMacFramework {
 		// For macOS framework, hardened runtime is required for notarization.
 		args = append(args, "--options", "runtime")
 	}
 	args = append(args, path)
-	t.Spawn(&j9.SpawnOpt{
+	shell.Spawn(&j9.SpawnOpt{
 		Name: "codesign",
 		Args: args,
 	})
+	verifyCodeSign(shell, path)
+}
+
+func verifyCodeSign(shell *ku.Shell, path string) {
+	output := shell.Shell("codesign -dvvv \"" + path + "\"")
+	if !strings.Contains(output, "Authority") {
+		shell.Quit("Code signing verification failed for: " + path)
+	}
 }
 
 func getDylibsInfo(shell *ku.Shell, libDir string, userLibs map[string]bool) []XCDylibInfo {
@@ -415,10 +420,8 @@ func moduleMapForFw(libName string) string {
 }`
 }
 
-func updateDylibDepRpath(t *j9.Tunnel, dylibPath string, buildDir string, aggressiveDepRpathUpdates bool) {
-	output := t.Shell(&j9.ShellOpt{
-		Cmd: "otool -L \"" + dylibPath + "\"",
-	})
+func updateDylibDepRpath(shell *ku.Shell, dylibPath string, buildDir string, aggressiveDepRpathUpdates bool) {
+	output := shell.Shell("otool -L \"" + dylibPath + "\"")
 	output = strings.TrimSpace(output)
 	lines := strings.Split(output, "\n")
 	// Skip the first line, which is the dylib path.
@@ -467,7 +470,7 @@ func updateDylibDepRpath(t *j9.Tunnel, dylibPath string, buildDir string, aggres
 			args = append(args, "-change", depPaths[i], "@rpath/"+replaceNames[i]+".framework/"+replaceNames[i])
 		}
 		args = append(args, dylibPath)
-		t.Spawn(&j9.SpawnOpt{
+		shell.Spawn(&j9.SpawnOpt{
 			Name: "install_name_tool",
 			Args: args,
 		})
