@@ -189,6 +189,8 @@ func Build(opt *XCBuildOptions) {
 
 				// Set rpath of dependencies.
 				updateDylibDepRpath(shell, archDylibPath, buildTypeDir, opt.AggressiveDepRpathUpdates)
+				// Verify no local dependencies.
+				verifyNoLocalDepInDylib(shell, archDylibPath)
 			}
 
 			// lipo
@@ -418,6 +420,13 @@ func moduleMapForFw(libName string) string {
 
 	export *
 }`
+}
+
+func verifyNoLocalDepInDylib(shell *ku.Shell, dylibPath string) {
+	output := shell.Shell("otool -L \"" + dylibPath + "\"")
+	if strings.Contains(output, "  /Users/") {
+		shell.Quit("Local dependency found in dylib: " + dylibPath + "\n" + output)
+	}
 }
 
 func updateDylibDepRpath(shell *ku.Shell, dylibPath string, buildDir string, aggressiveDepRpathUpdates bool) {
