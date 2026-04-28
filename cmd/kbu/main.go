@@ -56,11 +56,10 @@ func main() {
 			fmt.Println("Invalid OS type. Please specify 'd' for Darwin or 'a' for Android.")
 			return
 		}
-	} else if inputExt == ".dylib" {
+	} else if inputExt == ".so" {
+		isDarwin = false
+	} else {
 		isDarwin = true
-	} else if inputExt != ".so" {
-		fmt.Println("Unsupported file type")
-		return
 	}
 
 	t := j9.NewTunnel(j9.NewLocalNode(), j9.NewConsoleLogger())
