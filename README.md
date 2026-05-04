@@ -24,7 +24,7 @@ Supported host platform:
 ### Installation
 
 ```bash
-go install github.com/mgenware/ku-builder/cmd/kbu@latest
+go install github.com/mgenware/ku-builder/kbu@latest
 ```
 
 ### Usage
