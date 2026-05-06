@@ -316,6 +316,8 @@ func Build(opt *XCBuildOptions) {
 			codeSign(shell, xc, cliArgs.SignArg, kCodeSignTypeXCFramework)
 		}
 	}
+
+	shell.Logger().Log(j9.LogLevelInfo, "🚕 XC build completed")
 }
 
 type CodeSignType string
