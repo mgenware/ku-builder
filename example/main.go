@@ -4,12 +4,12 @@ import (
 	"github.com/mgenware/ku-builder"
 )
 
-const LibName = "libogg"
+const kTarget = "libogg"
 
 var Repo = &ku.RepoInfo{
 	Url:  "https://github.com/xiph/ogg",
 	Tag:  "v1.3.5",
-	Name: LibName,
+	Name: kTarget,
 }
 
 func BuildOgg(be *ku.BuildEnv, libType ku.LibType) {
@@ -30,7 +30,7 @@ func BuildOgg(be *ku.BuildEnv, libType ku.LibType) {
 
 func main() {
 	cliOpt := &ku.CLIOptions{
-		DefaultTarget: LibName,
+		DefaultTarget: kTarget,
 	}
 	loopOpt := &ku.StartEnvLoopOptions{
 		LoopFn: func(be *ku.BuildEnv) {
@@ -40,7 +40,7 @@ func main() {
 			BuildOgg(be, libType)
 		},
 		AfterAllFn: func(shell *ku.Shell) {
-			ku.CopyJNILibs(shell, []string{LibName + ".so"}, []string{"ogg"})
+			ku.CopyJNILibs(shell, []string{kTarget + ".so"}, []string{"ogg"})
 		},
 	}
 	ku.StartEnvLoopWithOptions(cliOpt, loopOpt)

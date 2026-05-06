@@ -77,7 +77,7 @@ func Build(opt *XCBuildOptions) {
 	for _, sdk := range sdks {
 		sdkDir := ku.GetSDKDir(buildTypeDir, sdk)
 		archs := ku.SDKArchs[sdk]
-		sdkFwDir := ku.GetSDKFrameworkDir(sdkDir)
+		sdkFwDir := filepath.Join(ku.GetSDKFrameworkDir(sdkDir), target)
 
 		// Get the first arch lib dir to get dylib info.
 		firstArchLibDir := ""
@@ -278,7 +278,8 @@ func Build(opt *XCBuildOptions) {
 		}
 	} // end of `for sdks`.
 
-	xcDir := filepath.Join(buildTypeDir, "xcframework", platformStr)
+	xcRootDir := ku.GetXCFrameworkDir(buildTypeDir)
+	xcDir := filepath.Join(xcRootDir, platformStr, target)
 	io2.CleanDir(xcDir)
 	var xcList []string
 

@@ -136,8 +136,8 @@ func GetSDKFrameworkDir(sdkDir string) string {
 	return filepath.Join(sdkDir, "framework")
 }
 
-func GetSDKXCFrameworkDir(sdkDir string) string {
-	return filepath.Join(sdkDir, "xcframework")
+func GetXCFrameworkDir(buildTypeDir string) string {
+	return filepath.Join(buildTypeDir, "xcframework")
 }
 
 func GetOldArch(arch ArchEnum) string {
