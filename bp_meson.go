@@ -46,9 +46,6 @@ func (bp *BuildProject) GetMesonSetupArgs() []string {
 	args = append(args, "--prefix="+buildEnv.OutDir)
 	args = append(args, "--cmake-prefix-path="+buildEnv.OutDir)
 
-	pkgConfigPath := filepath.Join(buildEnv.OutDir, "lib", "pkgconfig")
-	args = append(args, "--pkg-config-path="+pkgConfigPath)
-
 	crossFilePath, err := bp.getOrCreateCrossFilePath()
 	if err != nil {
 		bp.Shell.Quit(fmt.Sprintf("Failed to create Meson cross file: %v", err))
@@ -69,8 +66,14 @@ type RunMesonSetupOptions struct {
 func (bp *BuildProject) RunMesonSetup(opt *RunMesonSetupOptions) {
 	bp.NotNullOrQuit(opt, "opt")
 
-	// Note: `opt.Env` should be set after `GetKuBuiltinEnv`.
-	env := append(bp.GetKuBuiltinEnv(), opt.Env...)
+	buildEnv := bp.BuildEnv
+	pkgConfigDir := filepath.Join(buildEnv.OutDir, "lib", "pkgconfig")
+
+	env := append(bp.GetKuBuiltinEnv(),
+		// Force pkg-config to only look in our output directory for .pc files. This is needed to prevent meson from auto-detecting libraries on the build machine.
+		"PKG_CONFIG_LIBDIR="+pkgConfigDir,
+	)
+	env = append(env, opt.Env...)
 
 	bp.Shell.Spawn(&j9.SpawnOpt{
 		Name: "meson",
