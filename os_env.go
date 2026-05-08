@@ -100,6 +100,14 @@ func (e *OSEnv) GetSDKArchString() string {
 	return string(e.SDK) + "-" + string(e.Arch)
 }
 
+func (e *OSEnv) GetPkgConfigPath() string {
+	return e.cachedString("pkg-config", e.fetchPkgConfigPath)
+}
+
+func (e *OSEnv) fetchPkgConfigPath() string {
+	return e.shell.Shell("which pkg-config")
+}
+
 func (e *OSEnv) fetchLDPath() string {
 	if e.IsDarwinPlatform() {
 		return e.GetCCPath()

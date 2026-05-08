@@ -70,6 +70,7 @@ func (bp *BuildProject) RunMesonSetup(opt *RunMesonSetupOptions) {
 	pkgConfigDir := filepath.Join(buildEnv.OutDir, "lib", "pkgconfig")
 
 	env := append(bp.GetKuBuiltinEnv(),
+		"PKG_CONFIG="+bp.OS.GetPkgConfigPath(),
 		// Force pkg-config to only look in our output directory for .pc files. This is needed to prevent meson from auto-detecting libraries on the build machine.
 		"PKG_CONFIG_LIBDIR="+pkgConfigDir,
 	)
