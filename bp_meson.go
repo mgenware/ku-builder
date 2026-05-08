@@ -15,10 +15,25 @@ const kMesonCrossFileDir = "meson_cross_files"
 // K: `Env.GetSDKArchString()`, V: cached cross file path.
 var mesonCrossFileCache = make(map[string]string)
 
+type MesonSetupOptions struct {
+	// If true, run `meson configure` instead of `meson setup`.
+	Configure bool
+}
+
 func (bp *BuildProject) GetMesonSetupArgs() []string {
-	args := []string{
-		"setup",
+	return bp.GetMesonSetupArgsWithOptions(nil)
+}
+
+func (bp *BuildProject) GetMesonSetupArgsWithOptions(opt *MesonSetupOptions) []string {
+	if opt == nil {
+		opt = &MesonSetupOptions{}
 	}
+
+	rootAction := "setup"
+	if opt.Configure {
+		rootAction = "configure"
+	}
+	args := []string{rootAction}
 	cliArgs := bp.CLIArgs
 	buildEnv := bp.BuildEnv
 	libType := bp.LibType
