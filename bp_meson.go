@@ -66,7 +66,9 @@ func (bp *BuildProject) GetMesonSetupArgsWithOptions(opt *MesonSetupOptions) []s
 		bp.Shell.Quit(fmt.Sprintf("Failed to create Meson cross file: %v", err))
 		return nil
 	}
-	args = append(args, "--cross-file="+crossFilePath)
+	if !opt.Configure {
+		args = append(args, "--cross-file="+crossFilePath)
+	}
 
 	// Append the build dir as the last argument.
 	args = append(args, bp.mustGetBuildDir())
