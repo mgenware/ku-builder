@@ -209,7 +209,7 @@ func Build(opt *XCBuildOptions) {
 			infoPlistContent := infoPlistForFw(dylibInfo.Name, "com.mgenware", isMacos)
 			err := os.WriteFile(fwInfoPlistPath, []byte(infoPlistContent), 0644)
 			if err != nil {
-				panic(err)
+				shell.Quit(fmt.Sprintf("Error writing Info.plist at %s: %v", fwInfoPlistPath, err))
 			}
 
 			// Headers
@@ -228,7 +228,7 @@ func Build(opt *XCBuildOptions) {
 				}
 				err = os.WriteFile(fwModuleMapFile, []byte(fwModuleMapContent), 0644)
 				if err != nil {
-					panic(err)
+					shell.Quit(fmt.Sprintf("Error writing module.modulemap at %s: %v", fwModuleMapFile, err))
 				}
 				hasLibModulemapSet = true
 			}
