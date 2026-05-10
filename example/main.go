@@ -17,7 +17,7 @@ func BuildOgg(be *ku.BuildEnv, libType ku.LibType) {
 	bp.CloneAndGotoRepo()
 	args := bp.GetCmakeGenArgs()
 
-	env := bp.GetCompilerConfigureEnv(nil)
+	env := bp.GetToolchainEnv(nil)
 	bp.RunCmakeGen(&ku.RunCmakeGenOptions{
 		Args: args,
 		Env:  env,

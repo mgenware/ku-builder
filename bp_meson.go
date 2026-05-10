@@ -210,14 +210,14 @@ func (bp *BuildProject) createCrossFile() string {
 	osEnv := bp.OS
 
 	sb.WriteString("[binaries]\n")
-	compilerPathMap := bp.GetCompilerPathMapWithOptions(&GetCompilerPathMapOptions{Meson: true})
+	compilerPathMap := bp.GetToolchainPathMapWithOptions(&GetToolchainPathMapOptions{Meson: true})
 	for _, pair := range compilerPathMap {
 		sb.WriteString(strings.ToLower(pair[0]) + " = '" + pair[1] + "'\n")
 	}
 
 	sb.WriteString("[built-in options]\n")
-	cflags := bp.GetCompilerFlagList(nil)
-	ldflags := bp.GetCompilerFlagList(&GetCompilerFlagsOptions{LD: true})
+	cflags := bp.GetCompilerFlagsList(nil)
+	ldflags := bp.GetCompilerFlagsList(&GetCompilerFlagsOptions{LD: true})
 	sb.WriteString("c_args = " + joinStringsWithSingleQuotes(cflags) + "\n")
 	sb.WriteString("cpp_args = " + joinStringsWithSingleQuotes(cflags) + "\n")
 	sb.WriteString("c_link_args = " + joinStringsWithSingleQuotes(ldflags) + "\n")
