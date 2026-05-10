@@ -8,10 +8,17 @@ type ProjectInitOptions struct {
 	Args []string
 	Env  []string
 
+	// Cmake options.
 	GetCmakeSetupArgsOptions *GetCmakeGenArgsOptions
 	RunCmakeSetupOptions     *RunCmakeGenOptions
+
+	// Meson options.
 	GetMesonSetupArgsOptions *GetMesonSetupArgsOptions
 	RunMesonSetupOptions     *RunMesonSetupOptions
+
+	// Make options.
+	MakeExtraCAndCXXFlags []string
+	MakeExtraLDFlags      []string
 }
 
 type Project interface {
@@ -94,7 +101,9 @@ func (p *MakeProject) Init(opt *ProjectInitOptions) {
 	b.CloneAndGotoRepo()
 
 	env := b.GetToolchainEnv(&GetToolchainEnvOptions{
-		MakeOnlySetCompilerFlags: true,
+		MakeOnlySetCompilerFlags:  true,
+		MakeOnlyExtraCAndCXXFlags: opt.MakeExtraCAndCXXFlags,
+		MakeOnlyExtraLDFlags:      opt.MakeExtraLDFlags,
 	})
 	if len(opt.Env) > 0 {
 		env = append(env, opt.Env...)

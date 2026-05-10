@@ -6,6 +6,8 @@ type GetCompilerFlagsOptions struct {
 	LD          bool
 	DisableArch bool
 	EnablePIC   bool
+
+	ExtraFlags []string
 }
 
 func (bp *Builder) GetCompilerFlagsList(opt *GetCompilerFlagsOptions) []string {
@@ -45,6 +47,10 @@ func (bp *Builder) GetCompilerFlagsList(opt *GetCompilerFlagsOptions) []string {
 		args = append(args, "-fPIC")
 	}
 
+	if len(opt.ExtraFlags) > 0 {
+		args = append(args, opt.ExtraFlags...)
+	}
+
 	return args
 }
 
@@ -60,6 +66,9 @@ type GetToolchainEnvOptions struct {
 	// For CMake projects, these flags are passed via CMAKE_CXX_FLAGS, etc., so this option is not needed.
 	// For Meson projects, these flags are passed via cross file, so this option is not needed.
 	MakeOnlySetCompilerFlags bool
+
+	MakeOnlyExtraCAndCXXFlags []string
+	MakeOnlyExtraLDFlags      []string
 }
 
 type GetToolchainPathMapOptions struct {
@@ -127,8 +136,13 @@ func (bp *Builder) GetToolchainEnv(opt *GetToolchainEnvOptions) []string {
 	}
 
 	if opt.MakeOnlySetCompilerFlags {
-		cflags := bp.GetCompilerFlagsString(nil)
-		ldflags := bp.GetCompilerFlagsString(&GetCompilerFlagsOptions{LD: true})
+		cflags := bp.GetCompilerFlagsString(&GetCompilerFlagsOptions{
+			ExtraFlags: opt.MakeOnlyExtraCAndCXXFlags,
+		})
+		ldflags := bp.GetCompilerFlagsString(&GetCompilerFlagsOptions{
+			ExtraFlags: opt.MakeOnlyExtraLDFlags,
+			LD:         true,
+		})
 
 		args = append(args, "CFLAGS="+cflags)
 		args = append(args, "CXXFLAGS="+cflags)
