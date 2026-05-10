@@ -8,9 +8,10 @@ type ProjectInitOptions struct {
 	Args []string
 	Env  []string
 
-	// Once set, Args and Env are ignored.
-	CmakeOptions *RunCmakeGenOptions
-	MesonOptions *RunMesonSetupOptions
+	GetCmakeSetupArgsOptions *GetCmakeGenArgsOptions
+	RunCmakeSetupOptions     *RunCmakeGenOptions
+	GetMesonSetupArgsOptions *GetMesonSetupArgsOptions
+	RunMesonSetupOptions     *RunMesonSetupOptions
 }
 
 type Project interface {
@@ -37,7 +38,7 @@ func (p *CMakeProject) Init(opt *ProjectInitOptions) {
 
 	b := p.builder
 	b.CloneAndGotoRepo()
-	args := b.GetCmakeGenArgs()
+	args := b.GetCmakeGenArgsWithOptions(opt.GetCmakeSetupArgsOptions)
 	env := b.GetToolchainEnv(nil)
 	if len(opt.Args) > 0 {
 		args = append(args, opt.Args...)
@@ -48,8 +49,8 @@ func (p *CMakeProject) Init(opt *ProjectInitOptions) {
 
 	var genOpt *RunCmakeGenOptions
 	// Merge options.
-	if opt.CmakeOptions != nil {
-		genOpt = opt.CmakeOptions
+	if opt.RunCmakeSetupOptions != nil {
+		genOpt = opt.RunCmakeSetupOptions
 		genOpt.Args = append(args, genOpt.Args...)
 		genOpt.Env = append(env, genOpt.Env...)
 	} else {
@@ -137,15 +138,15 @@ func (p *MesonProject) Init(opt *ProjectInitOptions) {
 	bp := p.builder
 	bp.CloneAndGotoRepo()
 
-	args := bp.GetMesonSetupArgs()
+	args := bp.GetMesonSetupArgsWithOptions(opt.GetMesonSetupArgsOptions)
 	if len(opt.Args) > 0 {
 		args = append(args, opt.Args...)
 	}
 	env := opt.Env
 
 	var genOpt *RunMesonSetupOptions
-	if opt.MesonOptions != nil {
-		genOpt = opt.MesonOptions
+	if opt.RunMesonSetupOptions != nil {
+		genOpt = opt.RunMesonSetupOptions
 		genOpt.Args = append(args, genOpt.Args...)
 		genOpt.Env = append(env, genOpt.Env...)
 	} else {
