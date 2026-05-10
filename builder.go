@@ -7,7 +7,7 @@ import (
 	"github.com/mgenware/ku-builder/io2"
 )
 
-type BuildProject struct {
+type Builder struct {
 	Repo     *RepoInfo
 	BuildEnv *BuildEnv
 
@@ -23,8 +23,8 @@ type BuildProject struct {
 	buildDir string
 }
 
-func NewBuildProject(repo *RepoInfo, buildEnv *BuildEnv, libType LibType) *BuildProject {
-	return &BuildProject{
+func NewBuilder(repo *RepoInfo, buildEnv *BuildEnv, libType LibType) *Builder {
+	return &Builder{
 		Repo:     repo,
 		BuildEnv: buildEnv,
 		LibType:  libType,
@@ -35,7 +35,7 @@ func NewBuildProject(repo *RepoInfo, buildEnv *BuildEnv, libType LibType) *Build
 	}
 }
 
-func (bp *BuildProject) GetKuBuiltinEnv() []string {
+func (bp *Builder) GetKuBuiltinEnv() []string {
 	be := bp.BuildEnv
 	e := be.OSEnv
 
@@ -65,13 +65,13 @@ func (bp *BuildProject) GetKuBuiltinEnv() []string {
 	return env
 }
 
-func (bp *BuildProject) NotNullOrQuit(v interface{}, name string) {
+func (bp *Builder) NotNullOrQuit(v interface{}, name string) {
 	if v == nil {
 		bp.BuildEnv.Shell.Quit(fmt.Sprintf("%s should not be nil", name))
 	}
 }
 
-func (bp *BuildProject) createBuildDir(repoName string) {
+func (bp *Builder) createBuildDir(repoName string) {
 	buildEnv := bp.BuildEnv
 	buildDir := filepath.Join(buildEnv.TmpDir, repoName)
 	if buildEnv.Shell.Args.CleanBuild {
@@ -82,7 +82,7 @@ func (bp *BuildProject) createBuildDir(repoName string) {
 	bp.buildDir = buildDir
 }
 
-func (bp *BuildProject) mustGetBuildDir() string {
+func (bp *Builder) mustGetBuildDir() string {
 	if bp.buildDir == "" {
 		bp.createBuildDir(bp.Repo.Name)
 	}
@@ -90,7 +90,7 @@ func (bp *BuildProject) mustGetBuildDir() string {
 }
 
 // Could be empty for non-CMake or non-Meson projects.
-func (bp *BuildProject) GetBuildDir() string {
+func (bp *Builder) GetBuildDir() string {
 	return bp.buildDir
 }
 

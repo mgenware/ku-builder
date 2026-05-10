@@ -24,7 +24,7 @@ type RepoInfo struct {
 
 var repoPulled = make(map[string]bool)
 
-func (bp *BuildProject) CloneAndGotoRepo() string {
+func (bp *Builder) CloneAndGotoRepo() string {
 	repo := bp.Repo
 	shell := bp.Shell
 	repoDir := bp.repoDir
@@ -122,7 +122,7 @@ func (bp *BuildProject) CloneAndGotoRepo() string {
 	return repoDir
 }
 
-func (bp *BuildProject) GetRepoDir() string {
+func (bp *Builder) GetRepoDir() string {
 	return bp.repoDir
 }
 

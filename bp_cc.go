@@ -8,7 +8,7 @@ type GetCompilerFlagsOptions struct {
 	EnablePIC   bool
 }
 
-func (bp *BuildProject) GetCompilerFlagsList(opt *GetCompilerFlagsOptions) []string {
+func (bp *Builder) GetCompilerFlagsList(opt *GetCompilerFlagsOptions) []string {
 	if opt == nil {
 		opt = &GetCompilerFlagsOptions{}
 	}
@@ -48,7 +48,7 @@ func (bp *BuildProject) GetCompilerFlagsList(opt *GetCompilerFlagsOptions) []str
 	return args
 }
 
-func (bp *BuildProject) GetCompilerFlagsString(opt *GetCompilerFlagsOptions) string {
+func (bp *Builder) GetCompilerFlagsString(opt *GetCompilerFlagsOptions) string {
 	return strings.Join(bp.GetCompilerFlagsList(opt), " ")
 }
 
@@ -66,11 +66,11 @@ type GetToolchainPathMapOptions struct {
 	Meson bool
 }
 
-func (bp *BuildProject) GetToolchainPathMap() [][]string {
+func (bp *Builder) GetToolchainPathMap() [][]string {
 	return bp.GetToolchainPathMapWithOptions(nil)
 }
 
-func (bp *BuildProject) GetToolchainPathMapWithOptions(opt *GetToolchainPathMapOptions) [][]string {
+func (bp *Builder) GetToolchainPathMapWithOptions(opt *GetToolchainPathMapOptions) [][]string {
 	if opt == nil {
 		opt = &GetToolchainPathMapOptions{}
 	}
@@ -114,7 +114,7 @@ func (bp *BuildProject) GetToolchainPathMapWithOptions(opt *GetToolchainPathMapO
 // GetToolchainEnv returns environment variables for compiler configuration.
 // This includes CC, CXX, LD, and optionally CFLAGS, CXXFLAGS, LDFLAGS (when OverrideCompilerFlags is true).
 // On Android, it also includes AR, AS, RANLIB, STRIP, NM.
-func (bp *BuildProject) GetToolchainEnv(opt *GetToolchainEnvOptions) []string {
+func (bp *Builder) GetToolchainEnv(opt *GetToolchainEnvOptions) []string {
 	if opt == nil {
 		opt = &GetToolchainEnvOptions{}
 	}

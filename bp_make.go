@@ -7,7 +7,7 @@ import (
 	"github.com/mgenware/j9/v3"
 )
 
-func (bp *BuildProject) RunMakeCleanRaw() error {
+func (bp *Builder) RunMakeCleanRaw() error {
 	env := bp.GetKuBuiltinEnv()
 	return bp.BuildEnv.Shell.SpawnRaw(&j9.SpawnOpt{
 		Name: "make",
@@ -16,14 +16,14 @@ func (bp *BuildProject) RunMakeCleanRaw() error {
 	})
 }
 
-func (bp *BuildProject) RunMakeClean() {
+func (bp *Builder) RunMakeClean() {
 	err := bp.RunMakeCleanRaw()
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (bp *BuildProject) RunMakeWithArgs(opt *j9.SpawnOpt) {
+func (bp *Builder) RunMakeWithArgs(opt *j9.SpawnOpt) {
 	if opt == nil {
 		opt = &j9.SpawnOpt{}
 	}
@@ -39,11 +39,11 @@ func (bp *BuildProject) RunMakeWithArgs(opt *j9.SpawnOpt) {
 	})
 }
 
-func (bp *BuildProject) RunMake() {
+func (bp *Builder) RunMake() {
 	bp.RunMakeWithArgs(nil)
 }
 
-func (bp *BuildProject) RunMakeInstall(outFile []string) {
+func (bp *Builder) RunMakeInstall(outFile []string) {
 	env := bp.GetKuBuiltinEnv()
 	bp.BuildEnv.Shell.Spawn(&j9.SpawnOpt{
 		Name: "make",

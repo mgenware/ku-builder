@@ -12,7 +12,7 @@ type RunCmakeGenOptions struct {
 	Env  []string
 }
 
-func (bp *BuildProject) RunCmakeGen(opt *RunCmakeGenOptions) {
+func (bp *Builder) RunCmakeGen(opt *RunCmakeGenOptions) {
 	bp.NotNullOrQuit(opt, "opt")
 	// Note: `opt.Env` should be set after `GetKuBuiltinEnv`.
 	env := append(bp.GetKuBuiltinEnv(), opt.Env...)
@@ -43,7 +43,7 @@ type RunCmakeBuildOrInstallOptions struct {
 	Env       []string
 }
 
-func (bp *BuildProject) RunCmakeBuildOrInstall(opt *RunCmakeBuildOrInstallOptions, outFile []string) {
+func (bp *Builder) RunCmakeBuildOrInstall(opt *RunCmakeBuildOrInstallOptions, outFile []string) {
 	bp.NotNullOrQuit(opt, "opt")
 	bp.NotNullOrQuit(opt.Action, "opt.Action")
 
@@ -97,11 +97,11 @@ func (bp *BuildProject) RunCmakeBuildOrInstall(opt *RunCmakeBuildOrInstallOption
 	bp.BuildEnv.VerifyLibFileArch(outFile)
 }
 
-func (bp *BuildProject) RunCmakeBuild() {
+func (bp *Builder) RunCmakeBuild() {
 	bp.RunCmakeBuildTarget("")
 }
 
-func (bp *BuildProject) RunCmakeBuildTarget(target string) {
+func (bp *Builder) RunCmakeBuildTarget(target string) {
 	opt := &RunCmakeBuildOrInstallOptions{
 		Action: CmakeActionBuild,
 		Target: target,
@@ -109,7 +109,7 @@ func (bp *BuildProject) RunCmakeBuildTarget(target string) {
 	bp.RunCmakeBuildOrInstall(opt, nil)
 }
 
-func (bp *BuildProject) RunCmakeInstall(outFile []string) {
+func (bp *Builder) RunCmakeInstall(outFile []string) {
 	opt := &RunCmakeBuildOrInstallOptions{
 		Action: CmakeActionInstall,
 	}
@@ -122,11 +122,11 @@ type GetCmakeGenArgsOptions struct {
 	Preset           string
 }
 
-func (bp *BuildProject) GetCmakeGenArgs() []string {
+func (bp *Builder) GetCmakeGenArgs() []string {
 	return bp.GetCmakeGenArgsWithOptions(nil)
 }
 
-func (bp *BuildProject) GetCmakeGenArgsWithOptions(opt *GetCmakeGenArgsOptions) []string {
+func (bp *Builder) GetCmakeGenArgsWithOptions(opt *GetCmakeGenArgsOptions) []string {
 	if opt == nil {
 		opt = &GetCmakeGenArgsOptions{}
 	}
@@ -232,6 +232,6 @@ func (bp *BuildProject) GetCmakeGenArgsWithOptions(opt *GetCmakeGenArgsOptions) 
 	return args
 }
 
-func (bp *BuildProject) GoToBuildDir() {
+func (bp *Builder) GoToBuildDir() {
 	bp.Shell.CD(bp.mustGetBuildDir())
 }

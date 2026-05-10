@@ -20,11 +20,11 @@ type MesonSetupOptions struct {
 	Configure bool
 }
 
-func (bp *BuildProject) GetMesonSetupArgs() []string {
+func (bp *Builder) GetMesonSetupArgs() []string {
 	return bp.GetMesonSetupArgsWithOptions(nil)
 }
 
-func (bp *BuildProject) GetMesonSetupArgsWithOptions(opt *MesonSetupOptions) []string {
+func (bp *Builder) GetMesonSetupArgsWithOptions(opt *MesonSetupOptions) []string {
 	if opt == nil {
 		opt = &MesonSetupOptions{}
 	}
@@ -80,7 +80,7 @@ type RunMesonSetupOptions struct {
 	Env  []string
 }
 
-func (bp *BuildProject) RunMesonSetup(opt *RunMesonSetupOptions) {
+func (bp *Builder) RunMesonSetup(opt *RunMesonSetupOptions) {
 	bp.NotNullOrQuit(opt, "opt")
 
 	buildEnv := bp.BuildEnv
@@ -116,7 +116,7 @@ type RunMesonBuildOrInstallOptions struct {
 	Env       []string
 }
 
-func (bp *BuildProject) RunMesonBuildOrInstall(opt *RunMesonBuildOrInstallOptions, outFile []string) {
+func (bp *Builder) RunMesonBuildOrInstall(opt *RunMesonBuildOrInstallOptions, outFile []string) {
 	bp.NotNullOrQuit(opt, "opt")
 	bp.NotNullOrQuit(opt.Action, "opt.Action")
 
@@ -163,11 +163,11 @@ func (bp *BuildProject) RunMesonBuildOrInstall(opt *RunMesonBuildOrInstallOption
 	bp.BuildEnv.VerifyLibFileArch(outFile)
 }
 
-func (bp *BuildProject) RunMesonCompile() {
+func (bp *Builder) RunMesonCompile() {
 	bp.RunMesonCompileTarget("")
 }
 
-func (bp *BuildProject) RunMesonCompileTarget(target string) {
+func (bp *Builder) RunMesonCompileTarget(target string) {
 	opt := &RunMesonBuildOrInstallOptions{
 		Action: MesonActionCompile,
 		Target: target,
@@ -175,14 +175,14 @@ func (bp *BuildProject) RunMesonCompileTarget(target string) {
 	bp.RunMesonBuildOrInstall(opt, nil)
 }
 
-func (bp *BuildProject) RunMesonInstall(outFile []string) {
+func (bp *Builder) RunMesonInstall(outFile []string) {
 	opt := &RunMesonBuildOrInstallOptions{
 		Action: MesonActionInstall,
 	}
 	bp.RunMesonBuildOrInstall(opt, outFile)
 }
 
-func (bp *BuildProject) getOrCreateCrossFilePath() (string, error) {
+func (bp *Builder) getOrCreateCrossFilePath() (string, error) {
 	key := bp.OS.GetSDKArchString()
 	if path, ok := mesonCrossFileCache[key]; ok {
 		return path, nil
@@ -195,7 +195,7 @@ func (bp *BuildProject) getOrCreateCrossFilePath() (string, error) {
 	return path, nil
 }
 
-func (bp *BuildProject) writeCrossFile() (string, error) {
+func (bp *Builder) writeCrossFile() (string, error) {
 	paths := []string{kMesonCrossFileDir, bp.OS.GetSDKArchString() + ".txt"}
 	content := bp.createCrossFile()
 	path, err := util.WriteKuCacheFile(content, paths)
@@ -205,7 +205,7 @@ func (bp *BuildProject) writeCrossFile() (string, error) {
 	return path, nil
 }
 
-func (bp *BuildProject) createCrossFile() string {
+func (bp *Builder) createCrossFile() string {
 	var sb strings.Builder
 	osEnv := bp.OS
 

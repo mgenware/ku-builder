@@ -13,7 +13,7 @@ var Repo = &ku.RepoInfo{
 }
 
 func BuildOgg(be *ku.BuildEnv, libType ku.LibType) {
-	bp := ku.NewBuildProject(Repo, be, libType)
+	bp := ku.NewBuilder(Repo, be, libType)
 	bp.CloneAndGotoRepo()
 	args := bp.GetCmakeGenArgs()
 
