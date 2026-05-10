@@ -8,7 +8,7 @@ type GetCompilerFlagsOptions struct {
 	EnablePIC   bool
 }
 
-func (bp *BuildProject) GetCompilerFlagList(opt *GetCompilerFlagsOptions) []string {
+func (bp *BuildProject) GetCompilerFlagsList(opt *GetCompilerFlagsOptions) []string {
 	if opt == nil {
 		opt = &GetCompilerFlagsOptions{}
 	}
@@ -48,29 +48,31 @@ func (bp *BuildProject) GetCompilerFlagList(opt *GetCompilerFlagsOptions) []stri
 	return args
 }
 
-func (bp *BuildProject) GetCompilerFlags(opt *GetCompilerFlagsOptions) string {
-	return strings.Join(bp.GetCompilerFlagList(opt), " ")
+func (bp *BuildProject) GetCompilerFlagsString(opt *GetCompilerFlagsOptions) string {
+	return strings.Join(bp.GetCompilerFlagsList(opt), " ")
 }
 
-type GetCompilerConfigureEnvOptions struct {
+type GetToolchainEnvOptions struct {
 	// When true, override CFLAGS, CXXFLAGS, LDFLAGS.
 	// Useful for make projects using `./configure`.
 	// Note that might override existing compiler flags provided by source repo.
 	// In that case, it's recommended to use `--extra-xxxflags` during `./configure`.
-	OverrideCompilerFlags bool
+	// For CMake projects, these flags are passed via CMAKE_CXX_FLAGS, etc., so this option is not needed.
+	// For Meson projects, these flags are passed via cross file, so this option is not needed.
+	MakeOnlySetCompilerFlags bool
 }
 
-type GetCompilerPathMapOptions struct {
+type GetToolchainPathMapOptions struct {
 	Meson bool
 }
 
-func (bp *BuildProject) GetCompilerPathMap() [][]string {
-	return bp.GetCompilerPathMapWithOptions(nil)
+func (bp *BuildProject) GetToolchainPathMap() [][]string {
+	return bp.GetToolchainPathMapWithOptions(nil)
 }
 
-func (bp *BuildProject) GetCompilerPathMapWithOptions(opt *GetCompilerPathMapOptions) [][]string {
+func (bp *BuildProject) GetToolchainPathMapWithOptions(opt *GetToolchainPathMapOptions) [][]string {
 	if opt == nil {
-		opt = &GetCompilerPathMapOptions{}
+		opt = &GetToolchainPathMapOptions{}
 	}
 	env := bp.OS
 	isDarwin := env.IsDarwinPlatform()
@@ -109,24 +111,24 @@ func (bp *BuildProject) GetCompilerPathMapWithOptions(opt *GetCompilerPathMapOpt
 	return list
 }
 
-// GetCompilerConfigureEnv returns environment variables for compiler configuration.
+// GetToolchainEnv returns environment variables for compiler configuration.
 // This includes CC, CXX, LD, and optionally CFLAGS, CXXFLAGS, LDFLAGS (when OverrideCompilerFlags is true).
 // On Android, it also includes AR, AS, RANLIB, STRIP, NM.
-func (bp *BuildProject) GetCompilerConfigureEnv(opt *GetCompilerConfigureEnvOptions) []string {
+func (bp *BuildProject) GetToolchainEnv(opt *GetToolchainEnvOptions) []string {
 	if opt == nil {
-		opt = &GetCompilerConfigureEnvOptions{}
+		opt = &GetToolchainEnvOptions{}
 	}
 
 	args := []string{}
 
-	compilerPathMap := bp.GetCompilerPathMap()
-	for _, pair := range compilerPathMap {
+	toolchainPathMap := bp.GetToolchainPathMap()
+	for _, pair := range toolchainPathMap {
 		args = append(args, pair[0]+"="+pair[1])
 	}
 
-	if opt.OverrideCompilerFlags {
-		cflags := bp.GetCompilerFlags(nil)
-		ldflags := bp.GetCompilerFlags(&GetCompilerFlagsOptions{LD: true})
+	if opt.MakeOnlySetCompilerFlags {
+		cflags := bp.GetCompilerFlagsString(nil)
+		ldflags := bp.GetCompilerFlagsString(&GetCompilerFlagsOptions{LD: true})
 
 		args = append(args, "CFLAGS="+cflags)
 		args = append(args, "CXXFLAGS="+cflags)
