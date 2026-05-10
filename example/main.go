@@ -13,19 +13,10 @@ var Repo = &ku.RepoInfo{
 }
 
 func BuildOgg(be *ku.BuildEnv, libType ku.LibType) {
-	bp := ku.NewBuilder(Repo, be, libType)
-	bp.CloneAndGotoRepo()
-	args := bp.GetCmakeGenArgs()
-
-	env := bp.GetToolchainEnv(nil)
-	bp.RunCmakeGen(&ku.RunCmakeGenOptions{
-		Args: args,
-		Env:  env,
-	})
-
-	bp.GoToBuildDir()
-	bp.RunCmakeBuild()
-	bp.RunCmakeInstall([]string{"libogg" + libType.ToFilenameSuffix()})
+	p := ku.NewCMakeProject(Repo, be, libType)
+	p.Init(nil)
+	p.Build()
+	p.Install([]string{kTarget + libType.ToFilenameSuffix()})
 }
 
 func main() {
