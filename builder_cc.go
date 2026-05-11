@@ -5,7 +5,6 @@ import "strings"
 type GetCompilerFlagsOptions struct {
 	LD          bool
 	DisableArch bool
-	EnablePIC   bool
 
 	ExtraFlags []string
 }
@@ -43,9 +42,7 @@ func (bp *Builder) GetCompilerFlagsList(opt *GetCompilerFlagsOptions) []string {
 		args = append(args, "-g")
 	}
 
-	if opt.EnablePIC {
-		args = append(args, "-fPIC")
-	}
+	args = append(args, "-fPIC")
 
 	if len(opt.ExtraFlags) > 0 {
 		args = append(args, opt.ExtraFlags...)
