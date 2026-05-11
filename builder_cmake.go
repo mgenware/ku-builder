@@ -118,7 +118,6 @@ func (bp *Builder) RunCmakeInstall(outFile []string) {
 
 type GetCmakeGenArgsOptions struct {
 	EnableSystemPath bool
-	DisablePIC       bool
 	Preset           string
 }
 
@@ -169,11 +168,9 @@ func (bp *Builder) GetCmakeGenArgsWithOptions(opt *GetCmakeGenArgsOptions) []str
 		)
 	}
 
-	if !opt.DisablePIC {
-		args = append(args,
-			"-DCMAKE_POSITION_INDEPENDENT_CODE=1",
-		)
-	}
+	args = append(args,
+		"-DCMAKE_POSITION_INDEPENDENT_CODE=1",
+	)
 
 	isDylibStr := "0"
 	if isDylib {
