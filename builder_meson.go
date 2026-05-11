@@ -222,6 +222,7 @@ func (bp *Builder) createCrossFile() string {
 	sb.WriteString("cpp_args = " + joinStringsWithSingleQuotes(cflags) + "\n")
 	sb.WriteString("c_link_args = " + joinStringsWithSingleQuotes(ldflags) + "\n")
 	sb.WriteString("cpp_link_args = " + joinStringsWithSingleQuotes(ldflags) + "\n")
+	sb.WriteString("b_staticpic = true\n")
 
 	sb.WriteString("[properties]\n")
 	sb.WriteString("needs_exe_wrapper = true\n")
