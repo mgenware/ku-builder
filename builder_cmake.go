@@ -179,6 +179,7 @@ func (bp *Builder) GetCmakeGenArgsWithOptions(opt *GetCmakeGenArgsOptions) []str
 	args = append(args, "-DBUILD_SHARED_LIBS="+isDylibStr)
 
 	if osEnv.IsDarwinPlatform() {
+		targetTriple := osEnv.GetDarwinClangTargetTriple()
 		args = append(args,
 			// SDK
 			"-DCMAKE_OSX_SYSROOT="+osEnv.GetSDKRootPath(),
@@ -190,6 +191,10 @@ func (bp *Builder) GetCmakeGenArgsWithOptions(opt *GetCmakeGenArgsOptions) []str
 			"-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=0",
 			// On Android, this should be set by `DCMAKE_TOOLCHAIN_FILE`.
 			"-DCMAKE_SYSTEM_PROCESSOR="+string(osEnv.Arch),
+			// Lang targets.
+			"-DCMAKE_C_COMPILER_TARGET="+targetTriple,
+			"-DCMAKE_CXX_COMPILER_TARGET="+targetTriple,
+			"-DCMAKE_ASM_COMPILER_TARGET="+targetTriple,
 		)
 	}
 
