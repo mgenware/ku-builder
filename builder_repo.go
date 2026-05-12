@@ -24,6 +24,7 @@ type RepoInfo struct {
 
 var repoPulled = make(map[string]bool)
 
+// Clones the repo if needed and goes to the repo directory. Returns the repo directory.
 func (bp *Builder) CloneAndGotoRepo() string {
 	repo := bp.Repo
 	shell := bp.Shell

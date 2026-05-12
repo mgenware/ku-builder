@@ -1,7 +1,11 @@
 package ku
 
 import (
+	"fmt"
+	"path/filepath"
+
 	"github.com/mgenware/j9/v3"
+	"github.com/mgenware/ku-builder/io2"
 )
 
 type ProjectInitOptions struct {
@@ -98,7 +102,7 @@ func (p *MakeProject) Init(opt *ProjectInitOptions) {
 	}
 
 	b := p.builder
-	b.CloneAndGotoRepo()
+	repoDir := b.CloneAndGotoRepo()
 
 	env := b.GetToolchainEnv(&GetToolchainEnvOptions{
 		MakeOnlySetCompilerFlags:  true,
@@ -111,8 +115,15 @@ func (p *MakeProject) Init(opt *ProjectInitOptions) {
 
 	args := opt.Args
 	b.RunMakeCleanRaw()
+
+	// Run ./configure at build dir, not repo dir.
+	b.GoToBuildDir()
+	configureFilePath := filepath.Join(repoDir, "configure")
+	if !io2.FileExists(configureFilePath) {
+		b.Shell.Quit(fmt.Sprintf("configure script not found at %s", configureFilePath))
+	}
 	b.Shell.Spawn(&j9.SpawnOpt{
-		Name: "./configure",
+		Name: configureFilePath,
 		Args: args,
 		Env:  env,
 	})
@@ -120,6 +131,7 @@ func (p *MakeProject) Init(opt *ProjectInitOptions) {
 
 func (p *MakeProject) Build() {
 	b := p.builder
+	b.GoToBuildDir()
 	b.RunMake()
 }
 
@@ -170,7 +182,6 @@ func (p *MesonProject) Init(opt *ProjectInitOptions) {
 
 func (p *MesonProject) Build() {
 	b := p.builder
-
 	b.GoToBuildDir()
 	b.RunMesonCompile()
 }

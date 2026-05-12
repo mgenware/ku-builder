@@ -235,6 +235,8 @@ func (bp *Builder) GetCmakeGenArgsWithOptions(opt *GetCmakeGenArgsOptions) []str
 	return args
 }
 
-func (bp *Builder) GoToBuildDir() {
-	bp.Shell.CD(bp.mustGetBuildDir(false))
+func (bp *Builder) GoToBuildDir() string {
+	buildDir := bp.mustGetBuildDir(false)
+	bp.Shell.CD(buildDir)
+	return buildDir
 }
