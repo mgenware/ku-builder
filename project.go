@@ -113,9 +113,6 @@ func (p *MakeProject) Init(opt *ProjectInitOptions) {
 		env = append(env, opt.Env...)
 	}
 
-	args := opt.Args
-	b.RunMakeCleanRaw()
-
 	// Run ./configure at build dir, not repo dir.
 	b.GoToBuildDir()
 	configureFilePath := filepath.Join(repoDir, "configure")
@@ -124,7 +121,7 @@ func (p *MakeProject) Init(opt *ProjectInitOptions) {
 	}
 	b.Shell.Spawn(&j9.SpawnOpt{
 		Name: configureFilePath,
-		Args: args,
+		Args: opt.Args,
 		Env:  env,
 	})
 }
