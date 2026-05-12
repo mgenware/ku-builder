@@ -119,6 +119,7 @@ func (bp *Builder) RunCmakeInstall(outFile []string) {
 type GetCmakeGenArgsOptions struct {
 	EnableSystemPath bool
 	Preset           string
+	CleanBuild       bool
 }
 
 func (bp *Builder) GetCmakeGenArgs() []string {
@@ -220,7 +221,7 @@ func (bp *Builder) GetCmakeGenArgsWithOptions(opt *GetCmakeGenArgsOptions) []str
 	}
 	args = append(args, "-DCMAKE_BUILD_TYPE="+buildType)
 
-	if cliArgs.CleanBuild {
+	if cliArgs.CleanBuild || opt.CleanBuild {
 		args = append(args, "--fresh")
 	}
 	if opt.Preset != "" {
@@ -229,11 +230,11 @@ func (bp *Builder) GetCmakeGenArgsWithOptions(opt *GetCmakeGenArgsOptions) []str
 
 	// Put source and build dir arguments at the end.
 	args = append(args, "-S", ".")
-	args = append(args, "-B", bp.mustGetBuildDir())
+	args = append(args, "-B", bp.mustGetBuildDir(opt.CleanBuild))
 
 	return args
 }
 
 func (bp *Builder) GoToBuildDir() {
-	bp.Shell.CD(bp.mustGetBuildDir())
+	bp.Shell.CD(bp.mustGetBuildDir(false))
 }

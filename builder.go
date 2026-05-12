@@ -71,10 +71,10 @@ func (bp *Builder) NotNullOrQuit(v interface{}, name string) {
 	}
 }
 
-func (bp *Builder) createBuildDir(repoName string) {
+func (bp *Builder) createBuildDir(repoName string, cleanBuild bool) {
 	buildEnv := bp.BuildEnv
 	buildDir := filepath.Join(buildEnv.TmpDir, repoName)
-	if buildEnv.Shell.Args.CleanBuild {
+	if buildEnv.Shell.Args.CleanBuild || cleanBuild {
 		io2.CleanDir(buildDir)
 	} else {
 		io2.Mkdirp(buildDir)
@@ -82,9 +82,9 @@ func (bp *Builder) createBuildDir(repoName string) {
 	bp.buildDir = buildDir
 }
 
-func (bp *Builder) mustGetBuildDir() string {
+func (bp *Builder) mustGetBuildDir(cleanBuild bool) string {
 	if bp.buildDir == "" {
-		bp.createBuildDir(bp.Repo.Name)
+		bp.createBuildDir(bp.Repo.Name, cleanBuild)
 	}
 	return bp.buildDir
 }

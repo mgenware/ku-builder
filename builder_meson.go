@@ -17,7 +17,8 @@ var mesonCrossFileCache = make(map[string]string)
 
 type GetMesonSetupArgsOptions struct {
 	// If true, run `meson configure` instead of `meson setup`.
-	Configure bool
+	Configure  bool
+	CleanBuild bool
 }
 
 func (bp *Builder) GetMesonSetupArgs() []string {
@@ -38,7 +39,7 @@ func (bp *Builder) GetMesonSetupArgsWithOptions(opt *GetMesonSetupArgsOptions) [
 	buildEnv := bp.BuildEnv
 	libType := bp.LibType
 
-	if cliArgs.CleanBuild {
+	if cliArgs.CleanBuild || opt.CleanBuild {
 		args = append(args, "--wipe")
 	}
 	var buildType string
@@ -71,7 +72,7 @@ func (bp *Builder) GetMesonSetupArgsWithOptions(opt *GetMesonSetupArgsOptions) [
 	}
 
 	// Append the build dir as the last argument.
-	args = append(args, bp.mustGetBuildDir())
+	args = append(args, bp.mustGetBuildDir(opt.CleanBuild))
 	return args
 }
 
