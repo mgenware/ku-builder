@@ -190,8 +190,8 @@ func (bp *Builder) GetCmakeGenArgsWithOptions(opt *GetCmakeGenArgsOptions) []str
 			"-DCMAKE_OSX_ARCHITECTURES="+string(osEnv.Arch),
 			"-DCMAKE_MACOSX_BUNDLE=0",
 			"-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=0",
-			// On Android, this should be set by `DCMAKE_TOOLCHAIN_FILE`.
 			"-DCMAKE_SYSTEM_PROCESSOR="+string(osEnv.Arch),
+			"-DCMAKE_MAKE_PROGRAM="+osEnv.GetMakePath(),
 			// Lang targets.
 			"-DCMAKE_C_COMPILER_TARGET="+targetTriple,
 			"-DCMAKE_CXX_COMPILER_TARGET="+targetTriple,

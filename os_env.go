@@ -108,6 +108,14 @@ func (e *OSEnv) fetchPkgConfigPath() string {
 	return e.shell.Shell("which pkg-config")
 }
 
+func (e *OSEnv) GetMakePath() string {
+	return e.cachedString("make", e.fetchMakePath)
+}
+
+func (e *OSEnv) fetchMakePath() string {
+	return e.shell.Shell("which make")
+}
+
 func (e *OSEnv) fetchLDPath() string {
 	if e.IsDarwinPlatform() {
 		return e.GetCCPath()
