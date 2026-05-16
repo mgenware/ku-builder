@@ -202,7 +202,7 @@ func (bp *Builder) GetCmakeGenArgsWithOptions(opt *GetCmakeGenArgsOptions) []str
 			Cmake: true,
 		})
 		for _, pair := range toolchainPathMap {
-			args = append(args, pair[0]+"="+pair[1])
+			args = append(args, "-D"+pair[0]+"="+pair[1])
 		}
 	}
 
