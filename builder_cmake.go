@@ -197,6 +197,13 @@ func (bp *Builder) GetCmakeGenArgsWithOptions(opt *GetCmakeGenArgsOptions) []str
 			"-DCMAKE_CXX_COMPILER_TARGET="+targetTriple,
 			"-DCMAKE_ASM_COMPILER_TARGET="+targetTriple,
 		)
+
+		toolchainPathMap := bp.GetToolchainPathMapWithOptions(&GetToolchainPathMapOptions{
+			Cmake: true,
+		})
+		for _, pair := range toolchainPathMap {
+			args = append(args, pair[0]+"="+pair[1])
+		}
 	}
 
 	if osEnv.IsAndroidPlatform() {

@@ -70,6 +70,7 @@ type GetToolchainEnvOptions struct {
 
 type GetToolchainPathMapOptions struct {
 	Meson bool
+	Cmake bool
 }
 
 func (bp *Builder) GetToolchainPathMap() [][]string {
@@ -86,41 +87,49 @@ func (bp *Builder) GetToolchainPathMapWithOptions(opt *GetToolchainPathMapOption
 	cc := "CC"
 	if opt.Meson {
 		cc = "C"
+	} else if opt.Cmake {
+		cc = "CMAKE_C_COMPILER"
 	}
 	cxx := "CXX"
 	if opt.Meson {
 		cxx = "CPP"
+	} else if opt.Cmake {
+		cxx = "CMAKE_CXX_COMPILER"
+	}
+	ld := "LD"
+	if opt.Cmake {
+		ld = "CMAKE_LINKER"
 	}
 
 	list := [][]string{
 		{cc, env.GetCCPath()},
 		{cxx, env.GetCXXPath()},
-		{"LD", env.GetLDPath()},
+		{ld, env.GetLDPath()},
 	}
 
 	if isDarwin {
+		objC := "OBJC"
+		if opt.Cmake {
+			objC = "CMAKE_OBJC_COMPILER"
+		}
+
 		objCXX := "OBJCXX"
 		if opt.Meson {
 			objCXX = "OBJCPP"
+		} else if opt.Cmake {
+			objCXX = "CMAKE_OBJCXX_COMPILER"
 		}
-		list = append(list, []string{"OBJC", env.GetCCPath()})
+		list = append(list, []string{objC, env.GetCCPath()})
 		list = append(list, []string{objCXX, env.GetCXXPath()})
 	}
 
-	if env.IsAndroidPlatform() {
-		list = append(list, []string{"AR", env.GetNDKToolchainBinPath("llvm-ar")})
-		list = append(list, []string{"AS", env.GetNDKToolchainBinPath("llvm-as")})
-		list = append(list, []string{"RANLIB", env.GetNDKToolchainBinPath("llvm-ranlib")})
-		list = append(list, []string{"STRIP", env.GetNDKToolchainBinPath("llvm-strip")})
-		list = append(list, []string{"NM", env.GetNDKToolchainBinPath("llvm-nm")})
-	}
 	return list
 }
 
-// GetToolchainEnv returns environment variables for compiler configuration.
+// Returns environment variables for make project compiler configuration.
 // This includes CC, CXX, LD, and optionally CFLAGS, CXXFLAGS, LDFLAGS (when OverrideCompilerFlags is true).
 // On Android, it also includes AR, AS, RANLIB, STRIP, NM.
-func (bp *Builder) GetToolchainEnv(opt *GetToolchainEnvOptions) []string {
+func (bp *Builder) GetMakeToolchainEnv(opt *GetToolchainEnvOptions) []string {
 	if opt == nil {
 		opt = &GetToolchainEnvOptions{}
 	}

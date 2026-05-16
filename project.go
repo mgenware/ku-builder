@@ -49,11 +49,13 @@ func (p *CMakeProject) Init(opt *ProjectInitOptions) {
 
 	b := p.builder
 	b.CloneAndGotoRepo()
+
 	args := b.GetCmakeGenArgsWithOptions(opt.GetCmakeSetupArgsOptions)
-	env := b.GetToolchainEnv(nil)
 	if len(opt.Args) > 0 {
 		args = append(args, opt.Args...)
 	}
+
+	env := []string{}
 	if len(opt.Env) > 0 {
 		env = append(env, opt.Env...)
 	}
@@ -104,7 +106,7 @@ func (p *MakeProject) Init(opt *ProjectInitOptions) {
 	b := p.builder
 	repoDir := b.CloneAndGotoRepo()
 
-	env := b.GetToolchainEnv(&GetToolchainEnvOptions{
+	env := b.GetMakeToolchainEnv(&GetToolchainEnvOptions{
 		MakeOnlySetCompilerFlags:  true,
 		MakeOnlyExtraCAndCXXFlags: opt.MakeExtraCAndCXXFlags,
 		MakeOnlyExtraLDFlags:      opt.MakeExtraLDFlags,
