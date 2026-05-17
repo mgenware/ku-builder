@@ -29,6 +29,8 @@ type Project interface {
 	Init(opt *ProjectInitOptions)
 	Build()
 	Install(outFile []string)
+
+	CoreBuilder() *Builder
 }
 
 type CMakeProject struct {
@@ -40,6 +42,10 @@ func NewCMakeProject(repo *RepoInfo, buildEnv *BuildEnv, libType LibType) Projec
 	return &CMakeProject{
 		builder: builder,
 	}
+}
+
+func (p *CMakeProject) CoreBuilder() *Builder {
+	return p.builder
 }
 
 func (p *CMakeProject) Init(opt *ProjectInitOptions) {
@@ -89,6 +95,10 @@ func (p *CMakeProject) Install(outFile []string) {
 
 type MakeProject struct {
 	builder *Builder
+}
+
+func (p *MakeProject) CoreBuilder() *Builder {
+	return p.builder
 }
 
 func NewMakeProject(repo *RepoInfo, buildEnv *BuildEnv, libType LibType) Project {
@@ -141,6 +151,10 @@ func (p *MakeProject) Install(outFile []string) {
 
 type MesonProject struct {
 	builder *Builder
+}
+
+func (p *MesonProject) CoreBuilder() *Builder {
+	return p.builder
 }
 
 func NewMesonProject(repo *RepoInfo, buildEnv *BuildEnv, libType LibType) Project {
