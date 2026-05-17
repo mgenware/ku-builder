@@ -386,16 +386,30 @@ func getDylibsInfo(shell *ku.Shell, libDir string, userLibs map[string]bool) []X
 }
 
 func infoPlistForFw(libName, org string, isMacos bool) string {
-	var platformContent string
+	var tail string
+	// For minimum system version, macOS uses `LSMinimumSystemVersion`, while iOS uses `MinimumOSVersion`.
 	if isMacos {
-		platformContent = `<key>LSMinimumSystemVersion</key>
-<string>` + ku.MinMacosVersion + `</string>`
+		tail += `		<key>LSMinimumSystemVersion</key>
+		<string>` + ku.MinMacosVersion + `</string>`
 	} else {
-		platformContent = `<key>MinimumOSVersion</key>
-<string>` + ku.MinIosVersion + `</string>`
+		tail += `		<key>MinimumOSVersion</key>
+		<string>` + ku.MinIosVersion + `</string>`
 	}
 
+	var supportedPlatform string
+	if isMacos {
+		supportedPlatform = "MacOSX"
+	} else {
+		supportedPlatform = "iPhoneOS"
+	}
+
+	tail += `		<key>CFBundleSupportedPlatforms</key>
+		<array>
+				<string>` + supportedPlatform + `</string>
+		</array>`
+
 	return `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
   <dict>
 		<key>CFBundleExecutable</key>
@@ -412,7 +426,7 @@ func infoPlistForFw(libName, org string, isMacos bool) string {
     <string>1.0.0</string>
 		<key>CFBundlePackageType</key>
   	<string>FMWK</string>
-` + platformContent + `
+` + tail + `
   </dict>
 </plist>`
 }
