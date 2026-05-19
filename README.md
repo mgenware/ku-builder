@@ -1,23 +1,23 @@
 # ku-builder
 
-CMake / Makefile / Meson build util using [j9](https://github.com/mgenware/j9) for C/C++ projects.
+CMake / Makefile / Meson build util.
 
-Supported cross-compile targets:
+Supported cross-compiling targets:
 
 - macOS (ARM64, x86_64)
 - iOS (ARM64, x86_64)
 - iOS Simulator (ARM64, x86_64)
-- Android (ARM64, x86_64)
+- Android NDK (ARM64, x86_64)
 
-Minimum SDK versions:
+Minimum cross-compiling SDK versions:
 
 - macOS 11+
 - iOS 14+
 - Android SDK API level 26+
 
-Supported host platform:
+Supported host OS:
 
-- Latest stable macOS version.
+- Latest stable macOS.
 
 ## ku-builder Utils CLI (kbu)
 
