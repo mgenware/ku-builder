@@ -37,9 +37,43 @@ func main() {
 	action := args[0]
 	input := args[1]
 
+	t := j9.NewTunnel(j9.NewLocalNode(), j9.NewConsoleLogger())
+	shell := ku.NewShell(t, nil)
+
+	switch action {
+	case "dep":
+		isDarwin, err := getIsDarwinFromInput(input, osPtr)
+		if err != nil {
+			shell.Quit(fmt.Sprintf("Error: %v\n", err))
+		}
+		if isDarwin {
+			t.Spawn(&j9.SpawnOpt{Name: "otool", Args: []string{"-L", input}})
+		} else {
+			t.Spawn(&j9.SpawnOpt{Name: ndkBinPath(shell, mustHaveNDKVer(ndkVer), "llvm-readelf"), Args: []string{"-d", input}})
+		}
+
+	case "symbol":
+		isDarwin, err := getIsDarwinFromInput(input, osPtr)
+		if err != nil {
+			shell.Quit(fmt.Sprintf("Error: %v\n", err))
+		}
+		if isDarwin {
+			t.Spawn(&j9.SpawnOpt{Name: "nm", Args: []string{"-gU", input}})
+		} else {
+			t.Spawn(&j9.SpawnOpt{Name: ndkBinPath(shell, mustHaveNDKVer(ndkVer), "llvm-nm"), Args: []string{"-g", input}})
+		}
+
+	case "deploy":
+		RunKuDeploy(shell)
+
+	default:
+		shell.Quit("Unknown action")
+	}
+}
+
+func getIsDarwinFromInput(input string, osPtr *string) (bool, error) {
 	if input == "" {
-		fmt.Println("No input provided")
-		return
+		return false, fmt.Errorf("no input provided")
 	}
 
 	var isDarwin bool
@@ -52,34 +86,12 @@ func main() {
 		case "a":
 			isDarwin = false
 		default:
-			fmt.Println("Invalid OS type. Please specify 'd' for Darwin or 'a' for Android.")
-			return
+			return false, fmt.Errorf("invalid OS type. Please specify 'd' for Darwin or 'a' for Android")
 		}
 	} else if inputExt == ".so" {
 		isDarwin = false
 	} else {
 		isDarwin = true
 	}
-
-	t := j9.NewTunnel(j9.NewLocalNode(), j9.NewConsoleLogger())
-	shell := ku.NewShell(t, nil)
-
-	switch action {
-	case "deps":
-		if isDarwin {
-			t.Spawn(&j9.SpawnOpt{Name: "otool", Args: []string{"-L", input}})
-		} else {
-			t.Spawn(&j9.SpawnOpt{Name: ndkBinPath(shell, mustHaveNDKVer(ndkVer), "llvm-readelf"), Args: []string{"-d", input}})
-		}
-
-	case "symbols":
-		if isDarwin {
-			t.Spawn(&j9.SpawnOpt{Name: "nm", Args: []string{"-gU", input}})
-		} else {
-			t.Spawn(&j9.SpawnOpt{Name: ndkBinPath(shell, mustHaveNDKVer(ndkVer), "llvm-nm"), Args: []string{"-g", input}})
-		}
-
-	default:
-		fmt.Println("Unknown action")
-	}
+	return isDarwin, nil
 }

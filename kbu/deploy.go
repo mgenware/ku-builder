@@ -10,19 +10,14 @@ import (
 	"github.com/mgenware/ku-builder"
 )
 
-func Deploy() {
-	InitKuConfig()
+func RunKuDeploy(shell *ku.Shell) {
+	fmt.Println("Starting deployment...")
+	InitKuConfig(shell)
 
 	defaultTarget := ReadKuConfigString("deploy_default_target")
 	srcNames := ReadKuConfigStringArray("deploy_src_names")
 	darwinDestDir := resolveUserDir(ReadKuConfigString("deploy_dest_dir_darwin"))
 	// androidDestDir := resolveUserDir(ReadKuConfigString("deploy_dest_dir_android"))
-
-	cliOpt := &ku.CLIOptions{
-		DefaultTarget:   defaultTarget,
-		DefaultPlatform: ku.PlatformDarwin,
-	}
-	cliArgs := ku.ParseCLIArgs(cliOpt)
 
 	buildTypeDir := ku.GetBuildTypeDir(cliArgs.DebugBuild)
 	target := cliArgs.Target
@@ -73,9 +68,11 @@ func copyPath(src, dest string, isDir bool) error {
 	}
 
 	if isDir {
+		fmt.Printf("🚚 Copying directory %s to %s\n", src, dest)
 		return os.CopyFS(dest, os.DirFS(src))
 	}
 
+	fmt.Printf("🚚 Copying file %s to %s\n", src, dest)
 	source, err := os.Open(src)
 	if err != nil {
 		return fmt.Errorf("failed to open source file: %w", err)

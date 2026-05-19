@@ -8,7 +8,7 @@ const kTarget = "libogg"
 
 var Repo = &ku.RepoInfo{
 	Url:  "https://github.com/xiph/ogg",
-	Tag:  "v1.3.5",
+	Tag:  "v1.3.6",
 	Name: kTarget,
 }
 

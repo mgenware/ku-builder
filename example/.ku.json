@@ -1,0 +1,6 @@
+{
+  "deploy_default_target": "libogg",
+  "deploy_src_names": ["libogg"],
+  "deploy_dest_dir_darwin": "~/libogg-ku-example/darwin",
+  "deploy_dest_dir_android": "~/libogg-ku-example/android"
+}

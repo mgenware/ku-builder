@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+
+	"github.com/mgenware/j9/v3"
+	"github.com/mgenware/ku-builder"
 )
 
 var config map[string]interface{}
@@ -12,23 +15,25 @@ func init() {
 	config = make(map[string]interface{})
 }
 
-func InitKuConfig() {
+func InitKuConfig(shell *ku.Shell) {
 	// Read the file
 	data, err := os.ReadFile(".ku.json")
 	if err != nil {
-		fmt.Printf("Error reading .ku.json: %v\n", err)
-		return
+		shell.Quit(fmt.Sprintf("Error reading .ku.json: %v\n", err))
 	}
 
 	// Parse JSON into map
 	var result map[string]interface{}
 	err = json.Unmarshal(data, &result)
 	if err != nil {
-		fmt.Printf("Error parsing .ku.json: %v\n", err)
-		return
+		shell.Quit(fmt.Sprintf("Error parsing .ku.json: %v\n", err))
 	}
 
 	config = result
+	shell.Logger().Log(j9.LogLevelInfo, "✅ Read .ku.json successfully\n")
+	for key, value := range config {
+		shell.Logger().Log(j9.LogLevelVerbose, fmt.Sprintf("%s: %v\n", key, value))
+	}
 }
 
 func ReadKuConfigString(key string) string {
