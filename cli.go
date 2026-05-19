@@ -75,7 +75,7 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 
 	var platformInput string
 	var resolvedPlatform PlatformEnum
-	flag.StringVar(&platformInput, "platform", string(opt.DefaultPlatform), "Platform. Supported platforms: macos, ios, android, darwin(macos + ios).")
+	flag.StringVar(&platformInput, "platform", string(opt.DefaultPlatform), "Platform. Supported platforms: macos(m), ios(i), android(a), darwin(d).")
 	flag.StringVar(&platformInput, "p", string(opt.DefaultPlatform), "-platform shorthand.")
 
 	var target string
@@ -114,7 +114,7 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 	var sdks []SDKEnum
 	// Validate platform if specified.
 	if platformInput != "" {
-		resolvedPlatform = parsePlatformString(platformInput)
+		resolvedPlatform = ParsePlatformString(platformInput, false)
 		sdks = PlatformSDKs[resolvedPlatform]
 		if sdks == nil {
 			fmt.Printf("No supported SDKs for platform: %v\n", string(resolvedPlatform))
@@ -193,7 +193,7 @@ func CreateDefaultTunnel() *j9.Tunnel {
 	return j9.NewTunnel(j9.NewLocalNode(), j9.NewConsoleLogger())
 }
 
-func parsePlatformString(s string) PlatformEnum {
+func ParsePlatformString(s string, required bool) PlatformEnum {
 	// Check shorthand first.
 	switch s {
 	case "m":
@@ -217,8 +217,10 @@ func parsePlatformString(s string) PlatformEnum {
 	case string(PlatformDarwin):
 		return PlatformDarwin
 	default:
-		fmt.Printf("Unsupported platform: %v\n", s)
-		os.Exit(1)
+		if required {
+			fmt.Printf("Unsupported platform: %v\n", s)
+			os.Exit(1)
+		}
 	}
 	return ""
 }

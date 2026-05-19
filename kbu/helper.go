@@ -37,7 +37,7 @@ func mustHaveNDKVer(ndkVer string) string {
 }
 
 func printUsage() {
-	fmt.Println("Usage: kbu <action> [options] <input>")
+	fmt.Println("Usage: kbu [options] <action> <input>")
 	fmt.Println()
 	fmt.Println("Actions:")
 	fmt.Println("  deps       List dependencies of the input file")

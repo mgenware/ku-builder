@@ -10,8 +10,7 @@ import (
 	"github.com/mgenware/ku-builder"
 )
 
-func RunKuDeploy(shell *ku.Shell) {
-	fmt.Println("Starting deployment...")
+func RunKuDeploy(shell *ku.Shell, target string, debug bool, platform ku.PlatformEnum) {
 	InitKuConfig(shell)
 
 	defaultTarget := ReadKuConfigString("deploy_default_target")
@@ -19,20 +18,24 @@ func RunKuDeploy(shell *ku.Shell) {
 	darwinDestDir := resolveUserDir(ReadKuConfigString("deploy_dest_dir_darwin"))
 	// androidDestDir := resolveUserDir(ReadKuConfigString("deploy_dest_dir_android"))
 
-	buildTypeDir := ku.GetBuildTypeDir(cliArgs.DebugBuild)
-	target := cliArgs.Target
-
-	if cliArgs.PlatformArg == "" {
-		fmt.Printf("No platform specified")
-		return
+	buildTypeDir := ku.GetBuildTypeDir(debug)
+	if target == "" {
+		if defaultTarget == "" {
+			shell.Quit("No target specified and no default target set in config.")
+		}
+		target = defaultTarget
 	}
 
-	platformStr := string(cliArgs.PlatformArg)
-	if cliArgs.PlatformArg == ku.PlatformAndroid {
+	if platform == "" {
+		shell.Quit("No platform specified")
+	}
+
+	if platform == ku.PlatformAndroid {
 		fmt.Printf("Android deployment is not implemented yet")
 		return
 	}
 
+	platformStr := string(platform)
 	xcRootDir := ku.GetXCFrameworkDir(buildTypeDir)
 	xcDir := filepath.Join(xcRootDir, platformStr, target)
 
@@ -44,7 +47,7 @@ func RunKuDeploy(shell *ku.Shell) {
 		if err != nil {
 			fmt.Printf("Failed to deploy %s: %v\n", srcFileName, err)
 		} else {
-			fmt.Printf("Deployed %s to %s\n", srcFileName, dest)
+			fmt.Printf("✅ Deployed %s to %s\n", srcFileName, dest)
 		}
 	}
 }

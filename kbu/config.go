@@ -30,10 +30,11 @@ func InitKuConfig(shell *ku.Shell) {
 	}
 
 	config = result
-	shell.Logger().Log(j9.LogLevelInfo, "✅ Read .ku.json successfully\n")
+	shell.Logger().Log(j9.LogLevelInfo, "✅ Read .ku.json successfully")
 	for key, value := range config {
-		shell.Logger().Log(j9.LogLevelVerbose, fmt.Sprintf("%s: %v\n", key, value))
+		shell.Logger().Log(j9.LogLevelVerbose, fmt.Sprintf("%s: %v", key, value))
 	}
+	shell.Logger().Log(j9.LogLevelVerbose, "-----------------------------")
 }
 
 func ReadKuConfigString(key string) string {
