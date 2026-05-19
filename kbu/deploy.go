@@ -16,7 +16,7 @@ func RunKuDeploy(shell *ku.Shell, target string, debug bool, platform ku.Platfor
 	defaultTarget := ReadKuConfigString("deploy_default_target")
 	srcNames := ReadKuConfigStringArray("deploy_src_names")
 	darwinDestDir := resolveUserDir(ReadKuConfigString("deploy_dest_dir_darwin"))
-	// androidDestDir := resolveUserDir(ReadKuConfigString("deploy_dest_dir_android"))
+	androidDestDir := resolveUserDir(ReadKuConfigString("deploy_dest_dir_android"))
 
 	buildTypeDir := ku.GetBuildTypeDir(debug)
 	if target == "" {
@@ -29,16 +29,26 @@ func RunKuDeploy(shell *ku.Shell, target string, debug bool, platform ku.Platfor
 	if platform == "" {
 		shell.Quit("No platform specified")
 	}
+	platformStr := string(platform)
 
 	if platform == ku.PlatformAndroid {
-		fmt.Printf("Android deployment is not implemented yet")
+		ku.CopyJNILibsCore(&ku.CopyJNILibsOptions{
+			Shell:        shell,
+			DstLibsDir:   androidDestDir,
+			LibFileNames: srcNames,
+			Target:       target,
+			Debug:        debug,
+			KuDeploy:     true,
+		})
 		return
 	}
 
-	platformStr := string(platform)
 	xcRootDir := ku.GetXCFrameworkDir(buildTypeDir)
 	xcDir := filepath.Join(xcRootDir, platformStr, target)
+	deployDarwin(xcDir, srcNames, darwinDestDir)
+}
 
+func deployDarwin(xcDir string, srcNames []string, darwinDestDir string) {
 	for _, srcName := range srcNames {
 		srcFileName := srcName + ".xcframework"
 		src := filepath.Join(xcDir, srcFileName)

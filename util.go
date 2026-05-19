@@ -3,7 +3,7 @@ package ku
 import (
 	"fmt"
 	"path/filepath"
-	"slices"
+	"strings"
 
 	"github.com/mgenware/j9/v3"
 	"github.com/mgenware/ku-builder/io2"
@@ -80,18 +80,56 @@ func GetTargetDistDir(targetDir string) string {
 
 func CopyJNILibs(shell *Shell, libFileNames []string, headerFileNames []string) {
 	cliArgs := shell.Args
-	if !slices.Contains(cliArgs.SDKs, SDKAndroid) {
-		return
-	}
-	buildTypeDir := GetBuildTypeDir(cliArgs.DebugBuild)
+	target := cliArgs.Target
+	debug := cliArgs.DebugBuild
+	buildTypeDir := GetBuildTypeDir(debug)
 	sdkDir := GetSDKDir(buildTypeDir, SDKAndroid)
 
-	jniBuildDir := filepath.Join(sdkDir, "jni", cliArgs.Target)
-	libsDir := filepath.Join(jniBuildDir, "jniLibs")
-	includeDir := filepath.Join(jniBuildDir, "include")
+	jniBuildDir := filepath.Join(sdkDir, "jni", target)
+	dstLibsDir := filepath.Join(jniBuildDir, "jniLibs")
+	dstIncludeDir := filepath.Join(jniBuildDir, "include")
 
-	io2.Mkdirp(libsDir)
-	io2.Mkdirp(includeDir)
+	CopyJNILibsCore(&CopyJNILibsOptions{
+		Shell:           shell,
+		DstLibsDir:      dstLibsDir,
+		DstIncludeDir:   dstIncludeDir,
+		LibFileNames:    libFileNames,
+		HeaderFileNames: headerFileNames,
+		Target:          target,
+		Debug:           debug,
+	})
+}
+
+type CopyJNILibsOptions struct {
+	Shell           *Shell
+	DstLibsDir      string
+	DstIncludeDir   string
+	LibFileNames    []string
+	HeaderFileNames []string
+	Target          string
+	Debug           bool
+	KuDeploy        bool
+}
+
+func CopyJNILibsCore(opt *CopyJNILibsOptions) {
+	if opt == nil {
+		panic("CopyJNILibsCore: options cannot be nil")
+	}
+	shell := opt.Shell
+	dstLibsDir := opt.DstLibsDir
+	dstIncludeDir := opt.DstIncludeDir
+	libFileNames := opt.LibFileNames
+	headerFileNames := opt.HeaderFileNames
+	target := opt.Target
+	debug := opt.Debug
+
+	buildTypeDir := GetBuildTypeDir(debug)
+	sdkDir := GetSDKDir(buildTypeDir, SDKAndroid)
+
+	io2.Mkdirp(dstLibsDir)
+	if dstIncludeDir != "" {
+		io2.Mkdirp(dstIncludeDir)
+	}
 
 	// Copy the JNI libs to the jniLibs directory.
 	jniArchList := []ArchEnum{
@@ -102,9 +140,12 @@ func CopyJNILibs(shell *Shell, libFileNames []string, headerFileNames []string) 
 	for _, arch := range jniArchList {
 		for _, libFileName := range libFileNames {
 			archDir := GetSDKArchDir(sdkDir, arch)
-			targetDir := filepath.Join(archDir, cliArgs.Target)
+			targetDir := filepath.Join(archDir, target)
 			targetDistDir := GetTargetDistDir(targetDir)
 			srcLibFile := filepath.Join(targetDistDir, "lib", libFileName)
+			if !strings.HasSuffix(srcLibFile, ".so") {
+				srcLibFile += ".so"
+			}
 
 			var jniArch string
 			if arch == ArchArm64 {
@@ -112,7 +153,7 @@ func CopyJNILibs(shell *Shell, libFileNames []string, headerFileNames []string) 
 			} else {
 				jniArch = "x86_64"
 			}
-			jniArchDir := filepath.Join(libsDir, jniArch)
+			jniArchDir := filepath.Join(dstLibsDir, jniArch)
 			io2.Mkdirp(jniArchDir)
 
 			// Copy the lib file to the jniLibs directory.
@@ -120,11 +161,14 @@ func CopyJNILibs(shell *Shell, libFileNames []string, headerFileNames []string) 
 				Name: "cp",
 				Args: []string{srcLibFile, jniArchDir + "/"}},
 			)
+			if opt.KuDeploy {
+				fmt.Printf("✅ Deployed %s to %s\n", libFileName, jniArchDir)
+			}
 		}
 	}
 
 	arm64ArchDir := GetSDKArchDir(sdkDir, ArchArm64)
-	arm64TargetDir := filepath.Join(arm64ArchDir, cliArgs.Target)
+	arm64TargetDir := filepath.Join(arm64ArchDir, target)
 	arm64TargetDistDir := GetTargetDistDir(arm64TargetDir)
 	headerSrcDir := filepath.Join(arm64TargetDistDir, "include")
 	for _, headerFileName := range headerFileNames {
@@ -133,7 +177,7 @@ func CopyJNILibs(shell *Shell, libFileNames []string, headerFileNames []string) 
 		// Copy the header file to the include directory.
 		shell.Spawn(&j9.SpawnOpt{
 			Name: "cp",
-			Args: []string{"-R", srcHeaderFile, includeDir + "/"}},
+			Args: []string{"-R", srcHeaderFile, dstIncludeDir + "/"}},
 		)
 	}
 }
