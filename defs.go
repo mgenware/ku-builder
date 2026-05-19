@@ -23,13 +23,6 @@ const (
 	PlatformAndroid PlatformEnum = "android"
 )
 
-var SupportedPlatforms = map[PlatformEnum]bool{
-	PlatformMacos:   true,
-	PlatformIos:     true,
-	PlatformDarwin:  true,
-	PlatformAndroid: true,
-}
-
 type ArchEnum string
 
 const (

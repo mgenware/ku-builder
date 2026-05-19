@@ -73,8 +73,15 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 		os.Exit(1)
 	}
 
-	platformPtr := flag.String("platform", string(opt.DefaultPlatform), "Platform. Supported platforms: macos, ios, android, darwin(macos + ios).")
-	target := flag.String("target", opt.DefaultTarget, "Build target. "+"Allowed targets: "+fmt.Sprintf("%v", allowedTargets))
+	var platformInput string
+	var resolvedPlatform PlatformEnum
+	flag.StringVar(&platformInput, "platform", string(opt.DefaultPlatform), "Platform. Supported platforms: macos, ios, android, darwin(macos + ios).")
+	flag.StringVar(&platformInput, "p", string(opt.DefaultPlatform), "-platform shorthand.")
+
+	var target string
+	flag.StringVar(&target, "target", opt.DefaultTarget, "Build target. "+"Allowed targets: "+fmt.Sprintf("%v", allowedTargets))
+	flag.StringVar(&target, "t", opt.DefaultTarget, "-target shorthand.")
+
 	sdkPtr := flag.String("sdk", string(opt.DefaultSDK), "SDK. If not specified, all supported SDKs for the platform will be used.")
 	archPtr := flag.String("arch", string(opt.DefaultArch), "Arch. If not specified, all supported SDK archs for the platform will be used.")
 	actionPtr := flag.String("action", string(opt.DefaultAction), "Action. Supported actions: configure, clean, build.")
@@ -90,31 +97,27 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 
 	flag.Parse()
 
-	if *target == "" {
+	if target == "" {
 		fmt.Printf("Target is required\n")
 		os.Exit(1)
 	}
-	if !slices.Contains(allowedTargets, *target) {
-		fmt.Printf("Target %v is not allowed. Allowed targets: %v\n", *target, allowedTargets)
+	if !slices.Contains(allowedTargets, target) {
+		fmt.Printf("Target %v is not allowed. Allowed targets: %v\n", target, allowedTargets)
 		os.Exit(1)
 	}
 
-	if *platformPtr == "" && *ndkPtr != "" {
+	if platformInput == "" && *ndkPtr != "" {
 		// Make platform default to android if NDK is specified.
-		*platformPtr = string(PlatformAndroid)
+		platformInput = string(PlatformAndroid)
 	}
 
 	var sdks []SDKEnum
 	// Validate platform if specified.
-	if *platformPtr != "" {
-		platform := PlatformEnum(*platformPtr)
-		if !SupportedPlatforms[platform] {
-			fmt.Printf("Unsupported platform: %v\n", string(platform))
-			os.Exit(1)
-		}
-		sdks = PlatformSDKs[platform]
+	if platformInput != "" {
+		resolvedPlatform = parsePlatformString(platformInput)
+		sdks = PlatformSDKs[resolvedPlatform]
 		if sdks == nil {
-			fmt.Printf("No supported SDKs for platform: %v\n", string(platform))
+			fmt.Printf("No supported SDKs for platform: %v\n", string(resolvedPlatform))
 			os.Exit(1)
 		}
 	}
@@ -167,13 +170,13 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 	res := &CLIArgs{
 		SDKs:        sdks,
 		Arch:        ArchEnum(*archPtr),
-		Target:      *target,
+		Target:      target,
 		Action:      CLIAction(*actionPtr),
 		DebugBuild:  *debugPtr,
 		CleanBuild:  *cleanPtr,
 		NDK:         *ndkPtr,
 		SignArg:     *signPtr,
-		PlatformArg: PlatformEnum(*platformPtr),
+		PlatformArg: resolvedPlatform,
 		LibType:     libType,
 		Options:     opt,
 		NoPull:      *noPullPtr,
@@ -188,4 +191,34 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 
 func CreateDefaultTunnel() *j9.Tunnel {
 	return j9.NewTunnel(j9.NewLocalNode(), j9.NewConsoleLogger())
+}
+
+func parsePlatformString(s string) PlatformEnum {
+	// Check shorthand first.
+	switch s {
+	case "m":
+		return PlatformMacos
+	case "i":
+		return PlatformIos
+	case "a":
+		return PlatformAndroid
+	case "d":
+		return PlatformDarwin
+	}
+
+	// Check full string.
+	switch s {
+	case string(PlatformMacos):
+		return PlatformMacos
+	case string(PlatformIos):
+		return PlatformIos
+	case string(PlatformAndroid):
+		return PlatformAndroid
+	case string(PlatformDarwin):
+		return PlatformDarwin
+	default:
+		fmt.Printf("Unsupported platform: %v\n", s)
+		os.Exit(1)
+	}
+	return ""
 }
