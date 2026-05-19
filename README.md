@@ -5,8 +5,8 @@ CMake / Makefile / Meson build util.
 Supported cross-compiling targets:
 
 - macOS (ARM64, x86_64)
-- iOS (ARM64, x86_64)
-- iOS Simulator (ARM64, x86_64)
+- iOS (ARM64)
+- iOS Simulator (ARM64)
 - Android NDK (ARM64, x86_64)
 
 Minimum cross-compiling SDK versions:
