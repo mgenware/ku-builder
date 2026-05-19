@@ -9,13 +9,7 @@ import (
 	"github.com/mgenware/ku-builder"
 )
 
-var config map[string]interface{}
-
-func init() {
-	config = make(map[string]interface{})
-}
-
-func InitKuConfig(shell *ku.Shell) {
+func ReadKuConfig(shell *ku.Shell) map[string]interface{} {
 	// Read the file
 	data, err := os.ReadFile(".ku.json")
 	if err != nil {
@@ -29,15 +23,15 @@ func InitKuConfig(shell *ku.Shell) {
 		shell.Quit(fmt.Sprintf("Error parsing .ku.json: %v\n", err))
 	}
 
-	config = result
 	shell.Logger().Log(j9.LogLevelInfo, "Read .ku.json successfully")
-	for key, value := range config {
+	for key, value := range result {
 		shell.Logger().Log(j9.LogLevelVerbose, fmt.Sprintf("%s: %v", key, value))
 	}
 	shell.Logger().Log(j9.LogLevelVerbose, "-----------------------------")
+	return result
 }
 
-func ReadKuConfigString(key string) string {
+func ReadConfigString(config map[string]interface{}, key string) string {
 	if value, ok := config[key]; ok {
 		if strValue, ok := value.(string); ok {
 			return strValue
@@ -46,7 +40,7 @@ func ReadKuConfigString(key string) string {
 	return ""
 }
 
-func ReadKuConfigStringArray(key string) []string {
+func ReadConfigStringArray(config map[string]interface{}, key string) []string {
 	if value, ok := config[key]; ok {
 		if arrValue, ok := value.([]interface{}); ok {
 			strArr := make([]string, len(arrValue))
@@ -56,6 +50,15 @@ func ReadKuConfigStringArray(key string) []string {
 				}
 			}
 			return strArr
+		}
+	}
+	return nil
+}
+
+func ReadConfigMap(config map[string]interface{}, key string) map[string]interface{} {
+	if value, ok := config[key]; ok {
+		if mapValue, ok := value.(map[string]interface{}); ok {
+			return mapValue
 		}
 	}
 	return nil

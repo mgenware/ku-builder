@@ -10,14 +10,14 @@ import (
 )
 
 func RunKuDeploy(shell *ku.Shell, target string, debug bool, platform ku.PlatformEnum) {
-	InitKuConfig(shell)
+	rootKuConfig := ReadKuConfig(shell)
 
-	defaultTarget := ReadKuConfigString("deploy_default_target")
-	srcNames := ReadKuConfigStringArray("deploy_src_names")
-	darwinDestDir := resolveUserDir(ReadKuConfigString("deploy_dest_dir_darwin"))
-	androidDestDir := resolveUserDir(ReadKuConfigString("deploy_dest_dir_android"))
+	if platform == "" {
+		shell.Quit("No platform specified")
+	}
+	platformStr := string(platform)
 
-	buildTypeDir := ku.GetBuildTypeDir(debug)
+	defaultTarget := ReadConfigString(rootKuConfig, "deploy_default_target")
 	if target == "" {
 		if defaultTarget == "" {
 			shell.Quit("No target specified and no default target set in config.")
@@ -25,10 +25,21 @@ func RunKuDeploy(shell *ku.Shell, target string, debug bool, platform ku.Platfor
 		target = defaultTarget
 	}
 
-	if platform == "" {
-		shell.Quit("No platform specified")
+	targetConfigMap := ReadConfigMap(rootKuConfig, "deploy_targets")
+	if len(targetConfigMap) <= 0 {
+		shell.Quit("No target config map found in config.")
 	}
-	platformStr := string(platform)
+
+	targetConfig := ReadConfigMap(targetConfigMap, target)
+	if len(targetConfig) <= 0 {
+		shell.Quit(fmt.Sprintf("No config found for target: %s", target))
+	}
+
+	srcNames := ReadConfigStringArray(targetConfig, "deploy_src_names")
+	darwinDestDir := resolveUserDir(ReadConfigString(targetConfig, "deploy_dest_dir_darwin"))
+	androidDestDir := resolveUserDir(ReadConfigString(targetConfig, "deploy_dest_dir_android"))
+
+	buildTypeDir := ku.GetBuildTypeDir(debug)
 
 	if platform == ku.PlatformAndroid {
 		ku.CopyJNILibsCore(&ku.CopyJNILibsOptions{

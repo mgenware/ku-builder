@@ -55,8 +55,6 @@ func main() {
 		resolvedPlatform = ku.PlatformAndroid
 	}
 
-	fmt.Printf("platform str: %s, resolved platform: %s\n", platformInput, resolvedPlatform)
-
 	t := j9.NewTunnel(j9.NewLocalNode(), j9.NewConsoleLogger())
 	shell := ku.NewShell(t, nil)
 
