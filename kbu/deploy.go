@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -45,64 +44,17 @@ func RunKuDeploy(shell *ku.Shell, target string, debug bool, platform ku.Platfor
 
 	xcRootDir := ku.GetXCFrameworkDir(buildTypeDir)
 	xcDir := filepath.Join(xcRootDir, platformStr, target)
-	deployDarwin(xcDir, srcNames, darwinDestDir)
+	deployDarwin(shell, xcDir, srcNames, darwinDestDir)
 }
 
-func deployDarwin(xcDir string, srcNames []string, darwinDestDir string) {
+func deployDarwin(shell *ku.Shell, xcDir string, srcNames []string, darwinDestDir string) {
 	for _, srcName := range srcNames {
 		srcFileName := srcName + ".xcframework"
 		src := filepath.Join(xcDir, srcFileName)
-		dest := filepath.Join(darwinDestDir, srcFileName)
-		err := copyPath(src, dest, true)
-		if err != nil {
-			fmt.Printf("Failed to deploy %s: %v\n", srcFileName, err)
-		} else {
-			fmt.Printf("✅ Deployed %s to %s\n", srcFileName, dest)
-		}
-	}
-}
 
-func copyPath(src, dest string, isDir bool) error {
-	// Delete dest path if it exists.
-	if _, err := os.Stat(dest); err == nil {
-		if isDir {
-			err = os.RemoveAll(dest)
-		} else {
-			err = os.Remove(dest)
-		}
-		if err != nil {
-			return fmt.Errorf("failed to delete existing destination: %v", err)
-		}
+		ku.CPToDirByForce(shell, src, true, darwinDestDir)
+		fmt.Printf("✅ Deployed %s to %s\n", srcFileName, darwinDestDir)
 	}
-
-	destParent := filepath.Dir(dest)
-	if err := os.MkdirAll(destParent, 0755); err != nil {
-		return fmt.Errorf("failed to create destination parent directory: %w", err)
-	}
-
-	if isDir {
-		fmt.Printf("🚚 Copying directory %s to %s\n", src, dest)
-		return os.CopyFS(dest, os.DirFS(src))
-	}
-
-	fmt.Printf("🚚 Copying file %s to %s\n", src, dest)
-	source, err := os.Open(src)
-	if err != nil {
-		return fmt.Errorf("failed to open source file: %w", err)
-	}
-	defer source.Close()
-
-	destination, err := os.Create(dest)
-	if err != nil {
-		return fmt.Errorf("failed to create destination file: %w", err)
-	}
-	defer destination.Close()
-
-	if _, err := io.Copy(destination, source); err != nil {
-		return fmt.Errorf("failed to copy file data: %w", err)
-	}
-
-	return nil
 }
 
 func resolveUserDir(dir string) string {

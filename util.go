@@ -2,6 +2,7 @@ package ku
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -157,10 +158,8 @@ func CopyJNILibsCore(opt *CopyJNILibsOptions) {
 			io2.Mkdirp(jniArchDir)
 
 			// Copy the lib file to the jniLibs directory.
-			shell.Spawn(&j9.SpawnOpt{
-				Name: "cp",
-				Args: []string{srcLibFile, jniArchDir + "/"}},
-			)
+			CPToDirByForce(shell, srcLibFile, false, jniArchDir)
+
 			if opt.KuDeploy {
 				fmt.Printf("✅ Deployed %s to %s\n", libFileName, jniArchDir)
 			}
@@ -175,9 +174,34 @@ func CopyJNILibsCore(opt *CopyJNILibsOptions) {
 		srcHeaderFile := filepath.Join(headerSrcDir, headerFileName)
 
 		// Copy the header file to the include directory.
+		isSrcDir := io2.DirectoryExists(srcHeaderFile)
+		CPToDirByForce(shell, srcHeaderFile, isSrcDir, dstIncludeDir)
+	}
+}
+
+func CPToDirByForce(shell *Shell, src string, isSrcDir bool, dstDir string) {
+	if !strings.HasSuffix(dstDir, "/") {
+		dstDir += "/"
+	}
+	if isSrcDir {
+		dstPath := filepath.Join(dstDir, filepath.Base(src))
+		if io2.DirectoryExists(dstPath) {
+			err := os.RemoveAll(dstPath)
+			if err != nil {
+				shell.Quit(fmt.Sprintf("Error removing existing directory: %v\n", err))
+			}
+		}
+
 		shell.Spawn(&j9.SpawnOpt{
 			Name: "cp",
-			Args: []string{"-R", srcHeaderFile, dstIncludeDir + "/"}},
+			Args: []string{"-R", src, dstDir}},
 		)
+		return
 	}
+
+	// When cp a file into a dir, cp will overwrite the file if it already exists, so we don't need to delete it first.
+	shell.Spawn(&j9.SpawnOpt{
+		Name: "cp",
+		Args: []string{src, dstDir}},
+	)
 }
