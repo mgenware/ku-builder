@@ -11,7 +11,6 @@ import (
 )
 
 func main() {
-	ndkPtr := flag.String("ndk", "", "Specify NDK version.")
 
 	var platformInput string
 	var resolvedPlatform ku.PlatformEnum
@@ -21,6 +20,8 @@ func main() {
 	var target string
 	flag.StringVar(&target, "target", "", "Build target.")
 	flag.StringVar(&target, "t", "", "-target shorthand.")
+
+	ndkPtr := flag.String("ndk", "", "NDK version.")
 
 	debugPtr := flag.Bool("debug", false, "Debug build.")
 	helpPtr := flag.Bool("help", false, "Show usage information.")

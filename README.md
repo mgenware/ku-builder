@@ -19,24 +19,30 @@ Supported host OS:
 
 - Latest stable macOS.
 
-## ku-builder Utils CLI (kbu)
+## ku-builder Utils CLI (kuu)
 
 ### Installation
 
 ```bash
-go install github.com/mgenware/ku-builder/kbu@latest
+go install github.com/mgenware/ku-builder/kuu@latest
 ```
 
 ### Usage
 
 ```
-Usage: kbu <action> [options] <input>
+Usage: kuu [options] <action> <input>
 
 Actions:
-  deps       List dependencies of the input file
-  symbols    List exported symbols of the input file
+  dep       List dependencies of the input file
+  symbol    List exported symbols of the input file
+  deploy    Run deployment for the specified target and platform. Input is ignored.
 
 Options:
-  -ndk       Specify NDK version
-  -os        Specify the operating system type: 'd' for Darwin, 'a' for Android
+  -platform  Platform. Supported platforms: macos(m), ios(i), android(a), darwin(d).
+  -p         -platform shorthand.
+  -target    Build target.
+  -t         -target shorthand.
+  -ndk       NDK version.
+  -debug     Debug build.
+  -help      Show usage information.
 ```

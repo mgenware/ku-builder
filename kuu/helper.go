@@ -37,13 +37,19 @@ func mustHaveNDKVer(ndkVer string) string {
 }
 
 func printUsage() {
-	fmt.Println("Usage: kbu [options] <action> <input>")
+	fmt.Println("Usage: kuu [options] <action> <input>")
 	fmt.Println()
 	fmt.Println("Actions:")
-	fmt.Println("  deps       List dependencies of the input file")
-	fmt.Println("  symbols    List exported symbols of the input file")
+	fmt.Println("  dep       List dependencies of the input file")
+	fmt.Println("  symbol    List exported symbols of the input file")
+	fmt.Println("  deploy    Run deployment for the specified target and platform. Input is ignored.")
 	fmt.Println()
 	fmt.Println("Options:")
-	fmt.Println("  -ndk       Specify NDK version")
-	fmt.Println("  -os        Specify the operating system type: 'd' for Darwin, 'a' for Android")
+	fmt.Println("  -platform  Platform. Supported platforms: macos(m), ios(i), android(a), darwin(d).")
+	fmt.Println("  -p         -platform shorthand.")
+	fmt.Println("  -target    Build target.")
+	fmt.Println("  -t         -target shorthand.")
+	fmt.Println("  -ndk       NDK version.")
+	fmt.Println("  -debug     Debug build.")
+	fmt.Println("  -help      Show usage information.")
 }
