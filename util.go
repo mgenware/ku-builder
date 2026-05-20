@@ -70,12 +70,7 @@ func StartEnvLoop(cliOpt *CLIOptions, fn func(*BuildEnv)) {
 }
 
 func GetTargetDistDir(targetDir string) string {
-	// Dist dir could be ${TargetDir}/dist or ${TargetDir}/libs.
 	distDir := filepath.Join(targetDir, DistDirName)
-	if io2.DirectoryExists(distDir) {
-		return distDir
-	}
-	distDir = filepath.Join(targetDir, OutDirName)
 	return distDir
 }
 
