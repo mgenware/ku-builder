@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/mgenware/j9/v3"
 	"github.com/mgenware/ku-builder"
 )
 
@@ -42,6 +43,7 @@ func RunKuDeploy(shell *ku.Shell, target string, debug bool, platform ku.Platfor
 	buildTypeDir := ku.GetBuildTypeDir(debug)
 
 	if platform == ku.PlatformAndroid {
+		shell.Logger().Log(j9.LogLevelInfo, fmt.Sprintf("🚕 Deploying to Android: target=%s, debug=%v", target, debug))
 		ku.CopyJNILibsCore(&ku.CopyJNILibsOptions{
 			Shell:        shell,
 			DstLibsDir:   androidDestDir,
@@ -53,6 +55,7 @@ func RunKuDeploy(shell *ku.Shell, target string, debug bool, platform ku.Platfor
 		return
 	}
 
+	shell.Logger().Log(j9.LogLevelInfo, fmt.Sprintf("🚕 Deploying to Darwin: target=%s, debug=%v", target, debug))
 	xcRootDir := ku.GetXCFrameworkDir(buildTypeDir)
 	xcDir := filepath.Join(xcRootDir, platformStr, target)
 	deployDarwin(shell, xcDir, srcNames, darwinDestDir)
@@ -64,7 +67,7 @@ func deployDarwin(shell *ku.Shell, xcDir string, srcNames []string, darwinDestDi
 		src := filepath.Join(xcDir, srcFileName)
 
 		ku.CPToDirByForce(shell, src, true, darwinDestDir)
-		fmt.Printf("✅ Deployed %s to %s\n", srcFileName, darwinDestDir)
+		shell.Logger().Log(j9.LogLevelInfo, fmt.Sprintf("✅ Deployed %s to %s", srcFileName, darwinDestDir))
 	}
 }
 

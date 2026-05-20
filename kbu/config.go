@@ -24,10 +24,6 @@ func ReadKuConfig(shell *ku.Shell) map[string]interface{} {
 	}
 
 	shell.Logger().Log(j9.LogLevelInfo, "Read .ku.json successfully")
-	for key, value := range result {
-		shell.Logger().Log(j9.LogLevelVerbose, fmt.Sprintf("%s: %v", key, value))
-	}
-	shell.Logger().Log(j9.LogLevelVerbose, "-----------------------------")
 	return result
 }
 
