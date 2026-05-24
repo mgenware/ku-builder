@@ -34,6 +34,10 @@ func (s *Shell) Logger() j9.Logger {
 	return s.Tunnel.Logger()
 }
 
+func (s *Shell) Log(level int, message string) {
+	s.Tunnel.Logger().Log(level, message)
+}
+
 func (s *Shell) CD(dir string) {
 	s.Tunnel.CD(dir)
 }
