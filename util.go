@@ -122,6 +122,10 @@ func CopyJNILibsCore(opt *CopyJNILibsOptions) {
 	buildTypeDir := GetBuildTypeDir(debug)
 	sdkDir := GetSDKDir(buildTypeDir, SDKAndroid)
 
+	if opt.KuDeploy {
+		shell.Logger().Log(j9.LogLevelInfo, fmt.Sprintf("Copying JNI libs for target=%s, debug=%v, dstLibsDir=%s, dstIncludeDir=%s, libFileNames=%v, headerFileNames=%v", target, debug, dstLibsDir, dstIncludeDir, libFileNames, headerFileNames))
+	}
+
 	io2.Mkdirp(dstLibsDir)
 	if dstIncludeDir != "" {
 		io2.Mkdirp(dstIncludeDir)
@@ -156,7 +160,7 @@ func CopyJNILibsCore(opt *CopyJNILibsOptions) {
 			CPToDirByForce(shell, srcLibFile, false, jniArchDir)
 
 			if opt.KuDeploy {
-				fmt.Printf("✅ Deployed %s to %s\n", libFileName, jniArchDir)
+				shell.Logger().Log(j9.LogLevelInfo, fmt.Sprintf("✅ Deployed %s to %s", libFileName, jniArchDir))
 			}
 		}
 	}
