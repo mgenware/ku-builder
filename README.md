@@ -44,5 +44,6 @@ Options:
   -t         -target shorthand.
   -ndk       NDK version.
   -debug     Debug build.
+  -d         -debug shorthand.
   -help      Show usage information.
 ```
