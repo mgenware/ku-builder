@@ -51,7 +51,7 @@ func DirectoryMustExist(dir string) string {
 func ResolvePath(path string) string {
 	abs, err := filepath.Abs(path)
 	if err != nil {
-		panic(fmt.Errorf("Failed to resolve path: %w", err))
+		panic(fmt.Errorf("Failed to resolve path: %s, error: %w", path, err))
 	}
 	return abs
 }
@@ -72,14 +72,14 @@ func IsDirectoryEmpty(path string) (bool, error) {
 
 func Mkdirp(dir string) {
 	if err := os.MkdirAll(dir, 0755); err != nil {
-		panic(fmt.Errorf("Failed to create directory: %w", err))
+		panic(fmt.Errorf("Failed to create directory: %s, error: %w", dir, err))
 	}
 }
 
 func CleanDir(dir string) {
 	err := os.RemoveAll(dir)
 	if err != nil {
-		panic(fmt.Errorf("Failed to clean directory: %w", err))
+		panic(fmt.Errorf("Failed to clean directory: %s, error: %w", dir, err))
 	}
 	Mkdirp(dir)
 }
