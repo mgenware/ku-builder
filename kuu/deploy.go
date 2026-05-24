@@ -46,8 +46,14 @@ func RunKuDeploy(shell *ku.Shell, target string, debug bool, platform ku.Platfor
 		shell.Logger().Log(j9.LogLevelWarning, "☢️☢️☢️ You are deploying a debug build.")
 	}
 
-	if platform == ku.PlatformAndroid {
+	switch platform {
+	case ku.PlatformAndroid:
 		shell.Logger().Log(j9.LogLevelInfo, fmt.Sprintf("🚕 Deploying to Android: target=%s, debug=%v, outDir=%s", target, debug, androidDestDir))
+
+		if len(androidDestDir) <= 0 {
+			shell.Quit("No Android destination directory specified in config.")
+		}
+
 		ku.CopyJNILibsCore(&ku.CopyJNILibsOptions{
 			Shell:        shell,
 			DstLibsDir:   androidDestDir,
@@ -56,13 +62,22 @@ func RunKuDeploy(shell *ku.Shell, target string, debug bool, platform ku.Platfor
 			Debug:        debug,
 			KuDeploy:     true,
 		})
-		return
-	}
 
-	shell.Logger().Log(j9.LogLevelVerbose, fmt.Sprintf("🚕 Deploying to Darwin: target=%s, debug=%v, outDir=%s", target, debug, darwinDestDir))
-	xcRootDir := ku.GetXCFrameworkDir(buildTypeDir)
-	xcDir := filepath.Join(xcRootDir, platformStr, target)
-	deployDarwin(shell, xcDir, srcNames, darwinDestDir)
+	case ku.PlatformDarwin, ku.PlatformIos, ku.PlatformMacos:
+		shell.Logger().Log(j9.LogLevelVerbose, fmt.Sprintf("🚕 Deploying to %s: target=%s, debug=%v, outDir=%s", platformStr, target, debug, darwinDestDir))
+
+		if len(darwinDestDir) <= 0 {
+			shell.Quit(fmt.Sprintf("No %s destination directory specified in config.", platformStr))
+		}
+
+		xcRootDir := ku.GetXCFrameworkDir(buildTypeDir)
+		xcDir := filepath.Join(xcRootDir, platformStr, target)
+		deployDarwin(shell, xcDir, srcNames, darwinDestDir)
+
+	default:
+		shell.Quit(fmt.Sprintf("Unsupported platform: %s", platform))
+
+	}
 }
 
 func deployDarwin(shell *ku.Shell, xcDir string, srcNames []string, darwinDestDir string) {
