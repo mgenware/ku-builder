@@ -177,7 +177,10 @@ func (bp *Builder) GetCmakeGenArgsWithOptions(opt *GetCmakeGenArgsOptions) []str
 	if isDylib {
 		isDylibStr = "1"
 	}
-	args = append(args, "-DBUILD_SHARED_LIBS="+isDylibStr)
+	args = append(args,
+		"-DBUILD_SHARED_LIBS="+isDylibStr,
+		"-DCMAKE_MAKE_PROGRAM="+osEnv.GetMakePath(),
+	)
 
 	if osEnv.IsDarwinPlatform() {
 		targetTriple := osEnv.GetDarwinClangTargetTriple()
@@ -191,7 +194,6 @@ func (bp *Builder) GetCmakeGenArgsWithOptions(opt *GetCmakeGenArgsOptions) []str
 			"-DCMAKE_MACOSX_BUNDLE=0",
 			"-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=0",
 			"-DCMAKE_SYSTEM_PROCESSOR="+string(osEnv.Arch),
-			"-DCMAKE_MAKE_PROGRAM="+osEnv.GetMakePath(),
 			// Lang targets.
 			"-DCMAKE_C_COMPILER_TARGET="+targetTriple,
 			"-DCMAKE_CXX_COMPILER_TARGET="+targetTriple,
