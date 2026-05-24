@@ -2,9 +2,9 @@
   "deploy_default_target": "libogg",
   "deploy_targets": {
     "libogg": {
-      "deploy_src_names": ["libogg"],
-      "deploy_dest_dir_darwin": "~/libogg-ku-example/darwin",
-      "deploy_dest_dir_android": "~/libogg-ku-example/android"
+      "src_names": ["libogg"],
+      "dest_dir_darwin": "~/libogg-ku-example/darwin",
+      "dest_dir_android": "~/libogg-ku-example/android"
     }
   }
 }

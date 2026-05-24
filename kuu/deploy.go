@@ -36,9 +36,9 @@ func RunKuDeploy(shell *ku.Shell, target string, debug bool, platform ku.Platfor
 		shell.Quit(fmt.Sprintf("No config found for target: %s", target))
 	}
 
-	srcNames := ReadConfigStringArray(targetConfig, "deploy_src_names")
-	darwinDestDir := resolveUserDir(ReadConfigString(targetConfig, "deploy_dest_dir_darwin"))
-	androidDestDir := resolveUserDir(ReadConfigString(targetConfig, "deploy_dest_dir_android"))
+	srcNames := ReadConfigStringArray(targetConfig, "src_names")
+	darwinDestDir := resolveUserDir(ReadConfigString(targetConfig, "dest_dir_darwin"))
+	androidDestDir := resolveUserDir(ReadConfigString(targetConfig, "dest_dir_android"))
 
 	buildTypeDir := ku.GetBuildTypeDir(debug)
 
