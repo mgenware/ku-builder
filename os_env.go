@@ -105,14 +105,14 @@ func (e *OSEnv) GetPkgConfigPath() string {
 }
 
 func (e *OSEnv) fetchPkgConfigPath() string {
-	return e.GetWhichBin("pkg-config")
+	return e.GetWhichExe("pkg-config")
 }
 
 func (e *OSEnv) GetMakePath() string {
-	return e.GetWhichBin("make")
+	return e.GetWhichExe("make")
 }
 
-func (e *OSEnv) GetWhichBin(name string) string {
+func (e *OSEnv) GetWhichExe(name string) string {
 	cacheKey := "which-" + name
 	return e.cachedString(cacheKey, func() string {
 		return e.shell.Shell("which " + name)
