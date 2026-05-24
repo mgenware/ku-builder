@@ -66,7 +66,7 @@ func main() {
 
 	vLog := func(format string, args ...interface{}) {
 		if verbose {
-			shell.Logger().Log(j9.LogLevelVerbose, fmt.Sprintf(format, args...))
+			shell.Log(j9.LogLevelVerbose, fmt.Sprintf(format, args...))
 		}
 	}
 

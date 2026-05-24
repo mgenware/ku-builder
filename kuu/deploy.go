@@ -43,14 +43,14 @@ func RunKuDeploy(shell *ku.Shell, target string, debug bool, platform ku.Platfor
 	buildTypeDir := ku.GetBuildTypeDir(debug)
 
 	if debug {
-		shell.Logger().Log(j9.LogLevelWarning, "☢️ You are deploying a debug build.")
+		shell.Log(j9.LogLevelWarning, "☢️ You are deploying a debug build.")
 	}
 
 	fmt.Printf("--- Target config: %s ---\n%v\n--- --- --- --- ---\n", target, targetConfig)
 
 	switch platform {
 	case ku.PlatformAndroid:
-		shell.Logger().Log(j9.LogLevelInfo, fmt.Sprintf("🚕 Deploying to Android: %s", androidDestDir))
+		shell.Log(j9.LogLevelInfo, fmt.Sprintf("🚕 Deploying to Android: %s", androidDestDir))
 
 		if len(androidDestDir) <= 0 {
 			shell.Quit("No Android destination directory specified in config.")
@@ -66,7 +66,7 @@ func RunKuDeploy(shell *ku.Shell, target string, debug bool, platform ku.Platfor
 		})
 
 	case ku.PlatformDarwin, ku.PlatformIos, ku.PlatformMacos:
-		shell.Logger().Log(j9.LogLevelVerbose, fmt.Sprintf("🚕 Deploying to %s: %s", platformStr, darwinDestDir))
+		shell.Log(j9.LogLevelVerbose, fmt.Sprintf("🚕 Deploying to %s: %s", platformStr, darwinDestDir))
 
 		if len(darwinDestDir) <= 0 {
 			shell.Quit(fmt.Sprintf("No %s destination directory specified in config.", platformStr))
@@ -88,7 +88,7 @@ func deployDarwin(shell *ku.Shell, xcDir string, srcNames []string, darwinDestDi
 		src := filepath.Join(xcDir, srcFileName)
 
 		ku.CPToDirByForce(shell, src, true, darwinDestDir)
-		shell.Logger().Log(j9.LogLevelInfo, fmt.Sprintf("✅ Deployed %s to %s", srcFileName, darwinDestDir))
+		shell.Log(j9.LogLevelInfo, fmt.Sprintf("✅ Deployed %s to %s", srcFileName, darwinDestDir))
 	}
 }
 

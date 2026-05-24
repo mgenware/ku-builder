@@ -311,13 +311,13 @@ func Build(opt *XCBuildOptions) {
 		if cliArgs.SignArg == "" {
 			shell.Quit("-sign is required for release build")
 		}
-		shell.Logger().Log(j9.LogLevelWarning, "Signing xcframeworks")
+		shell.Log(j9.LogLevelWarning, "Signing xcframeworks")
 		for _, xc := range xcList {
 			codeSign(shell, xc, cliArgs.SignArg, kCodeSignTypeXCFramework)
 		}
 	}
 
-	shell.Logger().Log(j9.LogLevelInfo, "🚕 XC build completed")
+	shell.Log(j9.LogLevelInfo, "🚕 XC build completed")
 }
 
 type CodeSignType string

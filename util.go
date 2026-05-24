@@ -30,7 +30,7 @@ func StartEnvLoopWithOptions(cliOpt *CLIOptions, opt *StartEnvLoopOptions) {
 	shell := NewShell(tunnel, cliArgs)
 
 	if opt.BeforeAllFn != nil {
-		shell.Logger().Log(j9.LogLevelInfo, "🚕 Running BeforeAllFn")
+		shell.Log(j9.LogLevelInfo, "🚕 Running BeforeAllFn")
 		opt.BeforeAllFn(shell)
 	}
 
@@ -43,12 +43,12 @@ func StartEnvLoopWithOptions(cliOpt *CLIOptions, opt *StartEnvLoopOptions) {
 		}
 
 		for _, arch := range archs {
-			shell.Logger().Log(j9.LogLevelInfo, fmt.Sprintf("🚕 Running loop for SDK=%s, Arch=%s", sdk, arch))
+			shell.Log(j9.LogLevelInfo, fmt.Sprintf("🚕 Running loop for SDK=%s, Arch=%s", sdk, arch))
 			osEnv := NewOSEnv(shell, sdk, arch)
 			env := NewBuildEnv(shell, osEnv)
 
 			if !opt.DisableAutoClean {
-				shell.Logger().Log(j9.LogLevelInfo, fmt.Sprintf("🚕 Cleaning output directory: %s", env.OutDir))
+				shell.Log(j9.LogLevelInfo, fmt.Sprintf("🚕 Cleaning output directory: %s", env.OutDir))
 				io2.CleanDir(env.OutDir)
 			}
 			opt.LoopFn(env)
@@ -56,11 +56,11 @@ func StartEnvLoopWithOptions(cliOpt *CLIOptions, opt *StartEnvLoopOptions) {
 	}
 
 	if opt.AfterAllFn != nil {
-		shell.Logger().Log(j9.LogLevelInfo, "🚕 Running AfterAllFn")
+		shell.Log(j9.LogLevelInfo, "🚕 Running AfterAllFn")
 		opt.AfterAllFn(shell)
 	}
 
-	shell.Logger().Log(j9.LogLevelInfo, "🚕 Build loop completed")
+	shell.Log(j9.LogLevelInfo, "🚕 Build loop completed")
 }
 
 func StartEnvLoop(cliOpt *CLIOptions, fn func(*BuildEnv)) {
@@ -123,7 +123,7 @@ func CopyJNILibsCore(opt *CopyJNILibsOptions) {
 	sdkDir := GetSDKDir(buildTypeDir, SDKAndroid)
 
 	if opt.KuDeploy {
-		shell.Logger().Log(j9.LogLevelInfo, fmt.Sprintf("Copying JNI libs for target=%s, debug=%v, dstLibsDir=%s, dstIncludeDir=%s, libFileNames=%v, headerFileNames=%v", target, debug, dstLibsDir, dstIncludeDir, libFileNames, headerFileNames))
+		shell.Log(j9.LogLevelInfo, fmt.Sprintf("Copying JNI libs for target=%s, debug=%v, dstLibsDir=%s, dstIncludeDir=%s, libFileNames=%v, headerFileNames=%v", target, debug, dstLibsDir, dstIncludeDir, libFileNames, headerFileNames))
 	}
 
 	io2.Mkdirp(dstLibsDir)
@@ -160,7 +160,7 @@ func CopyJNILibsCore(opt *CopyJNILibsOptions) {
 			CPToDirByForce(shell, srcLibFile, false, jniArchDir)
 
 			if opt.KuDeploy {
-				shell.Logger().Log(j9.LogLevelInfo, fmt.Sprintf("✅ Deployed %s to %s", libFileName, jniArchDir))
+				shell.Log(j9.LogLevelInfo, fmt.Sprintf("✅ Deployed %s to %s", libFileName, jniArchDir))
 			}
 		}
 	}

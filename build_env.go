@@ -118,7 +118,7 @@ func (be *BuildEnv) LogSummary() {
 	cliArgs := shell.Args
 	osEnv := be.OSEnv
 
-	shell.Logger().Log(j9.LogLevelWarning, "Building target: "+cliArgs.Target+"-"+string(osEnv.SDK)+"-"+string(osEnv.Arch))
+	shell.Log(j9.LogLevelWarning, "Building target: "+cliArgs.Target+"-"+string(osEnv.SDK)+"-"+string(osEnv.Arch))
 }
 
 func (e *BuildEnv) VerifyLibFileArch(outFile []string) {

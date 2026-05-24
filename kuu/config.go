@@ -23,7 +23,7 @@ func ReadKuConfig(shell *ku.Shell) map[string]interface{} {
 		shell.Quit(fmt.Sprintf("Error parsing .ku.json: %v\n", err))
 	}
 
-	shell.Logger().Log(j9.LogLevelInfo, "Read .ku.json successfully")
+	shell.Log(j9.LogLevelInfo, "Read .ku.json successfully")
 	return result
 }
 
