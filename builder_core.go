@@ -122,10 +122,11 @@ func (bp *Builder) GetToolchainPathMapWithOptions(opt *GetToolchainPathMapOption
 		list = append(list, []string{objCXX, env.GetCXXPath()})
 	}
 
-	if env.IsAndroidPlatform() && opt.Meson {
+	if env.IsAndroidPlatform() {
 		// For Meson on Android, we also need to set other tools since there's no default
 		// toolchain file that sets them for us like CMake.
 		list = append(list, []string{"AR", env.GetNDKToolchainBinPath("llvm-ar")})
+		list = append(list, []string{"AS", env.GetNDKToolchainBinPath("llvm-as")})
 		list = append(list, []string{"NM", env.GetNDKToolchainBinPath("llvm-nm")})
 		list = append(list, []string{"RANLIB", env.GetNDKToolchainBinPath("llvm-ranlib")})
 		list = append(list, []string{"STRIP", env.GetNDKToolchainBinPath("llvm-strip")})
