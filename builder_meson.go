@@ -226,8 +226,7 @@ func (bp *Builder) createCrossFile() string {
 	sb.WriteString("b_staticpic = true\n")
 
 	sb.WriteString("[properties]\n")
-	sb.WriteString("needs_exe_wrapper = true\n")
-	sb.WriteString("root = '" + osEnv.GetSDKRootPath() + "'\n")
+	sb.WriteString("sys_root = '" + osEnv.GetSDKRootPath() + "'\n")
 
 	sb.WriteString("[host_machine]\n")
 	var system string
