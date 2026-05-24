@@ -42,6 +42,10 @@ func RunKuDeploy(shell *ku.Shell, target string, debug bool, platform ku.Platfor
 
 	buildTypeDir := ku.GetBuildTypeDir(debug)
 
+	if debug {
+		shell.Logger().Log(j9.LogLevelWarning, "☢️☢️☢️ You are deploying a debug build.")
+	}
+
 	if platform == ku.PlatformAndroid {
 		shell.Logger().Log(j9.LogLevelInfo, fmt.Sprintf("🚕 Deploying to Android: target=%s, debug=%v, outDir=%s", target, debug, androidDestDir))
 		ku.CopyJNILibsCore(&ku.CopyJNILibsOptions{
