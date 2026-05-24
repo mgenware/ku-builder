@@ -82,7 +82,6 @@ func (bp *Builder) GetToolchainPathMapWithOptions(opt *GetToolchainPathMapOption
 		opt = &GetToolchainPathMapOptions{}
 	}
 	env := bp.OS
-	isDarwin := env.IsDarwinPlatform()
 
 	cc := "CC"
 	if opt.Meson {
@@ -107,7 +106,7 @@ func (bp *Builder) GetToolchainPathMapWithOptions(opt *GetToolchainPathMapOption
 		{ld, env.GetLDPath()},
 	}
 
-	if isDarwin {
+	if env.IsDarwinPlatform() {
 		objC := "OBJC"
 		if opt.Cmake {
 			objC = "CMAKE_OBJC_COMPILER"
@@ -123,12 +122,20 @@ func (bp *Builder) GetToolchainPathMapWithOptions(opt *GetToolchainPathMapOption
 		list = append(list, []string{objCXX, env.GetCXXPath()})
 	}
 
+	if env.IsAndroidPlatform() && opt.Meson {
+		// For Meson on Android, we also need to set other tools since there's no default
+		// toolchain file that sets them for us like CMake.
+		list = append(list, []string{"AR", env.GetNDKToolchainBinPath("llvm-ar")})
+		list = append(list, []string{"NM", env.GetNDKToolchainBinPath("llvm-nm")})
+		list = append(list, []string{"RANLIB", env.GetNDKToolchainBinPath("llvm-ranlib")})
+		list = append(list, []string{"STRIP", env.GetNDKToolchainBinPath("llvm-strip")})
+	}
+
 	return list
 }
 
 // Returns environment variables for make project compiler configuration.
 // This includes CC, CXX, LD, and optionally CFLAGS, CXXFLAGS, LDFLAGS (when OverrideCompilerFlags is true).
-// On Android, it also includes AR, AS, RANLIB, STRIP, NM.
 func (bp *Builder) GetMakeToolchainEnv(opt *GetToolchainEnvOptions) []string {
 	if opt == nil {
 		opt = &GetToolchainEnvOptions{}
