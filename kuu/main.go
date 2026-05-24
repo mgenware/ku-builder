@@ -27,6 +27,7 @@ func main() {
 	flag.BoolVar(&debug, "debug", false, "Debug build.")
 	flag.BoolVar(&debug, "d", false, "-debug shorthand.")
 
+	verbosePtr := flag.Bool("verbose", false, "Verbose output.")
 	helpPtr := flag.Bool("help", false, "Show usage information.")
 
 	flag.Parse()
@@ -61,6 +62,16 @@ func main() {
 
 	t := j9.NewTunnel(j9.NewLocalNode(), j9.NewConsoleLogger())
 	shell := ku.NewShell(t, nil)
+	verbose := *verbosePtr
+
+	vLog := func(format string, args ...interface{}) {
+		if verbose {
+			shell.Logger().Log(j9.LogLevelVerbose, fmt.Sprintf(format, args...))
+		}
+	}
+
+	vLog("Action: %s", action)
+	vLog("Input: %s", input)
 
 	switch action {
 	case "dep":

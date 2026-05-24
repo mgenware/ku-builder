@@ -30,9 +30,6 @@ func main() {
 			libType := be.CLIArgs.LibType
 			BuildOgg(be, libType)
 		},
-		AfterAllFn: func(shell *ku.Shell) {
-			ku.CopyJNILibs(shell, []string{kTarget + ".so"}, []string{"ogg"})
-		},
 	}
 	ku.StartEnvLoopWithOptions(cliOpt, loopOpt)
 }
