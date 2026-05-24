@@ -86,7 +86,11 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 	archPtr := flag.String("arch", string(opt.DefaultArch), "Arch. If not specified, all supported SDK archs for the platform will be used.")
 	actionPtr := flag.String("action", string(opt.DefaultAction), "Action. Supported actions: configure, clean, build.")
 	ndkPtr := flag.String("ndk", "", "NDK name.")
-	debugPtr := flag.Bool("debug", false, "Debug build.")
+
+	var debug bool
+	flag.BoolVar(&debug, "debug", false, "Debug build.")
+	flag.BoolVar(&debug, "d", false, "-debug shorthand.")
+
 	cleanPtr := flag.Bool("clean", false, "Run a clean build.")
 	dylibPtr := flag.Bool("dylib", false, "Whether the output is a dynamic/shared library.")
 	signPtr := flag.String("sign", "", "Sign the output with the specified identity.")
@@ -172,7 +176,7 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 		Arch:        ArchEnum(*archPtr),
 		Target:      target,
 		Action:      CLIAction(*actionPtr),
-		DebugBuild:  *debugPtr,
+		DebugBuild:  debug,
 		CleanBuild:  *cleanPtr,
 		NDK:         *ndkPtr,
 		SignArg:     *signPtr,

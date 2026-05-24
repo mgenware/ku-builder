@@ -23,7 +23,10 @@ func main() {
 
 	ndkPtr := flag.String("ndk", "", "NDK version.")
 
-	debugPtr := flag.Bool("debug", false, "Debug build.")
+	var debug bool
+	flag.BoolVar(&debug, "debug", false, "Debug build.")
+	flag.BoolVar(&debug, "d", false, "-debug shorthand.")
+
 	helpPtr := flag.Bool("help", false, "Show usage information.")
 
 	flag.Parse()
@@ -83,7 +86,7 @@ func main() {
 		}
 
 	case "deploy":
-		RunKuDeploy(shell, target, *debugPtr, resolvedPlatform)
+		RunKuDeploy(shell, target, debug, resolvedPlatform)
 
 	default:
 		shell.Quit("Unknown action")
