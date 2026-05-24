@@ -1,6 +1,7 @@
 package io2
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -35,14 +36,14 @@ func DirectoryExists(dir string) bool {
 
 func FileMustExist(file string) string {
 	if !FileExists(file) {
-		panic("File does not exist: " + file)
+		panic(fmt.Errorf("File does not exist: %s", file))
 	}
 	return file
 }
 
 func DirectoryMustExist(dir string) string {
 	if !DirectoryExists(dir) {
-		panic("Directory does not exist: " + dir)
+		panic(fmt.Errorf("Directory does not exist: %s", dir))
 	}
 	return dir
 }
@@ -50,7 +51,7 @@ func DirectoryMustExist(dir string) string {
 func ResolvePath(path string) string {
 	abs, err := filepath.Abs(path)
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("Failed to resolve path: %w", err))
 	}
 	return abs
 }
@@ -71,14 +72,14 @@ func IsDirectoryEmpty(path string) (bool, error) {
 
 func Mkdirp(dir string) {
 	if err := os.MkdirAll(dir, 0755); err != nil {
-		panic(err)
+		panic(fmt.Errorf("Failed to create directory: %w", err))
 	}
 }
 
 func CleanDir(dir string) {
 	err := os.RemoveAll(dir)
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("Failed to clean directory: %w", err))
 	}
 	Mkdirp(dir)
 }
@@ -95,7 +96,7 @@ func JoinCLIFlags(flags ...string) string {
 
 func PathMustExist(path string) string {
 	if !FileExists(path) && !DirectoryExists(path) {
-		panic("Path does not exist: " + path)
+		panic(fmt.Errorf("Path does not exist: %s", path))
 	}
 	return path
 }
