@@ -206,6 +206,7 @@ func (bp *Builder) writeCrossFile() (string, error) {
 	return path, nil
 }
 
+// Important! Don't add project-specific options because cross files are cached based on OS and architecture.
 func (bp *Builder) createCrossFile() string {
 	var sb strings.Builder
 	osEnv := bp.OS
@@ -227,6 +228,9 @@ func (bp *Builder) createCrossFile() string {
 
 	sb.WriteString("[properties]\n")
 	sb.WriteString("sys_root = '" + osEnv.GetSDKRootPath() + "'\n")
+
+	// Required when cross-compiling for a different architecture (e.g., x86_64 to ARM) and your build system cannot directly execute the generated target binaries.
+	sb.WriteString("needs_exe_wrapper = true\n")
 
 	sb.WriteString("[host_machine]\n")
 	var system string
