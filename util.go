@@ -44,9 +44,9 @@ func StartEnvLoopWithOptions(cliOpt *CLIOptions, opt *StartEnvLoopOptions) {
 
 		for _, arch := range archs {
 			shell.Log(j9.LogLevelInfo, "\n--------------------------------")
-			shell.Log(j9.LogLevelInfo, " - ")
-			shell.Log(j9.LogLevelInfo, fmt.Sprintf(" - 🚕 Running loop for SDK=%s, Arch=%s", sdk, arch))
-			shell.Log(j9.LogLevelInfo, " - ")
+			shell.Log(j9.LogLevelInfo, "- ")
+			shell.Log(j9.LogLevelInfo, fmt.Sprintf("- 🚕 Running loop for SDK=%s, Arch=%s", sdk, arch))
+			shell.Log(j9.LogLevelInfo, "- ")
 			shell.Log(j9.LogLevelInfo, "--------------------------------\n")
 			osEnv := NewOSEnv(shell, sdk, arch)
 			env := NewBuildEnv(shell, osEnv)
