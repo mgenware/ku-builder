@@ -84,8 +84,13 @@ type RunMesonSetupOptions struct {
 func (bp *Builder) RunMesonSetup(opt *RunMesonSetupOptions) {
 	bp.NotNullOrQuit(opt, "opt")
 
+	buildEnv := bp.BuildEnv
+	pkgConfigDir := filepath.Join(buildEnv.OutDir, "lib", "pkgconfig")
+
 	env := append(bp.GetKuBuiltinEnv(),
 		"PKG_CONFIG="+bp.OS.GetPkgConfigPath(),
+		// Force pkg-config to only look in our output directory for .pc files. This is needed to prevent meson from auto-detecting libraries on the build machine.
+		"PKG_CONFIG_LIBDIR="+pkgConfigDir,
 	)
 	env = append(env, opt.Env...)
 
@@ -204,7 +209,6 @@ func (bp *Builder) writeCrossFile() (string, error) {
 func (bp *Builder) createCrossFile() string {
 	var sb strings.Builder
 	osEnv := bp.OS
-	buildEnv := bp.BuildEnv
 
 	sb.WriteString("[binaries]\n")
 	compilerPathMap := bp.GetToolchainPathMapWithOptions(&GetToolchainPathMapOptions{Meson: true})
@@ -223,14 +227,6 @@ func (bp *Builder) createCrossFile() string {
 
 	sb.WriteString("[properties]\n")
 	sb.WriteString("sys_root = '" + osEnv.GetSDKRootPath() + "'\n")
-
-	// Force pkg-config to only look in our output directory for .pc files. This is needed to prevent meson from auto-detecting libraries on the build machine.
-	// https://mesonbuild.com/Cross-compilation.html
-	pkgConfigLibDir := filepath.Join(buildEnv.OutDir, "lib", "pkgconfig")
-	sb.WriteString("pkg_config_libdir = '" + pkgConfigLibDir + "'\n")
-
-	// Required when cross-compiling for a different architecture (e.g., x86_64 to ARM) and your build system cannot directly execute the generated target binaries.
-	sb.WriteString("needs_exe_wrapper = true\n")
 
 	sb.WriteString("[host_machine]\n")
 	var system string
