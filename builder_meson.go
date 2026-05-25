@@ -2,7 +2,6 @@ package ku
 
 import (
 	"fmt"
-	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -84,15 +83,8 @@ type RunMesonSetupOptions struct {
 func (bp *Builder) RunMesonSetup(opt *RunMesonSetupOptions) {
 	bp.NotNullOrQuit(opt, "opt")
 
-	buildEnv := bp.BuildEnv
-	pkgConfigDir := filepath.Join(buildEnv.OutDir, "lib", "pkgconfig")
-
-	env := append(bp.GetKuBuiltinEnv(),
-		"PKG_CONFIG="+bp.OS.GetPkgConfigPath(),
-		// Force pkg-config to only look in our output directory for .pc files. This is needed to prevent meson from auto-detecting libraries on the build machine.
-		"PKG_CONFIG_LIBDIR="+pkgConfigDir,
-	)
-	env = append(env, opt.Env...)
+	// Note: `opt.Env` should be set after `GetKuBuiltinEnv`.
+	env := append(bp.GetKuBuiltinEnv(), opt.Env...)
 
 	bp.Shell.Spawn(&j9.SpawnOpt{
 		Name: "meson",

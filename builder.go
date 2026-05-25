@@ -41,6 +41,8 @@ func (bp *Builder) GetKuBuiltinEnv() []string {
 
 	libTypeExt := e.LibTypeExt(bp.LibType)
 	targetLibFileName := be.TargetLibName + libTypeExt
+	pkgConfigDir := filepath.Join(be.OutDir, "lib", "pkgconfig")
+
 	env := []string{
 		"KU_SDK=" + string(e.SDK),
 		"KU_ARCH=" + string(e.Arch),
@@ -54,6 +56,9 @@ func (bp *Builder) GetKuBuiltinEnv() []string {
 		"KU_LIB_TYPE=" + bp.LibType.String(),
 		"KU_LIB_TYPE_EXT=" + libTypeExt,
 		"KU_TARGET_LIB_FILENAME=" + targetLibFileName,
+		"PKG_CONFIG=" + bp.OS.GetPkgConfigPath(),
+		// Force pkg-config to only look in our output directory for .pc files. This is needed to prevent pkg-config from auto-detecting libraries from the host system.
+		"PKG_CONFIG_LIBDIR=" + pkgConfigDir,
 	}
 	if be.DistDir != "" {
 		env = append(env,
@@ -62,6 +67,7 @@ func (bp *Builder) GetKuBuiltinEnv() []string {
 			"KU_DIST_LIB_DIR="+be.DistLibDir,
 		)
 	}
+
 	return env
 }
 

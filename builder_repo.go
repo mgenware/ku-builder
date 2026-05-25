@@ -43,15 +43,15 @@ func (bp *Builder) CloneAndGotoRepoSource() string {
 	repoRootDir := bp.cloneAndGotoRepoRoot()
 
 	srcDir := repoRootDir
-	if len(bp.Repo.SourceSubDir) > 0 {
+	hasSubDir := len(bp.Repo.SourceSubDir) > 0
+	if hasSubDir {
 		srcDir = filepath.Join(repoRootDir, filepath.Join(bp.Repo.SourceSubDir...))
-	}
 
-	if !io2.DirectoryExists(srcDir) {
-		bp.Shell.Quit(fmt.Sprintf("Source subdirectory %s does not exist\n", srcDir))
+		if !io2.DirectoryExists(srcDir) {
+			bp.Shell.Quit(fmt.Sprintf("Source subdirectory %s does not exist\n", srcDir))
+		}
+		bp.Shell.CD(srcDir)
 	}
-
-	bp.Shell.CD(srcDir)
 	return srcDir
 }
 
