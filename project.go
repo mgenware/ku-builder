@@ -54,7 +54,7 @@ func (p *CMakeProject) Init(opt *ProjectInitOptions) {
 	}
 
 	b := p.builder
-	b.CloneAndGotoRepo()
+	b.CloneAndGotoRepoSource()
 
 	args := b.GetCmakeGenArgsWithOptions(opt.GetCmakeSetupArgsOptions)
 	if len(opt.Args) > 0 {
@@ -114,7 +114,7 @@ func (p *MakeProject) Init(opt *ProjectInitOptions) {
 	}
 
 	b := p.builder
-	repoDir := b.CloneAndGotoRepo()
+	srcDir := b.CloneAndGotoRepoSource()
 
 	env := b.GetMakeToolchainEnv(&GetToolchainEnvOptions{
 		MakeOnlySetCompilerFlags:  true,
@@ -127,7 +127,7 @@ func (p *MakeProject) Init(opt *ProjectInitOptions) {
 
 	// Run ./configure at build dir, not repo dir.
 	b.GoToBuildDir()
-	configureFilePath := filepath.Join(repoDir, "configure")
+	configureFilePath := filepath.Join(srcDir, "configure")
 	if !io2.FileExists(configureFilePath) {
 		b.Shell.Quit(fmt.Sprintf("configure script not found at %s", configureFilePath))
 	}
@@ -170,7 +170,7 @@ func (p *MesonProject) Init(opt *ProjectInitOptions) {
 	}
 
 	bp := p.builder
-	bp.CloneAndGotoRepo()
+	bp.CloneAndGotoRepoSource()
 
 	args := bp.GetMesonSetupArgsWithOptions(opt.GetMesonSetupArgsOptions)
 	if len(opt.Args) > 0 {

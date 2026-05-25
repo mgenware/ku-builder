@@ -18,20 +18,20 @@ type Builder struct {
 	OS      *OSEnv
 	CLIArgs *CLIArgs
 
-	repoDir string
+	repoRootDir string
 	// Could be empty for non-CMake or non-Meson projects.
 	buildDir string
 }
 
 func NewBuilder(repo *RepoInfo, buildEnv *BuildEnv, libType LibType) *Builder {
 	return &Builder{
-		Repo:     repo,
-		BuildEnv: buildEnv,
-		LibType:  libType,
-		Shell:    buildEnv.Shell,
-		OS:       buildEnv.OSEnv,
-		CLIArgs:  buildEnv.Shell.Args,
-		repoDir:  generateRepoDir(repo),
+		Repo:        repo,
+		BuildEnv:    buildEnv,
+		LibType:     libType,
+		Shell:       buildEnv.Shell,
+		OS:          buildEnv.OSEnv,
+		CLIArgs:     buildEnv.Shell.Args,
+		repoRootDir: generateRepoRootDir(repo),
 	}
 }
 
@@ -94,7 +94,7 @@ func (bp *Builder) GetBuildDir() string {
 	return bp.buildDir
 }
 
-func generateRepoDir(repo *RepoInfo) string {
+func generateRepoRootDir(repo *RepoInfo) string {
 	if repo.LocalRepoDir != "" {
 		return repo.LocalRepoDir
 	}

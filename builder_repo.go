@@ -1,7 +1,9 @@
 package ku
 
 import (
+	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/mgenware/j9/v3"
@@ -9,28 +11,56 @@ import (
 )
 
 type RepoInfo struct {
-	Url          string
-	Name         string
+	// URL of the git repo.
+	Url string
+	// Name of the repo, used to create the repo directory.
+	Name string
+	// If set, use the local directory instead of cloning. The directory should already exist.
 	LocalRepoDir string
 
-	Tag            string
-	Commit         string
-	UrlArchiveName string
-	Branch         string
+	// If set, clone the repo and checkout the tag.
+	Tag string
+	// If set, clone the repo and checkout the commit.
+	Commit string
+	// If set, clone the repo and checkout the branch.
+	Branch string
 
-	CreateArchiveDirName bool
+	// The archive file name (without extension) of the URL. If set, download the archive and extract it. The URL should point to an archive file (e.g. .tar.gz, .zip).
+	UrlArchiveName string
+
+	// If set, run these commands after checking out the repo.
 	PostCheckoutCommands [][]string
+
+	// If set, go to this subdirectory after setting up the repo. The path is relative to the repo root.
+	// Some repos have the source code in a subdirectory instead of the repo root.
+	SourceSubDir []string
 }
 
 var repoPulled = make(map[string]bool)
 
-// Clones the repo if needed and goes to the repo directory. Returns the repo directory.
-func (bp *Builder) CloneAndGotoRepo() string {
+// Clones the repo if needed and goes to the repo directory. Returns the repo source directory.
+func (bp *Builder) CloneAndGotoRepoSource() string {
+	repoRootDir := bp.cloneAndGotoRepoRoot()
+
+	srcDir := repoRootDir
+	if len(bp.Repo.SourceSubDir) > 0 {
+		srcDir = filepath.Join(repoRootDir, filepath.Join(bp.Repo.SourceSubDir...))
+	}
+
+	if !io2.DirectoryExists(srcDir) {
+		bp.Shell.Quit(fmt.Sprintf("Source subdirectory %s does not exist\n", srcDir))
+	}
+
+	bp.Shell.CD(srcDir)
+	return srcDir
+}
+
+func (bp *Builder) cloneAndGotoRepoRoot() string {
 	repo := bp.Repo
 	shell := bp.Shell
-	repoDir := bp.repoDir
+	repoDir := bp.repoRootDir
 
-	if io2.DirectoryExists(repoDir) && !checkDirEmpty(repoDir) {
+	if io2.DirectoryExists(repoDir) && !checkDirEmpty(shell, repoDir) {
 		shell.CD(repoDir)
 
 		// Call git pull if needed.
@@ -51,15 +81,13 @@ func (bp *Builder) CloneAndGotoRepo() string {
 	shell.CD(repoDir)
 
 	if repo.UrlArchiveName != "" {
-		if !repo.CreateArchiveDirName {
-			// If `CreateArchiveDirName` is false, we assume the archive contains a root directory named `ArchiveDirName`.
-			// We go to the parent directory.
-			shell.CD("..")
-		}
+		// If `UrlArchiveName` is set, `repoDir` is now '<repo>/<UrlArchiveName>'. We need to go back to the parent directory to download and
+		// extract the archive at `<repo>/`, which will create the `<repo>/<UrlArchiveName>/` directory.
+		shell.CD("..")
 		// Download the archive and extract it.
 		tmpFile, err := os.CreateTemp("", "ku_download")
 		if err != nil {
-			panic(err)
+			shell.Quit(fmt.Sprintf("Error creating temp file: %v\n", err))
 		}
 		defer os.Remove(tmpFile.Name())
 
@@ -79,10 +107,7 @@ func (bp *Builder) CloneAndGotoRepo() string {
 			Args: []string{tarFlags, tmpFile.Name()},
 		})
 
-		if !repo.CreateArchiveDirName {
-			shell.CD(repoDir)
-		}
-
+		shell.CD(repoDir)
 		return repoDir
 	}
 
@@ -123,14 +148,14 @@ func (bp *Builder) CloneAndGotoRepo() string {
 	return repoDir
 }
 
-func (bp *Builder) GetRepoDir() string {
-	return bp.repoDir
+func (bp *Builder) GetRepoRootDir() string {
+	return bp.repoRootDir
 }
 
-func checkDirEmpty(path string) bool {
+func checkDirEmpty(shell *Shell, path string) bool {
 	empty, err := io2.IsDirectoryEmpty(path)
 	if err != nil {
-		panic(err)
+		shell.Quit(fmt.Sprintf("Error checking if directory is empty: %v\n", err))
 	}
 	return empty
 }
