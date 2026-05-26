@@ -15,7 +15,7 @@ type RunCmakeGenOptions struct {
 func (bp *Builder) RunCmakeGen(opt *RunCmakeGenOptions) {
 	bp.NotNullOrQuit(opt, "opt")
 	// Note: `opt.Env` should be set after `GetKuBuiltinEnv`.
-	env := append(bp.GetKuBuiltinEnv(), opt.Env...)
+	env := append(bp.GetKuBuiltinEnv(true), opt.Env...)
 	env = append(env,
 		"KU_CMAKE_ACTION=gen",
 	)
@@ -84,7 +84,7 @@ func (bp *Builder) RunCmakeBuildOrInstall(opt *RunCmakeBuildOrInstallOptions, ou
 	}
 
 	// Note: `opt.Env` should be set after `GetKuBuiltinEnv`.
-	env := append(bp.GetKuBuiltinEnv(), opt.Env...)
+	env := append(bp.GetKuBuiltinEnv(false), opt.Env...)
 	env = append(env,
 		"KU_CMAKE_ACTION="+string(opt.Action),
 	)

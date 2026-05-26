@@ -8,7 +8,7 @@ import (
 )
 
 func (bp *Builder) RunMakeCleanRaw() error {
-	env := bp.GetKuBuiltinEnv()
+	env := bp.GetKuBuiltinEnv(false)
 	return bp.BuildEnv.Shell.SpawnRaw(&j9.SpawnOpt{
 		Name: "make",
 		Args: []string{"clean"},
@@ -30,7 +30,7 @@ func (bp *Builder) RunMakeWithArgs(opt *j9.SpawnOpt) {
 	numCores := runtime.NumCPU()
 
 	// Note: `opt.Env` should be set after `GetKuBuiltinEnv`.
-	env := append(bp.GetKuBuiltinEnv(), opt.Env...)
+	env := append(bp.GetKuBuiltinEnv(false), opt.Env...)
 
 	bp.BuildEnv.Shell.Spawn(&j9.SpawnOpt{
 		Name: "make",
@@ -44,7 +44,7 @@ func (bp *Builder) RunMake() {
 }
 
 func (bp *Builder) RunMakeInstall(outFile []string) {
-	env := bp.GetKuBuiltinEnv()
+	env := bp.GetKuBuiltinEnv(false)
 	bp.BuildEnv.Shell.Spawn(&j9.SpawnOpt{
 		Name: "make",
 		Args: []string{"install"},

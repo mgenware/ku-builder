@@ -121,11 +121,12 @@ func (p *MakeProject) Init(opt *ProjectInitOptions) {
 		MakeOnlyExtraCAndCXXFlags: opt.MakeExtraCAndCXXFlags,
 		MakeOnlyExtraLDFlags:      opt.MakeExtraLDFlags,
 	})
-	if len(opt.Env) > 0 {
-		env = append(env, opt.Env...)
-	}
 
-	// Run ./configure at build dir, not repo dir.
+	// Note: `opt.Env` should be set after `GetKuBuiltinEnv`.
+	env = append(env, b.GetKuBuiltinEnv(true)...)
+	env = append(env, opt.Env...)
+
+	// Run ./configure at build dir, not source dir.
 	b.GoToBuildDir()
 	configureFilePath := filepath.Join(srcDir, "configure")
 	if !io2.FileExists(configureFilePath) {

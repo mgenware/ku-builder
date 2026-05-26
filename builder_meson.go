@@ -84,7 +84,7 @@ func (bp *Builder) RunMesonSetup(opt *RunMesonSetupOptions) {
 	bp.NotNullOrQuit(opt, "opt")
 
 	// Note: `opt.Env` should be set after `GetKuBuiltinEnv`.
-	env := append(bp.GetKuBuiltinEnv(), opt.Env...)
+	env := append(bp.GetKuBuiltinEnv(true), opt.Env...)
 
 	bp.Shell.Spawn(&j9.SpawnOpt{
 		Name: "meson",
@@ -143,7 +143,7 @@ func (bp *Builder) RunMesonBuildOrInstall(opt *RunMesonBuildOrInstallOptions, ou
 	}
 
 	// Note: `opt.Env` should be set after `GetKuBuiltinEnv`.
-	env := append(bp.GetKuBuiltinEnv(), opt.Env...)
+	env := append(bp.GetKuBuiltinEnv(false), opt.Env...)
 	env = append(env,
 		"KU_MESON_ACTION="+string(opt.Action),
 	)

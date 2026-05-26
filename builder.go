@@ -35,7 +35,8 @@ func NewBuilder(repo *RepoInfo, buildEnv *BuildEnv, libType LibType) *Builder {
 	}
 }
 
-func (bp *Builder) GetKuBuiltinEnv() []string {
+// `setup` indicates if it is called in the setup phase (e.g. Cmake generate or Meson setup).
+func (bp *Builder) GetKuBuiltinEnv(setup bool) []string {
 	be := bp.BuildEnv
 	e := be.OSEnv
 
@@ -56,15 +57,20 @@ func (bp *Builder) GetKuBuiltinEnv() []string {
 		"KU_LIB_TYPE=" + bp.LibType.String(),
 		"KU_LIB_TYPE_EXT=" + libTypeExt,
 		"KU_TARGET_LIB_FILENAME=" + targetLibFileName,
-		"PKG_CONFIG=" + bp.OS.GetPkgConfigPath(),
-		// Force pkg-config to only look in our output directory for .pc files. This is needed to prevent pkg-config from auto-detecting libraries from the host system.
-		"PKG_CONFIG_LIBDIR=" + pkgConfigDir,
 	}
 	if be.DistDir != "" {
 		env = append(env,
 			"KU_DIST_DIR="+be.DistDir,
 			"KU_DIST_INCLUDE_DIR="+be.DistIncludeDir,
 			"KU_DIST_LIB_DIR="+be.DistLibDir,
+		)
+	}
+
+	if setup {
+		env = append(env,
+			"PKG_CONFIG="+bp.OS.GetPkgConfigPath(),
+			// Force pkg-config to only look in our output directory for .pc files. This is needed to prevent pkg-config from auto-detecting libraries from the host system.
+			"PKG_CONFIG_LIBDIR="+pkgConfigDir,
 		)
 	}
 
