@@ -2,6 +2,7 @@ package ku
 
 import (
 	"fmt"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -202,6 +203,7 @@ func (bp *Builder) writeCrossFile() (string, error) {
 func (bp *Builder) createCrossFile() string {
 	var sb strings.Builder
 	osEnv := bp.OS
+	be := bp.BuildEnv
 
 	sb.WriteString("[binaries]\n")
 	compilerPathMap := bp.GetToolchainPathMapWithOptions(&GetToolchainPathMapOptions{Meson: true})
@@ -220,6 +222,10 @@ func (bp *Builder) createCrossFile() string {
 
 	sb.WriteString("[properties]\n")
 	sb.WriteString("sys_root = '" + osEnv.GetSDKRootPath() + "'\n")
+
+	// TODO: disable crossfile cache.
+	pkgConfigLibDir := filepath.Join(be.OutDir, "lib", "pkgconfig")
+	sb.WriteString("pkg_config_libdir = '" + pkgConfigLibDir + "'\n")
 
 	// Required when cross-compiling for a different architecture (e.g., x86_64 to ARM) and your build system cannot directly execute the generated target binaries.
 	sb.WriteString("needs_exe_wrapper = true\n")
