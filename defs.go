@@ -105,6 +105,14 @@ func (t LibType) String() string {
 	}
 }
 
+type BuildSystemEnum string
+
+const (
+	BuildSystemMake  BuildSystemEnum = "make"
+	BuildSystemCmake BuildSystemEnum = "cmake"
+	BuildSystemMeson BuildSystemEnum = "meson"
+)
+
 var SupportedLibTypes = map[LibType]bool{
 	LibTypeStatic:  true,
 	LibTypeDynamic: true,

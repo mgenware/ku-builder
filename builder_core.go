@@ -68,35 +68,29 @@ type GetToolchainEnvOptions struct {
 	MakeOnlyExtraLDFlags      []string
 }
 
-type GetToolchainPathMapOptions struct {
-	Meson bool
-	Cmake bool
+func (bp *Builder) GetToolchainPathMap(buildSys BuildSystemEnum) [][]string {
+	return bp.GetToolchainPathMapWithOptions(buildSys)
 }
 
-func (bp *Builder) GetToolchainPathMap() [][]string {
-	return bp.GetToolchainPathMapWithOptions(nil)
-}
-
-func (bp *Builder) GetToolchainPathMapWithOptions(opt *GetToolchainPathMapOptions) [][]string {
-	if opt == nil {
-		opt = &GetToolchainPathMapOptions{}
-	}
+func (bp *Builder) GetToolchainPathMapWithOptions(buildSys BuildSystemEnum) [][]string {
 	env := bp.OS
 
-	cc := "CC"
-	if opt.Meson {
+	var cc string
+	var cxx string
+	var ld string
+
+	switch buildSys {
+	case BuildSystemMake:
+		cc = "CC"
+		cxx = "CXX"
+		ld = "LD"
+	case BuildSystemMeson:
 		cc = "C"
-	} else if opt.Cmake {
-		cc = "CMAKE_C_COMPILER"
-	}
-	cxx := "CXX"
-	if opt.Meson {
 		cxx = "CPP"
-	} else if opt.Cmake {
+		ld = "LD"
+	case BuildSystemCmake:
+		cc = "CMAKE_C_COMPILER"
 		cxx = "CMAKE_CXX_COMPILER"
-	}
-	ld := "LD"
-	if opt.Cmake {
 		ld = "CMAKE_LINKER"
 	}
 
@@ -108,14 +102,14 @@ func (bp *Builder) GetToolchainPathMapWithOptions(opt *GetToolchainPathMapOption
 
 	if env.IsDarwinPlatform() {
 		objC := "OBJC"
-		if opt.Cmake {
+		if buildSys == BuildSystemCmake {
 			objC = "CMAKE_OBJC_COMPILER"
 		}
 
 		objCXX := "OBJCXX"
-		if opt.Meson {
+		if buildSys == BuildSystemMeson {
 			objCXX = "OBJCPP"
-		} else if opt.Cmake {
+		} else if buildSys == BuildSystemCmake {
 			objCXX = "CMAKE_OBJCXX_COMPILER"
 		}
 		list = append(list, []string{objC, env.GetCCPath()})
@@ -144,7 +138,7 @@ func (bp *Builder) GetMakeToolchainEnv(opt *GetToolchainEnvOptions) []string {
 
 	args := []string{}
 
-	toolchainPathMap := bp.GetToolchainPathMap()
+	toolchainPathMap := bp.GetToolchainPathMap(BuildSystemMake)
 	for _, pair := range toolchainPathMap {
 		args = append(args, pair[0]+"="+pair[1])
 	}

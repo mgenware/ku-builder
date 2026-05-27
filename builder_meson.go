@@ -192,7 +192,7 @@ func (bp *Builder) createCrossFile() string {
 	be := bp.BuildEnv
 
 	sb.WriteString("[binaries]\n")
-	compilerPathMap := bp.GetToolchainPathMapWithOptions(&GetToolchainPathMapOptions{Meson: true})
+	compilerPathMap := bp.GetToolchainPathMapWithOptions(BuildSystemMeson)
 	for _, pair := range compilerPathMap {
 		sb.WriteString(strings.ToLower(pair[0]) + " = '" + pair[1] + "'\n")
 	}

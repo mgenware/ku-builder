@@ -200,9 +200,7 @@ func (bp *Builder) GetCmakeGenArgsWithOptions(opt *GetCmakeGenArgsOptions) []str
 			"-DCMAKE_ASM_COMPILER_TARGET="+targetTriple,
 		)
 
-		toolchainPathMap := bp.GetToolchainPathMapWithOptions(&GetToolchainPathMapOptions{
-			Cmake: true,
-		})
+		toolchainPathMap := bp.GetToolchainPathMapWithOptions(BuildSystemCmake)
 		for _, pair := range toolchainPathMap {
 			args = append(args, "-D"+pair[0]+"="+pair[1])
 		}
