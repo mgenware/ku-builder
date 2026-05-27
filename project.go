@@ -122,7 +122,7 @@ func (p *MakeProject) Init(opt *ProjectInitOptions) {
 		MakeOnlyExtraLDFlags:      opt.MakeExtraLDFlags,
 	})
 
-	// Note: `opt.Env` should be set after `GetKuBuiltinEnv`.
+	// Note: `opt.Env` should come at last to allow overriding builtin env if needed.
 	env = append(env, b.GetKuBuiltinEnv(true)...)
 	env = append(env, opt.Env...)
 

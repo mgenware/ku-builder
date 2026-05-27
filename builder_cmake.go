@@ -14,7 +14,8 @@ type RunCmakeGenOptions struct {
 
 func (bp *Builder) RunCmakeGen(opt *RunCmakeGenOptions) {
 	bp.NotNullOrQuit(opt, "opt")
-	// Note: `opt.Env` should be set after `GetKuBuiltinEnv`.
+
+	// Note: `opt.Env` should come at last to allow overriding builtin env if needed.
 	env := append(bp.GetKuBuiltinEnv(true), opt.Env...)
 	env = append(env,
 		"KU_CMAKE_ACTION=gen",
@@ -207,12 +208,14 @@ func (bp *Builder) GetCmakeGenArgsWithOptions(opt *GetCmakeGenArgsOptions) []str
 	}
 
 	if osEnv.IsAndroidPlatform() {
+		coreEnv := bp.GetCoreSetupEnv()
+		for _, val := range coreEnv {
+			args = append(args, "-D"+val)
+		}
+
 		ndk := osEnv.GetNDKPath()
 		abi := GetABI(osEnv.Arch)
 		args = append(args,
-			"-DANDROID_NDK="+ndk,
-			"-DANDROID_ABI="+abi,
-			"-DANDROID_PLATFORM=android-"+MinAndroidAPI,
 			"-DCMAKE_ANDROID_NDK="+ndk,
 			"-DCMAKE_TOOLCHAIN_FILE="+osEnv.GetNDKCmakeToolchainFile(),
 			"-DCMAKE_ANDROID_ARCH_ABI="+abi,

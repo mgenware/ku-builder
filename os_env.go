@@ -157,7 +157,7 @@ func (e *OSEnv) GetAndroidSDKPath() string {
 
 func (e *OSEnv) GetNDKPath() string {
 	if e.IsAndroidPlatform() {
-		return e.cachedString("ndk", func() string {
+		return e.cachedString("ndk-path", func() string {
 			path := os.Getenv("ANDROID_NDK_PATH")
 			if path != "" {
 				return path

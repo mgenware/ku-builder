@@ -157,11 +157,11 @@ func (bp *Builder) GetMakeToolchainEnv(opt *GetToolchainEnvOptions) []string {
 		opt = &GetToolchainEnvOptions{}
 	}
 
-	args := []string{}
+	env := bp.GetCoreSetupEnv()
 
 	toolchainPathMap := bp.GetToolchainPathMap(BuildSystemMake)
 	for _, pair := range toolchainPathMap {
-		args = append(args, pair[0]+"="+pair[1])
+		env = append(env, pair[0]+"="+pair[1])
 	}
 
 	if opt.MakeOnlySetCompilerFlags {
@@ -173,10 +173,10 @@ func (bp *Builder) GetMakeToolchainEnv(opt *GetToolchainEnvOptions) []string {
 			LD:         true,
 		})
 
-		args = append(args, "CFLAGS="+cflags)
-		args = append(args, "CXXFLAGS="+cflags)
-		args = append(args, "LDFLAGS="+ldflags)
+		env = append(env, "CFLAGS="+cflags)
+		env = append(env, "CXXFLAGS="+cflags)
+		env = append(env, "LDFLAGS="+ldflags)
 	}
 
-	return args
+	return env
 }

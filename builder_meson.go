@@ -80,8 +80,10 @@ type RunMesonSetupOptions struct {
 func (bp *Builder) RunMesonSetup(opt *RunMesonSetupOptions) {
 	bp.NotNullOrQuit(opt, "opt")
 
-	// Note: `opt.Env` should be set after `GetKuBuiltinEnv`.
-	env := append(bp.GetKuBuiltinEnv(true), opt.Env...)
+	env := bp.GetCoreSetupEnv()
+
+	// Note: `opt.Env` should come at last to allow overriding builtin env if needed.
+	env = append(bp.GetKuBuiltinEnv(true), opt.Env...)
 
 	bp.Shell.Spawn(&j9.SpawnOpt{
 		Name: "meson",

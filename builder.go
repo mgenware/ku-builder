@@ -77,6 +77,25 @@ func (bp *Builder) GetKuBuiltinEnv(setup bool) []string {
 	return env
 }
 
+// Unlike GetKuBuiltinEnv, this function returns the environment variables that should be set based on build systems.
+// e.g. for Cmake, we should pass them as CLI params like '-D<VAR>=<VALUE>'. But for meson or make, we can set them as environment variables directly.
+func (bp *Builder) GetCoreSetupEnv() []string {
+	be := bp.BuildEnv
+	e := be.OSEnv
+	env := []string{}
+
+	if e.IsAndroidPlatform() {
+		ndk := e.GetNDKPath()
+		abi := GetABI(e.Arch)
+		env = append(env,
+			"ANDROID_NDK="+ndk,
+			"ANDROID_ABI="+abi,
+			"ANDROID_PLATFORM=android-"+MinAndroidAPI,
+		)
+	}
+	return env
+}
+
 func (bp *Builder) NotNullOrQuit(v interface{}, name string) {
 	if v == nil {
 		bp.BuildEnv.Shell.Quit(fmt.Sprintf("%s should not be nil", name))
