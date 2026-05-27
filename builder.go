@@ -91,6 +91,7 @@ func (bp *Builder) GetCoreSetupEnv() []string {
 			"ANDROID_NDK="+ndk,
 			"ANDROID_ABI="+abi,
 			"ANDROID_PLATFORM=android-"+MinAndroidAPI,
+			"ANDROID_NATIVE_API_LEVEL=android-"+MinAndroidAPI,
 		)
 	}
 	return env
