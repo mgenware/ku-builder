@@ -50,8 +50,10 @@ type BuildEnv struct {
 	DistLibDir string
 
 	// TmpDir = ${TargetDir}/tmp
-	// Mostly CMake build files.
 	TmpDir string
+
+	TmpBuildDir     string
+	TmpCrossfileDir string
 }
 
 func NewBuildEnv(shell *Shell, env *OSEnv) *BuildEnv {
@@ -64,6 +66,8 @@ func NewBuildEnv(shell *Shell, env *OSEnv) *BuildEnv {
 	targetDir := filepath.Join(archDir, target)
 	outDir := filepath.Join(targetDir, OutDirName)
 	tmpDir := filepath.Join(targetDir, "tmp")
+	tmpBuildDir := filepath.Join(tmpDir, "build")
+	tmpCrossfileDir := filepath.Join(tmpDir, "crossfiles")
 
 	// Validate arch.
 	sdkArchs := SDKArchs[env.SDK]
@@ -85,14 +89,16 @@ func NewBuildEnv(shell *Shell, env *OSEnv) *BuildEnv {
 
 		Target: target,
 
-		BuildTypeDir:  buildTypeDir,
-		SDKDir:        sdkDir,
-		ArchDir:       archDir,
-		TmpDir:        tmpDir,
-		TargetDir:     targetDir,
-		OutDir:        outDir,
-		OutIncludeDir: outIncludeDir,
-		OutLibDir:     outLibDir,
+		BuildTypeDir:    buildTypeDir,
+		SDKDir:          sdkDir,
+		ArchDir:         archDir,
+		TargetDir:       targetDir,
+		OutDir:          outDir,
+		OutIncludeDir:   outIncludeDir,
+		OutLibDir:       outLibDir,
+		TmpDir:          tmpDir,
+		TmpBuildDir:     tmpBuildDir,
+		TmpCrossfileDir: tmpCrossfileDir,
 	}
 
 	targetLibName := GetTargetLibName(target)

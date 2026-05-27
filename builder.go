@@ -85,7 +85,7 @@ func (bp *Builder) NotNullOrQuit(v interface{}, name string) {
 
 func (bp *Builder) createBuildDir(repoName string, cleanBuild bool) {
 	buildEnv := bp.BuildEnv
-	buildDir := filepath.Join(buildEnv.TmpDir, repoName)
+	buildDir := filepath.Join(buildEnv.TmpBuildDir, repoName)
 	if buildEnv.Shell.Args.CleanBuild || cleanBuild {
 		io2.CleanDir(buildDir)
 	} else {

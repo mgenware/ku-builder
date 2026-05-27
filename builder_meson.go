@@ -2,18 +2,14 @@ package ku
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 
 	"github.com/mgenware/j9/v3"
-	"github.com/mgenware/ku-builder/util"
+	"github.com/mgenware/ku-builder/io2"
 )
-
-const kMesonCrossFileDir = "meson_cross_files"
-
-// K: `Env.GetSDKArchString()`, V: cached cross file path.
-var mesonCrossFileCache = make(map[string]string)
 
 type GetMesonSetupArgsOptions struct {
 	// If true, run `meson configure` instead of `meson setup`.
@@ -62,9 +58,9 @@ func (bp *Builder) GetMesonSetupArgsWithOptions(opt *GetMesonSetupArgsOptions) [
 	args = append(args, "--prefix="+buildEnv.OutDir)
 	args = append(args, "--cmake-prefix-path="+buildEnv.OutDir)
 
-	crossFilePath, err := bp.getOrCreateCrossFilePath()
+	crossFilePath, err := bp.writeCrossFile()
 	if err != nil {
-		bp.Shell.Quit(fmt.Sprintf("Failed to create Meson cross file: %v", err))
+		bp.Shell.Quit(fmt.Sprintf("Failed to create crossfile: %v", err))
 		return nil
 	}
 	if !opt.Configure {
@@ -176,27 +172,17 @@ func (bp *Builder) RunMesonInstall(outFile []string) {
 	bp.RunMesonBuildOrInstall(opt, outFile)
 }
 
-func (bp *Builder) getOrCreateCrossFilePath() (string, error) {
-	key := bp.OS.GetSDKArchString()
-	if path, ok := mesonCrossFileCache[key]; ok {
-		return path, nil
-	}
-	path, err := bp.writeCrossFile()
-	if err != nil {
-		return "", err
-	}
-	mesonCrossFileCache[key] = path
-	return path, nil
-}
-
 func (bp *Builder) writeCrossFile() (string, error) {
-	paths := []string{kMesonCrossFileDir, bp.OS.GetSDKArchString() + ".txt"}
+	be := bp.BuildEnv
+	io2.Mkdirp(be.TmpCrossfileDir)
+
+	crossfile := filepath.Join(be.TmpCrossfileDir, bp.Repo.Name)
 	content := bp.createCrossFile()
-	path, err := util.WriteKuCacheFile(content, paths)
+	err := os.WriteFile(crossfile, []byte(content), 0644)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to write cross file at %s: %w", crossfile, err)
 	}
-	return path, nil
+	return crossfile, nil
 }
 
 // Important! Don't add project-specific options because cross files are cached based on OS and architecture.
