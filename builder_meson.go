@@ -209,7 +209,6 @@ func (bp *Builder) createCrossFile() string {
 	sb.WriteString("[properties]\n")
 	sb.WriteString("sys_root = '" + osEnv.GetSDKRootPath() + "'\n")
 
-	// TODO: disable crossfile cache.
 	pkgConfigLibDir := filepath.Join(be.OutDir, "lib", "pkgconfig")
 	sb.WriteString("pkg_config_libdir = '" + pkgConfigLibDir + "'\n")
 
