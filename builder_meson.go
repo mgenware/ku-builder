@@ -207,7 +207,10 @@ func (bp *Builder) createCrossFile() string {
 	sb.WriteString("b_staticpic = true\n")
 
 	sb.WriteString("[properties]\n")
-	sb.WriteString("sys_root = '" + osEnv.GetSDKRootPath() + "'\n")
+	// DO NOT set sys_root during cross-compilation.
+	// We already have '-isysroot' set in cflags and cppflags.
+	// Setting sys_root in crossfile will cause Meson to join this path with pkg-config search path, resulting in incorrect search paths.
+	// sb.WriteString("sys_root = '" + osEnv.GetSDKRootPath() + "'\n")
 
 	pkgConfigLibDir := filepath.Join(be.OutDir, "lib", "pkgconfig")
 	sb.WriteString("pkg_config_libdir = '" + pkgConfigLibDir + "'\n")
