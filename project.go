@@ -26,10 +26,16 @@ type ProjectInitOptions struct {
 }
 
 type Project interface {
+	// This calls `CloneAndGotoRepoSource` first, then runs the project setup command.
 	Init(opt *ProjectInitOptions)
+
+	// Starts the build process. This should be called after `Init`.
 	Build()
+
+	// Installs the built library to the output directory. This should be called after `Build`.
 	Install(outFile []string)
 
+	// Returns the core builder for this project. This is used for advanced users who want to run custom commands.
 	CoreBuilder() *Builder
 }
 
