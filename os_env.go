@@ -68,7 +68,7 @@ func (e *OSEnv) GetCCPath() string {
 
 func (e *OSEnv) fetchCCPath() string {
 	if e.IsDarwinPlatform() {
-		return e.shell.Shell("xcodebuild -find clang")
+		return e.RunXcodeFindCached("clang")
 	}
 	if e.IsAndroidPlatform() {
 		return e.getNDKClangPath(false)
@@ -77,13 +77,19 @@ func (e *OSEnv) fetchCCPath() string {
 	panic("unreachable")
 }
 
+func (e *OSEnv) RunXcodeFindCached(name string) string {
+	return e.cachedString("xcodebuild-find-"+name, func() string {
+		return e.shell.Shell("xcodebuild -find " + name)
+	})
+}
+
 func (e *OSEnv) GetCXXPath() string {
 	return e.cachedString("cxx", e.fetchCXXPath)
 }
 
 func (e *OSEnv) fetchCXXPath() string {
 	if e.IsDarwinPlatform() {
-		return e.shell.Shell("xcodebuild -find clang++")
+		return e.RunXcodeFindCached("clang++")
 	}
 	if e.IsAndroidPlatform() {
 		return e.getNDKClangPath(true)
@@ -233,7 +239,7 @@ func (e *OSEnv) StripFile(src, dst string) {
 	var stripBin string
 	var args []string
 	if e.IsDarwinPlatform() {
-		stripBin = e.shell.Shell("xcodebuild -find strip")
+		stripBin = e.RunXcodeFindCached("strip")
 		args = []string{"-x"}
 	} else {
 		stripBin = e.GetNDKToolchainBinPath("llvm-strip")

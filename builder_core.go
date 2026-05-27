@@ -75,6 +75,18 @@ func (bp *Builder) GetToolchainPathMap(buildSys BuildSystemEnum) [][]string {
 func (bp *Builder) GetToolchainPathMapWithOptions(buildSys BuildSystemEnum) [][]string {
 	env := bp.OS
 
+	if buildSys == BuildSystemCmake && env.IsAndroidPlatform() {
+		// For CMake on Android, we have toolchain file that sets the compiler paths for us.
+		return [][]string{}
+	}
+
+	lowerIfMeson := func(s string) string {
+		if buildSys == BuildSystemMeson {
+			return strings.ToLower(s)
+		}
+		return s
+	}
+
 	var cc string
 	var cxx string
 	var ld string
@@ -85,9 +97,9 @@ func (bp *Builder) GetToolchainPathMapWithOptions(buildSys BuildSystemEnum) [][]
 		cxx = "CXX"
 		ld = "LD"
 	case BuildSystemMeson:
-		cc = "C"
-		cxx = "CPP"
-		ld = "LD"
+		cc = "c"
+		cxx = "cpp"
+		ld = "ld"
 	case BuildSystemCmake:
 		cc = "CMAKE_C_COMPILER"
 		cxx = "CMAKE_CXX_COMPILER"
@@ -101,29 +113,38 @@ func (bp *Builder) GetToolchainPathMapWithOptions(buildSys BuildSystemEnum) [][]
 	}
 
 	if env.IsDarwinPlatform() {
-		objC := "OBJC"
-		if buildSys == BuildSystemCmake {
-			objC = "CMAKE_OBJC_COMPILER"
+		var objc, objcpp string
+		switch buildSys {
+		case BuildSystemMake:
+			objc = "OBJC"
+			objcpp = "OBJCXX"
+		case BuildSystemMeson:
+			objc = "objc"
+			objcpp = "objcpp"
+		case BuildSystemCmake:
+			objc = "CMAKE_OBJC_COMPILER"
+			objcpp = "CMAKE_OBJCXX_COMPILER"
 		}
 
-		objCXX := "OBJCXX"
-		if buildSys == BuildSystemMeson {
-			objCXX = "OBJCPP"
-		} else if buildSys == BuildSystemCmake {
-			objCXX = "CMAKE_OBJCXX_COMPILER"
-		}
-		list = append(list, []string{objC, env.GetCCPath()})
-		list = append(list, []string{objCXX, env.GetCXXPath()})
+		list = append(list, []string{objc, env.GetCCPath()})
+		list = append(list, []string{objcpp, env.GetCXXPath()})
 	}
 
 	if env.IsAndroidPlatform() {
 		// For Meson on Android, we also need to set other tools since there's no default
 		// toolchain file that sets them for us like CMake.
-		list = append(list, []string{"AR", env.GetNDKToolchainBinPath("llvm-ar")})
-		list = append(list, []string{"AS", env.GetNDKToolchainBinPath("llvm-as")})
-		list = append(list, []string{"NM", env.GetNDKToolchainBinPath("llvm-nm")})
-		list = append(list, []string{"RANLIB", env.GetNDKToolchainBinPath("llvm-ranlib")})
-		list = append(list, []string{"STRIP", env.GetNDKToolchainBinPath("llvm-strip")})
+		list = append(list, []string{lowerIfMeson("AR"), env.GetNDKToolchainBinPath("llvm-ar")})
+		list = append(list, []string{lowerIfMeson("AS"), env.GetNDKToolchainBinPath("llvm-as")})
+		list = append(list, []string{lowerIfMeson("NM"), env.GetNDKToolchainBinPath("llvm-nm")})
+		list = append(list, []string{lowerIfMeson("RANLIB"), env.GetNDKToolchainBinPath("llvm-ranlib")})
+		list = append(list, []string{lowerIfMeson("STRIP"), env.GetNDKToolchainBinPath("llvm-strip")})
+	} else if env.IsDarwinPlatform() {
+		list = append(list, []string{lowerIfMeson("AR"), env.RunXcodeFindCached("ar")})
+		// In modern Xcode environments, there is no discrete as or separate assembler binary that you target directly. Apple relies entirely on Clang's integrated assembler.
+		list = append(list, []string{lowerIfMeson("AS"), env.RunXcodeFindCached("clang")})
+		list = append(list, []string{lowerIfMeson("NM"), env.RunXcodeFindCached("nm")})
+		list = append(list, []string{lowerIfMeson("RANLIB"), env.RunXcodeFindCached("ranlib")})
+		list = append(list, []string{lowerIfMeson("STRIP"), env.RunXcodeFindCached("strip")})
 	}
 
 	return list
