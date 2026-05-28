@@ -140,8 +140,10 @@ func (bp *Builder) GetToolchainPathMapWithOptions(buildSys BuildSystemEnum) [][]
 		list = append(list, []string{lowerIfMeson("STRIP"), env.GetNDKToolchainBinPath("llvm-strip")})
 	} else if env.IsDarwinPlatform() {
 		list = append(list, []string{lowerIfMeson("AR"), env.RunXcodeFindCached("ar")})
-		// In modern Xcode environments, there is no discrete as or separate assembler binary that you target directly. Apple relies entirely on Clang's integrated assembler.
-		list = append(list, []string{lowerIfMeson("AS"), env.RunXcodeFindCached("clang")})
+		// Don't set AS here. Unlike NDK, macOS doesn't have a separate assembler.
+		// For Arm64, clang can be used as AS. For x86_64, AS is usually nasm or yasm, which is not in Xcode toolchain.
+		// We can let the build system find AS by itself, or users can set it manually if needed.
+		// list = append(list, []string{lowerIfMeson("AS"), env.RunXcodeFindCached("clang")})
 		list = append(list, []string{lowerIfMeson("NM"), env.RunXcodeFindCached("nm")})
 		list = append(list, []string{lowerIfMeson("RANLIB"), env.RunXcodeFindCached("ranlib")})
 		list = append(list, []string{lowerIfMeson("STRIP"), env.RunXcodeFindCached("strip")})
