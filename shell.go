@@ -5,21 +5,34 @@ import (
 	"strings"
 
 	"github.com/mgenware/j9/v3"
+	"github.com/mgenware/ku-builder/util"
 )
 
 type Shell struct {
 	Args   *CLIArgs
 	Tunnel *j9.Tunnel
+
+	shellCache *util.StringCache
 }
 
 func NewShell(tunnel *j9.Tunnel, args *CLIArgs) *Shell {
-	return &Shell{Tunnel: tunnel, Args: args}
+	return &Shell{
+		Tunnel:     tunnel,
+		Args:       args,
+		shellCache: util.NewStringCache(),
+	}
 }
 
 func (s *Shell) Shell(cmd string) string {
 	output := s.Tunnel.Shell(&j9.ShellOpt{
 		Cmd: cmd})
 	return strings.TrimSpace(string(output))
+}
+
+func (s *Shell) ShellCached(cmd string) string {
+	return s.shellCache.Get(cmd, func() string {
+		return s.Shell(cmd)
+	})
 }
 
 func (s *Shell) Spawn(opt *j9.SpawnOpt) {

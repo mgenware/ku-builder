@@ -11,6 +11,8 @@ import (
 	"github.com/mgenware/ku-builder/util"
 )
 
+var gStringCache = util.NewStringCache()
+
 // OSEnv = SDK + Arch.
 type OSEnv struct {
 	SDK  SDKEnum
@@ -50,11 +52,11 @@ func (e *OSEnv) GetSDKRootPath() string {
 func (e *OSEnv) fetchSDKRootPath() string {
 	switch e.SDK {
 	case SDKMacos:
-		return e.shell.Shell("xcrun --sdk macosx --show-sdk-path")
+		return e.shell.ShellCached("xcrun --sdk macosx --show-sdk-path")
 	case SDKIos:
-		return e.shell.Shell("xcrun --sdk iphoneos --show-sdk-path")
+		return e.shell.ShellCached("xcrun --sdk iphoneos --show-sdk-path")
 	case SDKIosSimulator:
-		return e.shell.Shell("xcrun --sdk iphonesimulator --show-sdk-path")
+		return e.shell.ShellCached("xcrun --sdk iphonesimulator --show-sdk-path")
 	case SDKAndroid:
 		return filepath.Join(e.getNDKToolchainRootPath(), "sysroot")
 	}
@@ -78,9 +80,7 @@ func (e *OSEnv) fetchCCPath() string {
 }
 
 func (e *OSEnv) RunXcodeFindCached(name string) string {
-	return e.cachedString("xcodebuild-find-"+name, func() string {
-		return e.shell.Shell("xcodebuild -find " + name)
-	})
+	return e.shell.ShellCached("xcodebuild -find " + name)
 }
 
 func (e *OSEnv) GetCXXPath() string {
@@ -107,10 +107,6 @@ func (e *OSEnv) GetSDKArchString() string {
 }
 
 func (e *OSEnv) GetPkgConfigPath() string {
-	return e.cachedString("pkg-config", e.fetchPkgConfigPath)
-}
-
-func (e *OSEnv) fetchPkgConfigPath() string {
 	return e.GetWhichExe("pkg-config")
 }
 
@@ -119,10 +115,7 @@ func (e *OSEnv) GetMakePath() string {
 }
 
 func (e *OSEnv) GetWhichExe(name string) string {
-	cacheKey := "which-" + name
-	return e.cachedString(cacheKey, func() string {
-		return e.shell.Shell("which " + name)
-	})
+	return e.shell.ShellCached("which " + name)
 }
 
 func (e *OSEnv) fetchLDPath() string {
@@ -138,7 +131,7 @@ func (e *OSEnv) fetchLDPath() string {
 
 func (e *OSEnv) GetAndroidSDKPath() string {
 	if e.IsAndroidPlatform() {
-		return e.cachedString("android_sdk", func() string {
+		return globalCachedString("android_sdk", func() string {
 			path := os.Getenv("ANDROID_SDK_PATH")
 			if path != "" {
 				return path
@@ -157,7 +150,7 @@ func (e *OSEnv) GetAndroidSDKPath() string {
 
 func (e *OSEnv) GetNDKPath() string {
 	if e.IsAndroidPlatform() {
-		return e.cachedString("ndk-path", func() string {
+		return globalCachedString("ndk-path", func() string {
 			path := os.Getenv("ANDROID_NDK_PATH")
 			if path != "" {
 				return path
@@ -177,7 +170,7 @@ func (e *OSEnv) GetNDKPath() string {
 
 func (e *OSEnv) GetNDKCmakeToolchainFile() string {
 	if e.IsAndroidPlatform() {
-		return e.cachedString("ndk_cmake_toolchain", func() string {
+		return globalCachedString("ndk_cmake_toolchain", func() string {
 			path := filepath.Join(e.GetNDKPath(), "build/cmake/android.toolchain.cmake")
 			io2.FileMustExist(path)
 			return path
@@ -222,14 +215,14 @@ func (e *OSEnv) ExpandFilenameLibType(name string) (string, LibType) {
 
 func (e *OSEnv) getNDKToolchainRootPath() string {
 	ndkPath := e.GetNDKPath()
-	return e.cachedString("ndk-toolchain-root", func() string {
+	return globalCachedString("ndk-toolchain-root", func() string {
 		path := filepath.Join(ndkPath, "toolchains", "llvm", "prebuilt", "darwin-x86_64")
 		return io2.DirectoryMustExist(path)
 	})
 }
 
 func (e *OSEnv) GetNDKToolchainBinPath(name string) string {
-	return e.cachedString("ndk-toolchain-bin-"+name, func() string {
+	return globalCachedString("ndk-toolchain-bin-"+name, func() string {
 		path := filepath.Join(e.getNDKToolchainRootPath(), "bin", name)
 		return io2.FileMustExist(path)
 	})
@@ -435,6 +428,9 @@ func (e *OSEnv) MustGetAutoconfHost() string {
 }
 
 func (e *OSEnv) cachedString(key string, fn util.StringCacheGetFn) string {
-	key = string(e.SDK) + "_" + string(e.Arch) + "_" + key
 	return e.stringCache.Get(key, fn)
+}
+
+func globalCachedString(key string, fn util.StringCacheGetFn) string {
+	return gStringCache.Get(key, fn)
 }
