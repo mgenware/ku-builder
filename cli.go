@@ -10,17 +10,18 @@ import (
 )
 
 type CLIArgs struct {
-	SDKs        []SDKEnum
-	Arch        ArchEnum
-	Target      string
-	Action      CLIAction
-	DebugBuild  bool
-	NDK         string
-	CleanBuild  bool
-	SignArg     string
-	PlatformArg PlatformEnum
-	LibType     LibType
-	NoPull      bool
+	SDKs            []SDKEnum
+	Arch            ArchEnum
+	Target          string
+	Action          CLIAction
+	DebugBuild      bool
+	NDK             string
+	CleanBuild      bool
+	SignArg         string
+	PlatformArg     PlatformEnum
+	HardenedRuntime bool
+	LibType         LibType
+	NoPull          bool
 
 	Options *CLIOptions
 }
@@ -94,6 +95,7 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 	cleanPtr := flag.Bool("clean", false, "Run a clean build.")
 	dylibPtr := flag.Bool("dylib", false, "Whether the output is a dynamic/shared library.")
 	signPtr := flag.String("sign", "", "Sign the output with the specified identity.")
+	hardenedRuntimePtr := flag.Bool("hardened", false, "Enable hardened runtime for macOS frameworks.")
 	noPullPtr := flag.Bool("no-pull", false, "Whether to skip git pull")
 	if opt.BeforeParseFn != nil {
 		opt.BeforeParseFn()
@@ -172,18 +174,19 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 	}
 
 	res := &CLIArgs{
-		SDKs:        sdks,
-		Arch:        ArchEnum(*archPtr),
-		Target:      target,
-		Action:      CLIAction(*actionPtr),
-		DebugBuild:  debug,
-		CleanBuild:  *cleanPtr,
-		NDK:         *ndkPtr,
-		SignArg:     *signPtr,
-		PlatformArg: resolvedPlatform,
-		LibType:     libType,
-		Options:     opt,
-		NoPull:      *noPullPtr,
+		SDKs:            sdks,
+		Arch:            ArchEnum(*archPtr),
+		Target:          target,
+		Action:          CLIAction(*actionPtr),
+		DebugBuild:      debug,
+		CleanBuild:      *cleanPtr,
+		NDK:             *ndkPtr,
+		SignArg:         *signPtr,
+		PlatformArg:     resolvedPlatform,
+		LibType:         libType,
+		Options:         opt,
+		NoPull:          *noPullPtr,
+		HardenedRuntime: *hardenedRuntimePtr,
 	}
 
 	if opt.AfterParseFn != nil {

@@ -306,11 +306,8 @@ func Build(opt *XCBuildOptions) {
 		xcList = append(xcList, xcLibDir)
 	}
 
-	// Sign the xcframeworks.
-	if !cliArgs.DebugBuild {
-		if cliArgs.SignArg == "" {
-			shell.Quit("-sign is required for release build")
-		}
+	// Signing.
+	if cliArgs.SignArg != "" {
 		shell.Log(j9.LogLevelWarning, "Signing xcframeworks")
 		for _, xc := range xcList {
 			codeSign(shell, xc, cliArgs.SignArg, kCodeSignTypeXCFramework)
@@ -329,9 +326,9 @@ const (
 )
 
 func codeSign(shell *ku.Shell, path string, signIdentity string, signType CodeSignType) {
+	cliArgs := shell.Args
 	args := []string{"--force", "--timestamp", "-s", signIdentity}
-	if signType == kCodeSignTypeMacFramework {
-		// For macOS framework, hardened runtime is required for notarization.
+	if signType == kCodeSignTypeMacFramework && cliArgs.HardenedRuntime {
 		args = append(args, "--options", "runtime")
 	}
 	args = append(args, path)
