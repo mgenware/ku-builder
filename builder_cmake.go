@@ -44,7 +44,7 @@ type RunCmakeBuildOrInstallOptions struct {
 	Env       []string
 }
 
-func (bp *Builder) RunCmakeBuildOrInstall(opt *RunCmakeBuildOrInstallOptions, outFile []string) {
+func (bp *Builder) RunCmakeBuildOrInstall(opt *RunCmakeBuildOrInstallOptions, outFile string, vfOpt *VerifyFileOptions) {
 	bp.NotNullOrQuit(opt, "opt")
 	bp.NotNullOrQuit(opt.Action, "opt.Action")
 
@@ -95,7 +95,7 @@ func (bp *Builder) RunCmakeBuildOrInstall(opt *RunCmakeBuildOrInstallOptions, ou
 		Env:  env,
 	})
 
-	bp.BuildEnv.VerifyLibFileArch(outFile)
+	bp.BuildEnv.VerifyFile(outFile, vfOpt)
 }
 
 func (bp *Builder) RunCmakeBuild() {
@@ -107,14 +107,14 @@ func (bp *Builder) RunCmakeBuildTarget(target string) {
 		Action: CmakeActionBuild,
 		Target: target,
 	}
-	bp.RunCmakeBuildOrInstall(opt, nil)
+	bp.RunCmakeBuildOrInstall(opt, "", nil)
 }
 
-func (bp *Builder) RunCmakeInstall(outFile []string) {
+func (bp *Builder) RunCmakeInstall(outFile string, vfOpt *VerifyFileOptions) {
 	opt := &RunCmakeBuildOrInstallOptions{
 		Action: CmakeActionInstall,
 	}
-	bp.RunCmakeBuildOrInstall(opt, outFile)
+	bp.RunCmakeBuildOrInstall(opt, outFile, vfOpt)
 }
 
 type GetCmakeGenArgsOptions struct {

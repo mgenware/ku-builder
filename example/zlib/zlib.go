@@ -14,5 +14,5 @@ func BuildZlib(be *ku.BuildEnv) {
 	p := ku.NewCMakeProject(repo, be, ku.LibTypeStatic)
 	p.Init(nil)
 	p.Build()
-	p.Install([]string{"libz.<s>"})
+	p.Install("libz", nil)
 }

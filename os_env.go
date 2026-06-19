@@ -194,25 +194,6 @@ func (e *OSEnv) LibTypeExt(libType LibType) string {
 	panic("unreachable")
 }
 
-// Replaces the extension of a library file based on the platform and lib type.
-// 'liba.<s>' -> 'liba.a' for static library on all platforms.
-// 'liba.<d>' -> 'liba.dylib' or 'liba.so' for dynamic library on different platforms.
-func (e *OSEnv) ExpandFilenameLibType(name string) (string, LibType) {
-	var libType LibType
-	var timmedName string
-	if strings.HasSuffix(name, LibFilenameSuffixStatic) {
-		timmedName = strings.TrimSuffix(name, LibFilenameSuffixStatic)
-		libType = LibTypeStatic
-	} else if strings.HasSuffix(name, LibFilenameSuffixDynamic) {
-		timmedName = strings.TrimSuffix(name, LibFilenameSuffixDynamic)
-		libType = LibTypeDynamic
-	} else {
-		return "", LibTypeStatic
-	}
-
-	return timmedName + e.LibTypeExt(libType), libType
-}
-
 func (e *OSEnv) getNDKToolchainRootPath() string {
 	ndkPath := e.GetNDKPath()
 	return globalCachedString("ndk-toolchain-root", func() string {
@@ -294,34 +275,6 @@ func (e *OSEnv) readAndroidLibArch(file string) ArchEnum {
 	}
 }
 
-func (e *OSEnv) AutoVerifyFileArch(outDir string, distDir string, outFile []string) {
-	if len(outFile) > 0 {
-		baseDir := outDir
-		// Check if the first element is '<dist>', which indicates the file is in dist dir.
-		if outFile[0] == "<dist>" {
-			baseDir = distDir
-			outFile = outFile[1:]
-		}
-
-		// Use a copy of outFile to avoid modifying the original slice.
-		outFileCopy := make([]string, len(outFile))
-		copy(outFileCopy, outFile)
-
-		// Call `ExpandFilenameLibType` on last element, which is the filename with lib type suffix.
-		lastIndex := len(outFileCopy) - 1
-		filename, libType := e.ExpandFilenameLibType(outFileCopy[lastIndex])
-		if filename == "" {
-			e.shell.Quit(fmt.Sprintf("Invalid output filename %s, should end with %s for static library or %s for dynamic library", outFileCopy[lastIndex], LibFilenameSuffixStatic, LibFilenameSuffixDynamic))
-		}
-		outFileCopy[lastIndex] = filename
-
-		parts := append([]string{baseDir}, outFileCopy...)
-		fullPath := filepath.Join(parts...)
-
-		e.VerifyFileArch(libType, fullPath)
-	}
-}
-
 func (e *OSEnv) VerifyFileArch(libType LibType, file string) {
 	logger := e.shell.Logger()
 
@@ -358,7 +311,7 @@ func (e *OSEnv) GetDarwinClangTargetTriple() string {
 	panic("unreachable")
 }
 
-func (e *OSEnv) checkStaticLibMinSDKVer(file string, minSDKVer string) {
+func (e *OSEnv) verifyDarwinStaticLibMinSDKVer(file string, minSDKVer string) {
 	output := e.shell.Shell(fmt.Sprintf("otool -l %s | grep -m 1 minos", file))
 	// output looks like:
 	// minos 18.2
@@ -386,9 +339,9 @@ func (e *OSEnv) MinDarwinSDKVer() string {
 	panic("unreachable")
 }
 
-func (e *OSEnv) CheckLocalStaticLibMinSDKVer(file string) {
+func (e *OSEnv) VerifyDarwinStaticLibMinSDKVer(file string) {
 	if e.IsDarwinPlatform() {
-		e.checkStaticLibMinSDKVer(file, e.MinDarwinSDKVer())
+		e.verifyDarwinStaticLibMinSDKVer(file, e.MinDarwinSDKVer())
 	}
 }
 

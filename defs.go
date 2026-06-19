@@ -78,22 +78,6 @@ const (
 	LibTypeDynamic
 )
 
-const (
-	LibFilenameSuffixStatic  = ".<s>"
-	LibFilenameSuffixDynamic = ".<d>"
-)
-
-func (t LibType) ToFilenameSuffix() string {
-	switch t {
-	case LibTypeStatic:
-		return LibFilenameSuffixStatic
-	case LibTypeDynamic:
-		return LibFilenameSuffixDynamic
-	default:
-		return ""
-	}
-}
-
 func (t LibType) String() string {
 	switch t {
 	case LibTypeStatic:

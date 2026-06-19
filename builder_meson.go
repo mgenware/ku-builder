@@ -108,7 +108,7 @@ type RunMesonBuildOrInstallOptions struct {
 	Env       []string
 }
 
-func (bp *Builder) RunMesonBuildOrInstall(opt *RunMesonBuildOrInstallOptions, outFile []string) {
+func (bp *Builder) RunMesonBuildOrInstall(opt *RunMesonBuildOrInstallOptions, outFile string, vfOpt *VerifyFileOptions) {
 	bp.NotNullOrQuit(opt, "opt")
 	bp.NotNullOrQuit(opt.Action, "opt.Action")
 
@@ -152,7 +152,7 @@ func (bp *Builder) RunMesonBuildOrInstall(opt *RunMesonBuildOrInstallOptions, ou
 		Env:  env,
 	})
 
-	bp.BuildEnv.VerifyLibFileArch(outFile)
+	bp.BuildEnv.VerifyFile(outFile, vfOpt)
 }
 
 func (bp *Builder) RunMesonCompile() {
@@ -164,14 +164,14 @@ func (bp *Builder) RunMesonCompileTarget(target string) {
 		Action: MesonActionCompile,
 		Target: target,
 	}
-	bp.RunMesonBuildOrInstall(opt, nil)
+	bp.RunMesonBuildOrInstall(opt, "", nil)
 }
 
-func (bp *Builder) RunMesonInstall(outFile []string) {
+func (bp *Builder) RunMesonInstall(outFile string, vfOpt *VerifyFileOptions) {
 	opt := &RunMesonBuildOrInstallOptions{
 		Action: MesonActionInstall,
 	}
-	bp.RunMesonBuildOrInstall(opt, outFile)
+	bp.RunMesonBuildOrInstall(opt, outFile, vfOpt)
 }
 
 func (bp *Builder) writeCrossFile() (string, error) {

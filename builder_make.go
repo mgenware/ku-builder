@@ -43,12 +43,12 @@ func (bp *Builder) RunMake() {
 	bp.RunMakeWithArgs(nil)
 }
 
-func (bp *Builder) RunMakeInstall(outFile []string) {
+func (bp *Builder) RunMakeInstall(outFile string, vfOpt *VerifyFileOptions) {
 	env := bp.GetKuBuiltinEnv(false)
 	bp.BuildEnv.Shell.Spawn(&j9.SpawnOpt{
 		Name: "make",
 		Args: []string{"install"},
 		Env:  env,
 	})
-	bp.BuildEnv.VerifyLibFileArch(outFile)
+	bp.BuildEnv.VerifyFile(outFile, vfOpt)
 }

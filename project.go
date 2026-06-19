@@ -33,7 +33,7 @@ type Project interface {
 	Build()
 
 	// Installs the built library to the output directory. This should be called after `Build`.
-	Install(outFile []string)
+	Install(outFile string, vfOpt *VerifyFileOptions)
 
 	// Returns the core builder for this project. This is used for advanced users who want to run custom commands.
 	CoreBuilder() *Builder
@@ -94,9 +94,9 @@ func (p *CMakeProject) Build() {
 	b.RunCmakeBuild()
 }
 
-func (p *CMakeProject) Install(outFile []string) {
+func (p *CMakeProject) Install(outFile string, vfOpt *VerifyFileOptions) {
 	b := p.builder
-	b.RunCmakeInstall(outFile)
+	b.RunCmakeInstall(outFile, vfOpt)
 }
 
 type MakeProject struct {
@@ -151,9 +151,9 @@ func (p *MakeProject) Build() {
 	b.RunMake()
 }
 
-func (p *MakeProject) Install(outFile []string) {
+func (p *MakeProject) Install(outFile string, vfOpt *VerifyFileOptions) {
 	b := p.builder
-	b.RunMakeInstall(outFile)
+	b.RunMakeInstall(outFile, vfOpt)
 }
 
 type MesonProject struct {
@@ -206,7 +206,7 @@ func (p *MesonProject) Build() {
 	b.RunMesonCompile()
 }
 
-func (p *MesonProject) Install(outFile []string) {
+func (p *MesonProject) Install(outFile string, vfOpt *VerifyFileOptions) {
 	b := p.builder
-	b.RunMesonInstall(outFile)
+	b.RunMesonInstall(outFile, vfOpt)
 }

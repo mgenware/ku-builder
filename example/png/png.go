@@ -19,5 +19,5 @@ func BuildPng(be *ku.BuildEnv) {
 		},
 	})
 	p.Build()
-	p.Install([]string{"libpng.<s>"})
+	p.Install("libpng", nil)
 }

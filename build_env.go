@@ -127,6 +127,55 @@ func (be *BuildEnv) LogSummary() {
 	shell.Log(j9.LogLevelWarning, "Building target: "+cliArgs.Target+"-"+string(osEnv.SDK)+"-"+string(osEnv.Arch))
 }
 
-func (e *BuildEnv) VerifyLibFileArch(outFile []string) {
-	e.OSEnv.AutoVerifyFileArch(e.OutLibDir, e.DistLibDir, outFile)
+type VerifyFileOptions struct {
+	DistDir               bool
+	Dylib                 bool
+	SkipDarwinSDKVerCheck bool
+	DarwinSDKVer          string
+}
+
+func (be *BuildEnv) VerifyFile(outFile string, opt *VerifyFileOptions) {
+	if len(outFile) == 0 {
+		return
+	}
+	if opt == nil {
+		opt = &VerifyFileOptions{}
+	}
+
+	filePath := be.getVerifyFilePath(outFile, opt)
+	libType := LibTypeStatic
+	if opt.Dylib {
+		libType = LibTypeDynamic
+	}
+
+	e := be.OSEnv
+	// Verify file arch.
+	e.VerifyFileArch(libType, filePath)
+
+	// Verify min SDK version for Darwin static libs.
+	if !opt.SkipDarwinSDKVerCheck && e.IsDarwinPlatform() && libType == LibTypeStatic {
+		minSDKVer := opt.DarwinSDKVer
+		if minSDKVer == "" {
+			minSDKVer = e.MinDarwinSDKVer()
+		}
+		e.VerifyDarwinStaticLibMinSDKVer(filePath)
+	}
+}
+
+func (be *BuildEnv) getVerifyFilePath(outFile string, opt *VerifyFileOptions) string {
+	baseDir := be.OutDir
+	if opt != nil && opt.DistDir {
+		baseDir = be.DistDir
+	}
+	s := filepath.Join(baseDir, "lib", outFile)
+
+	dylib := opt != nil && opt.Dylib
+	e := be.OSEnv
+	if dylib {
+		if e.IsDarwinPlatform() {
+			return s + ".dylib"
+		}
+		return s + ".so"
+	}
+	return s + ".a"
 }
