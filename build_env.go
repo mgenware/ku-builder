@@ -158,7 +158,7 @@ func (be *BuildEnv) VerifyFile(outFile string, opt *VerifyFileOptions) {
 		if minSDKVer == "" {
 			minSDKVer = e.MinDarwinSDKVer()
 		}
-		e.VerifyDarwinStaticLibMinSDKVer(filePath)
+		e.VerifyDarwinStaticLibSDK(filePath, minSDKVer, e.SDK)
 	}
 }
 

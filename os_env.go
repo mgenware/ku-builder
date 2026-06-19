@@ -311,19 +311,60 @@ func (e *OSEnv) GetDarwinClangTargetTriple() string {
 	panic("unreachable")
 }
 
-func (e *OSEnv) verifyDarwinStaticLibMinSDKVer(file string, minSDKVer string) {
-	output := e.shell.Shell(fmt.Sprintf("otool -l %s | grep -m 1 minos", file))
-	// output looks like:
-	// minos 18.2
-	if strings.HasPrefix(output, "minos ") {
-		verStr := strings.TrimPrefix(output, "minos ")
-		if verStr != minSDKVer {
-			e.shell.Quit(fmt.Sprintf("Unexpected min SDK version: %s, expected: %s for file %s", verStr, minSDKVer, file))
-		}
-		// Success,
-		return
+func (e *OSEnv) VerifyDarwinStaticLibSDK(file string, minSDKVer string, sdk SDKEnum) {
+	if !e.IsDarwinPlatform() {
+		e.ThrowUnsupportedError()
 	}
-	e.shell.Quit(fmt.Sprintf("Cannot find minos in %s", file))
+
+	output := e.shell.Shell(fmt.Sprintf("otool -l %s | grep -m 2 -E 'platform|minos'", file))
+	// Sample output:
+	//  platform 2
+	//  minos 14.0
+
+	lines := strings.Split(output, "\n")
+	platformVerified := false
+	versionVerified := false
+
+	otoolPlatform := ""
+	switch sdk {
+	case SDKMacos:
+		otoolPlatform = "1"
+	case SDKIos:
+		otoolPlatform = "2"
+	case SDKIosSimulator:
+		otoolPlatform = "7"
+	default:
+		e.shell.Quit(fmt.Sprintf("Unsupported SDK for otool verification: %s", sdk))
+	}
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		parts := strings.Fields(line)
+		if len(parts) != 2 {
+			e.shell.Quit(fmt.Sprintf("Unexpected line in otool output: %s", line))
+		}
+		key := parts[0]
+		value := parts[1]
+
+		if key == "platform" {
+			if value != otoolPlatform {
+				e.shell.Quit(fmt.Sprintf("Unexpected platform in otool output: %s, expected: %s for file %s", value, otoolPlatform, file))
+			}
+			platformVerified = true
+		} else if key == "minos" {
+			if value != minSDKVer {
+				e.shell.Quit(fmt.Sprintf("Unexpected min SDK version in otool output: %s, expected: %s for file %s", value, minSDKVer, file))
+			}
+			versionVerified = true
+		}
+	}
+
+	if !platformVerified {
+		e.shell.Quit(fmt.Sprintf("platform not found in otool output for file %s, output: %s", file, output))
+	}
+	if !versionVerified {
+		e.shell.Quit(fmt.Sprintf("minos not found in otool output for file %s, output: %s", file, output))
+	}
 }
 
 func (e *OSEnv) MinDarwinSDKVer() string {
@@ -337,12 +378,6 @@ func (e *OSEnv) MinDarwinSDKVer() string {
 	}
 	e.ThrowUnsupportedError()
 	panic("unreachable")
-}
-
-func (e *OSEnv) VerifyDarwinStaticLibMinSDKVer(file string) {
-	if e.IsDarwinPlatform() {
-		e.verifyDarwinStaticLibMinSDKVer(file, e.MinDarwinSDKVer())
-	}
 }
 
 func (e *OSEnv) GetAutoconfHost() string {
