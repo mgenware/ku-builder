@@ -140,10 +140,11 @@ func (bp *Builder) GetToolchainPathMapWithOptions(buildSys BuildSystemEnum) [][]
 		list = append(list, []string{lowerIfMeson("STRIP"), env.GetNDKToolchainBinPath("llvm-strip")})
 	} else if env.IsDarwinPlatform() {
 		list = append(list, []string{lowerIfMeson("AR"), env.RunXcodeFindCached("ar")})
-		// Don't set AS here. Unlike NDK, macOS doesn't have a separate assembler.
-		// For Arm64, clang can be used as AS. For x86_64, AS is usually nasm or yasm, which is not in Xcode toolchain.
-		// We can let the build system find AS by itself, or users can set it manually if needed.
-		// list = append(list, []string{lowerIfMeson("AS"), env.RunXcodeFindCached("clang")})
+		// Only set "AS" as clang on Darwin + ARM.
+		// For x86_64, the assembler could be nasm or yasm.
+		if env.Arch == ArchArm64 {
+			list = append(list, []string{lowerIfMeson("AS"), env.RunXcodeFindCached("clang")})
+		}
 		list = append(list, []string{lowerIfMeson("NM"), env.RunXcodeFindCached("nm")})
 		list = append(list, []string{lowerIfMeson("RANLIB"), env.RunXcodeFindCached("ranlib")})
 		list = append(list, []string{lowerIfMeson("STRIP"), env.RunXcodeFindCached("strip")})
@@ -160,6 +161,7 @@ func (bp *Builder) GetMakeToolchainEnv(opt *GetToolchainEnvOptions) []string {
 	}
 
 	env := bp.GetCoreSetupEnv()
+	e := bp.OS
 
 	toolchainPathMap := bp.GetToolchainPathMap(BuildSystemMake)
 	for _, pair := range toolchainPathMap {
@@ -178,6 +180,11 @@ func (bp *Builder) GetMakeToolchainEnv(opt *GetToolchainEnvOptions) []string {
 		env = append(env, "CFLAGS="+cflags)
 		env = append(env, "CXXFLAGS="+cflags)
 		env = append(env, "LDFLAGS="+ldflags)
+
+		// Set ASFLAGS for Darwin + ARM since AS is clang.
+		if e.IsDarwinPlatform() && e.Arch == ArchArm64 {
+			env = append(env, "ASFLAGS="+cflags)
+		}
 	}
 
 	return env
