@@ -316,7 +316,7 @@ func (e *OSEnv) VerifyDarwinStaticLibSDK(file string, minSDKVer string, sdk SDKE
 		e.ThrowUnsupportedError()
 	}
 
-	output := e.shell.Shell(fmt.Sprintf("otool -l %s | grep -m 2 -E 'platform|minos'", file))
+	output := e.shell.Shell(fmt.Sprintf("otool -l %s | grep -E 'platform|minos'", file))
 	// Sample output:
 	//  platform 2
 	//  minos 14.0
