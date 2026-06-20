@@ -73,8 +73,15 @@ func main() {
 	vLog("Action: %s", action)
 	vLog("Input: %s", input)
 
+	requireInput := func() {
+		if input == "" {
+			shell.Quit("No input provided.")
+		}
+	}
+
 	switch action {
 	case "dep":
+		requireInput()
 		isDarwin, err := getIsDarwinFromInput(input, resolvedPlatform)
 		if err != nil {
 			shell.Quit(fmt.Sprintf("Error: %v\n", err))
@@ -86,6 +93,7 @@ func main() {
 		}
 
 	case "symbol":
+		requireInput()
 		isDarwin, err := getIsDarwinFromInput(input, resolvedPlatform)
 		if err != nil {
 			shell.Quit(fmt.Sprintf("Error: %v\n", err))
