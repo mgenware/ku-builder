@@ -255,11 +255,13 @@ func Build(opt *XCBuildOptions) {
 			}
 
 			// Sign the framework.
-			signType := kCodeSignTypeIosFramework
-			if isMacos {
-				signType = kCodeSignTypeMacFramework
+			if cliArgs.SignArg != "" {
+				signType := kCodeSignTypeIosFramework
+				if isMacos {
+					signType = kCodeSignTypeMacFramework
+				}
+				codeSign(shell, fwBinPath, cliArgs.SignArg, signType)
 			}
-			codeSign(shell, fwBinPath, cliArgs.SignArg, signType)
 
 			// Save the dylib path.
 			fwInfo := iFrameworkInfo{
