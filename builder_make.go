@@ -31,12 +31,11 @@ func (bp *Builder) RunMakeWithArgs(opt *j9.SpawnOpt) {
 
 	// Note: `opt.Env` should be set after `GetKuBuiltinEnv`.
 	env := append(bp.GetKuBuiltinEnv(false), opt.Env...)
-
-	bp.BuildEnv.Shell.Spawn(&j9.SpawnOpt{
-		Name: "make",
-		Args: []string{fmt.Sprintf("-j%v", numCores)},
-		Env:  env,
-	})
+	spawnOpt := *opt
+	spawnOpt.Name = "make"
+	spawnOpt.Args = append([]string{fmt.Sprintf("-j%v", numCores)}, opt.Args...)
+	spawnOpt.Env = env
+	bp.BuildEnv.Shell.Spawn(&spawnOpt)
 }
 
 func (bp *Builder) RunMake() {

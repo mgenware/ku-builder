@@ -43,6 +43,7 @@ var SupportedCLIActions = map[CLIAction]bool{
 	CLIActionConfigure: true,
 	CLIActionClean:     true,
 	CLIActionBuild:     true,
+	CLIActionMake:      true,
 }
 
 type CLIOptions struct {
@@ -154,8 +155,8 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 		}
 	}
 	// Validate action.
-	if *actionPtr == "" {
-		if !SupportedCLIActions[CLIActionBuild] {
+	if *actionPtr != "" {
+		if !SupportedCLIActions[CLIAction(*actionPtr)] {
 			fmt.Printf("Unsupported action: %v\n", *actionPtr)
 			os.Exit(1)
 		}

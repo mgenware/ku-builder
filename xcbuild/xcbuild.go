@@ -60,6 +60,14 @@ func Build(opt *XCBuildOptions) {
 		sdks = ku.PlatformSDKs[ku.PlatformDarwin]
 	}
 	platformStr := string(cliArgs.PlatformArg)
+	if len(sdks) == 1 {
+		switch sdks[0] {
+		case ku.SDKMacos:
+			platformStr = string(ku.PlatformMacos)
+		case ku.SDKIos, ku.SDKIosSimulator:
+			platformStr = string(ku.PlatformIos)
+		}
+	}
 	if platformStr == "" {
 		platformStr = "darwin"
 	}
