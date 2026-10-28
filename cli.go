@@ -86,7 +86,7 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 
 	sdkPtr := flag.String("sdk", string(opt.DefaultSDK), "SDK. If not specified, all supported SDKs for the platform will be used.")
 	archPtr := flag.String("arch", string(opt.DefaultArch), "Arch. If not specified, all supported SDK archs for the platform will be used.")
-	actionPtr := flag.String("action", string(opt.DefaultAction), "Action. Supported actions: configure, clean, build.")
+	actionPtr := flag.String("action", string(opt.DefaultAction), "Action. Supported actions: configure, clean, build, make.")
 	ndkPtr := flag.String("ndk", "", "NDK name.")
 
 	var debug bool
