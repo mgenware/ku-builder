@@ -12,16 +12,17 @@ import (
 
 func main() {
 
+	flag.Usage = printUsage
 	var platformInput string
 	var resolvedPlatform ku.PlatformEnum
-	flag.StringVar(&platformInput, "platform", "", "Platform. Supported platforms: macos(m), ios(i), android(a), darwin(d).")
+	flag.StringVar(&platformInput, "platform", "", "Platform: macos (m), ios (i), android (a), or darwin (d).")
 	flag.StringVar(&platformInput, "p", "", "-platform shorthand.")
 
 	var target string
 	flag.StringVar(&target, "target", "", "Build target.")
 	flag.StringVar(&target, "t", "", "-target shorthand.")
 
-	ndkPtr := flag.String("ndk", "", "NDK version.")
+	ndkPtr := flag.String("ndk", "", "Android NDK version under $ANDROID_HOME/ndk.")
 
 	var debug bool
 	flag.BoolVar(&debug, "debug", false, "Debug build.")

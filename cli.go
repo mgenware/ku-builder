@@ -77,27 +77,27 @@ func ParseCLIArgs(opt *CLIOptions) *CLIArgs {
 
 	var platformInput string
 	var resolvedPlatform PlatformEnum
-	flag.StringVar(&platformInput, "platform", string(opt.DefaultPlatform), "Platform. Supported platforms: macos(m), ios(i), android(a), darwin(d).")
+	flag.StringVar(&platformInput, "platform", string(opt.DefaultPlatform), "Select SDKs: macos (m), ios (i: device and simulator), android (a), or darwin (d: macOS and iOS).")
 	flag.StringVar(&platformInput, "p", string(opt.DefaultPlatform), "-platform shorthand.")
 
 	var target string
-	flag.StringVar(&target, "target", opt.DefaultTarget, "Build target. "+"Allowed targets: "+fmt.Sprintf("%v", allowedTargets))
+	flag.StringVar(&target, "target", opt.DefaultTarget, "Build target; required unless a default is configured. Allowed targets: "+fmt.Sprintf("%v", allowedTargets))
 	flag.StringVar(&target, "t", opt.DefaultTarget, "-target shorthand.")
 
-	sdkPtr := flag.String("sdk", string(opt.DefaultSDK), "SDK. If not specified, all supported SDKs for the platform will be used.")
-	archPtr := flag.String("arch", string(opt.DefaultArch), "Arch. If not specified, all supported SDK archs for the platform will be used.")
-	actionPtr := flag.String("action", string(opt.DefaultAction), "Action. Supported actions: configure, clean, build, make.")
-	ndkPtr := flag.String("ndk", "", "NDK name.")
+	sdkPtr := flag.String("sdk", string(opt.DefaultSDK), "Select one SDK: macosx, iphoneos, iphonesimulator, or android; overrides -platform.")
+	archPtr := flag.String("arch", string(opt.DefaultArch), "Select arm64 or x86_64; otherwise use all supported architectures for each SDK.")
+	actionPtr := flag.String("action", string(opt.DefaultAction), "Action for the calling program to handle: configure, clean, build, or make.")
+	ndkPtr := flag.String("ndk", "", "Android NDK version or absolute path; required for Android builds.")
 
 	var debug bool
-	flag.BoolVar(&debug, "debug", false, "Debug build.")
+	flag.BoolVar(&debug, "debug", false, "Use debug instead of release build directories and flags.")
 	flag.BoolVar(&debug, "d", false, "-debug shorthand.")
 
-	cleanPtr := flag.Bool("clean", false, "Run a clean build.")
-	dylibPtr := flag.Bool("dylib", false, "Whether the output is a dynamic/shared library.")
-	signPtr := flag.String("sign", "", "Sign the output with the specified identity.")
-	hardenedRuntimePtr := flag.Bool("hardened", false, "Enable hardened runtime for macOS frameworks.")
-	noPullPtr := flag.Bool("no-pull", false, "Whether to skip git pull")
+	cleanPtr := flag.Bool("clean", false, "Clean temporary build directories before configuring.")
+	dylibPtr := flag.Bool("dylib", false, "Request a dynamic/shared library instead of a static library (if supported by the calling program).")
+	signPtr := flag.String("sign", "", "Signing identity for programs that sign their output.")
+	hardenedRuntimePtr := flag.Bool("hardened", false, "Enable hardened runtime when signing macOS frameworks.")
+	noPullPtr := flag.Bool("no-pull", false, "Skip git pull for existing source checkouts.")
 	if opt.BeforeParseFn != nil {
 		opt.BeforeParseFn()
 	}

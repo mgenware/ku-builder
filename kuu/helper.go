@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -37,19 +38,34 @@ func mustHaveNDKVer(ndkVer string) string {
 }
 
 func printUsage() {
-	fmt.Println("Usage: kuu [options] <action> <input>")
-	fmt.Println()
-	fmt.Println("Actions:")
-	fmt.Println("  dep       List dependencies of the input file")
-	fmt.Println("  symbol    List exported symbols of the input file")
-	fmt.Println("  deploy    Run deployment for the specified target and platform. Input is ignored.")
-	fmt.Println()
-	fmt.Println("Options:")
-	fmt.Println("  -platform  Platform. Supported platforms: macos(m), ios(i), android(a), darwin(d).")
-	fmt.Println("  -p         -platform shorthand.")
-	fmt.Println("  -target    Build target.")
-	fmt.Println("  -t         -target shorthand.")
-	fmt.Println("  -ndk       NDK version.")
-	fmt.Println("  -debug     Debug build.")
-	fmt.Println("  -help      Show usage information.")
+	writeUsage(os.Stdout)
+}
+
+func writeUsage(w io.Writer) {
+	fmt.Fprintln(w, `Usage: kuu [options] <action> [input]
+
+Run on macOS. Put options before the action.
+
+Actions:
+  dep <input>     List binary dependencies (otool -L or llvm-readelf -d).
+  symbol <input>  List global symbols (nm -gU or llvm-nm -g).
+  deploy          Copy configured artifacts using .ku.json in the current directory.
+
+Options:
+  -platform, -p  Platform: macos (m), ios (i), android (a), or darwin (d).
+  -target, -t    Deployment target (defaults to deploy_default_target in .ku.json).
+  -ndk           Android NDK version under $ANDROID_HOME/ndk.
+  -debug, -d     Deploy debug rather than release artifacts.
+  -verbose       Show additional action and input information.
+  -help, -h      Show this help.
+
+For dep and symbol, .so inputs default to Android; other extensions default to
+Darwin. Specify -platform to override detection. Android inspection requires
+-ndk and ANDROID_HOME. Supplying -ndk without -platform selects Android.
+Deployment requires -platform (or -ndk for Android) and ignores input.
+
+Examples:
+  kuu dep ./libexample.dylib
+  kuu -platform android -ndk 27.2.12479018 symbol ./libexample.so
+  kuu -platform ios -target example deploy`)
 }
